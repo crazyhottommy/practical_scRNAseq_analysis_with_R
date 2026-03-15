@@ -1,0 +1,1293 @@
+--- 
+always_allow_html: true
+webshot: true
+editor_options: 
+  chunk_output_type: console
+---
+
+
+```{r include=FALSE}
+knitr::opts_chunk$set(
+  warning = FALSE,
+  message = FALSE
+)
+```
+
+
+# Seurat workflow
+
+## What we are doing in this chapter
+
+In the previous chapter, we removed empty droplets and obtained filtered count matrices for our four samples. Now we need to go from raw counts to clusters and cell types. This is really the core of any single-cell analysis.
+
+Here's the overall pipeline:
+
+```
+Raw counts → Seurat object → QC filtering → Normalization → Variable genes →
+Scaling → PCA → Integration → UMAP → Clustering → Marker genes → Interpretation
+```
+
+That looks like a lot of steps, but the nice thing is that they all follow a standard pattern. Let me briefly walk you through each one:
+
+1. **Create Seurat Object** -- organize counts into an S4 object that holds your data, metadata, and analyses in one place.
+2. **Additional QC Filtering** -- filter cells by gene counts, mitochondrial %, ribosomal %. Empty droplet removal (Chapter 2) was just the first pass.
+3. **Normalization** -- divide by library size, multiply by 10,000, log transform. Cells have different sequencing depths and we need to make them comparable.
+4. **Find Variable Features** -- pick the ~2,000 most variable genes. Housekeeping genes don't help you cluster.
+5. **Scale Data** -- Z-score each gene so that highly expressed genes don't dominate PCA.
+6. **Run PCA** -- go from 2,000 genes down to ~30 principal components. This filters out noise.
+7. **Integrate with Harmony** -- remove sample-specific batch effects while keeping real biology.
+8. **Run UMAP** -- project 30 PCs down to 2 dimensions so you can actually see what's going on.
+9. **Find Neighbors + Clusters** -- build a k-nearest-neighbor graph, apply Louvain clustering. Cells with similar expression profiles end up in the same cluster.
+10. **Find Marker Genes** -- differential expression testing to figure out what each cluster actually is.
+
+What we're doing here is exploratory analysis: start with raw data, cluster unsupervised, discover cell populations. We're asking "what cell types are present?" This is hypothesis-generating, not hypothesis-testing. If you want to do something like "do activated vs resting T cells differentially express cytokines?" -- that's a confirmatory analysis and requires a different statistical framework (pseudo-bulk DE, which we'll touch on later).
+
+### How I structured this chapter
+
+I decided to first run the entire pipeline so you can see the results, and then go back and unpack the math behind each step. In my experience, it's much easier to understand *why* normalization works a certain way after you've already seen it in action. So don't skip the math sections later -- we'll manually verify LogNormalize, dig into how log2 fold changes are calculated (Seurat and Scanpy do it differently!), and talk about how to choose parameters.
+
+By the end, you'll know:
+
+- How many distinct cell populations are in our PBMC samples
+- What marker genes define each population
+- Whether there are batch effects between samples/donors
+- Whether activated vs resting T cells separate into different clusters
+- How to spot and remove low-quality clusters
+
+Let's get started.
+
+## Read in the filtered matrices and make a Seurat object
+
+```{r}
+library(here)
+options(future.globals.maxSize = 5000 * 1024^2) # Increases the limit to 5000 MB
+
+# read in the count matrix as a list
+mats<- purrr::map(paste0("SRX532939", 4:7),
+                  ~ readRDS(here(paste0("data/", 
+                                        .x, "_quant/filtered_mat.rds"))))
+
+names(mats)<- paste0("SRX532939", 4:7)
+
+# take a look at the first filtered matrix
+# mats$SRX5329394[1:5, 1:5]
+```
+
+make a function to create a seurat object, and prefix the cell barcodes with the sample name. Different sample may have the same cell barcodes. If we want to merge all samples together without barcodes collision, we need to prefix the sample name.
+
+```{r}
+library(Seurat)
+library(dplyr)
+library(stringr)
+
+create_seurat<- function(mat, sample){
+  colnames(mat)<- paste0(sample, "_", colnames(mat))
+  obj<- CreateSeuratObject(mat)
+  obj$sample<- sample
+  return(obj)
+}
+```
+We need to make the cell id unique by prefixing the sample ID to the cell barcode.
+Different samples may have cell barcode collison. 
+
+That's what `colnames(mat)<- paste0(sample, "_", colnames(mat))` is doing.
+
+
+Now create seurat objects for all matrices/samples.
+
+```{r}
+objs<- purrr::map2(mats, names(mats), ~create_seurat(.x, .y))
+
+# merge all the objects into a single seurat object
+# the reduce function will take a list and merge the list iteratively
+obj<- purrr::reduce(objs, merge)
+
+# merged single object 
+obj
+
+# In Seurat v5, merged objects keep data in separate layers per sample.
+# We need to join them into a single layer for functions like FindAllMarkers to work.
+obj<- JoinLayers(obj)
+```
+
+
+## alternative input formats to make a seurat object
+
+If you go to GEO, for some datasets, the authors provide a count table for all samples; for other datasets, the authors provide a count table per sample.
+
+```{r eval=FALSE}
+library(scCustomize)
+
+?Read10X_GEO
+```
+
+I have a youtube video teaching you how to do that from scratch:
+
+https://www.youtube.com/watch?v=5e_8wr5Xx_Q&list=PLctGJos87iQ39aENVpYVaBEaUwnhMGfQe&index=4
+
+Again, master the basics. You read in the counts to a sparse matrix and add the genes and cells as the row names or column names.
+
+### cellranger input
+
+If you used `cellranger` instead of `simpleaf` for quantification, the output directory structure looks like this:
+
+```
+sample/outs/filtered_feature_bc_matrix/
+├── barcodes.tsv.gz    # one barcode (cell) per line
+├── features.tsv.gz    # gene IDs and gene names
+└── matrix.mtx.gz      # the sparse count matrix in Matrix Market format
+```
+
+These three files together define the count matrix. `matrix.mtx.gz` stores only the non-zero entries (row index, column index, count value), and the other two files tell you which row corresponds to which gene and which column corresponds to which cell.
+
+You point `Read10X()` to the directory containing these three files:
+
+```{r eval=FALSE}
+# pass the path to the directory, not to individual files
+counts <- Seurat::Read10X(data.dir = "sample/outs/filtered_feature_bc_matrix/")
+
+# this returns a sparse matrix, which you can pass to CreateSeuratObject()
+obj <- CreateSeuratObject(counts = counts, project = "my_sample")
+```
+
+If you have multiple samples from `cellranger`, you can read them in one by one and then merge:
+
+```{r eval=FALSE}
+# read in each sample
+sample1 <- Read10X(data.dir = "sample1/outs/filtered_feature_bc_matrix/")
+sample2 <- Read10X(data.dir = "sample2/outs/filtered_feature_bc_matrix/")
+
+obj1 <- CreateSeuratObject(counts = sample1, project = "sample1")
+obj2 <- CreateSeuratObject(counts = sample2, project = "sample2")
+
+# merge into one object
+obj <- merge(obj1, y = obj2, add.cell.ids = c("sample1", "sample2"))
+```
+
+The `add.cell.ids` argument prepends the sample name to each cell barcode so you can tell which sample each cell came from after merging. If you have many samples, you can use a loop or `purrr::map()` as we showed in Chapter 2.
+
+One thing to watch out for: `cellranger` provides both a `filtered_feature_bc_matrix` (cells that passed cellranger's built-in cell calling) and a `raw_feature_bc_matrix` (all barcodes including empty droplets). If you want to do your own cell calling with `emptyDrops()`, use the raw matrix. If you trust cellranger's filtering, use the filtered one.
+
+
+## add metadata to the seurat object
+
+add the conditions and donor information
+
+```{r}
+# the old metadata 
+head(obj@meta.data)
+
+
+new_meta<- obj@meta.data %>%
+        mutate(condition = case_when(
+                sample %in% c("SRX5329394" ,"SRX5329396") ~ "activated",
+                sample %in% c("SRX5329395", "SRX5329397") ~ "resting"
+        )) %>%
+        mutate(donor = case_when(
+                sample %in% c("SRX5329394" ,"SRX5329395") ~ "donorA",
+                sample %in% c("SRX5329396" ,"SRX5329397") ~ "donorB"
+        ))
+
+head(new_meta)
+```
+This is a new dataframe with rownames for the cell id.
+
+Add the condition and donor information to the meta.data slot.
+```{r}
+# the order of the rows are the same for the new_meta dataframe and the seurat object
+obj$condition<- new_meta$condition
+obj$donor<- new_meta$donor
+
+head(obj@meta.data)
+```
+
+Note, you can also use the `AddMetaData()` function.
+
+Tip, Seurat is an S4 objecct and it contains the so-called slots (a terminology for object-oriented programming in R). Read [my blog post](https://divingintogeneticsandgenomics.com/post/s3-and-s4-objects-in-r-explained/) to understand the `S3` and `S4` ojects in R if you are interested.
+
+
+## more quality control
+
+What are the ribosomal genes and mitochondrial genes?
+
+```{r}
+str_subset(rownames(obj), pattern = "^RPS|^RPL")
+str_subset(rownames(obj), pattern = "^MT\\.")
+```
+
+Usually the the mitochondrial genes should be matching a pattern of `^MT-`.
+But those `-` was convered to `.` when we use `make.names` in the last chapter to
+map the ENSEMBLE ID to the gene symbol. Always check your data with your eyes.
+
+For example if you do this:
+
+```{r}
+str_subset(rownames(obj), pattern = "^MT-")
+```
+and did not find any match. You know there is some problem.
+
+If you work with mouse scRNAseq data, the mitochondrial genes start with ^mt-,  not ^Mt- or ^MT.
+Your data may vary so always double check your data with eyes.
+
+
+Let's go back to the original gene name mapping file:
+
+```{r eval=FALSE}
+gene_dat %>% 
+        filter(str_detect(gene_name, "^MT-"))
+```
+
+when we used `rownames(filt_mtx)<- make.names(gene_dat$gene_name, unique=TRUE)` to change the ENSEMBL ID to gene symbol, `make.name` changes the `-` to `.`.
+
+```{r}
+obj[["percent.mt"]] <- PercentageFeatureSet(obj, pattern = "^MT\\.")
+obj[["percent.ribo"]] <- PercentageFeatureSet(obj, pattern = "^RPS|^RPL")
+
+VlnPlot(obj, 
+        features = c("nFeature_RNA", "nCount_RNA", "percent.mt", "percent.ribo"), 
+        pt.size= 0, ncol = 2) 
+
+## number of cells for each sample before filtering
+table(obj$sample)
+
+# filter
+obj <- subset(obj, subset = nFeature_RNA > 200 & nFeature_RNA < 5000 & 
+                      percent.mt < 10 & percent.ribo < 60)
+```
+
+This data have high ribosomal gene content, that's why we used high 60% cutoff.
+The cutoff for `nFeature_RNA`, `percent.ribo` and `percent.mt` are kind of subjective.
+It depends on your data, so always visualize your data first and then make the decision.
+
+The mitochondrial content varies among different cell types and tissues. Metabolically active parenchymal cells and specialized cells such as neutrophils have higher mitochondrial gene expression, they may be filtered out if we use too stringent cutoffs.
+
+> Naive poised T cells are known to have higher ribosomal content, as are malignant cells.
+
+Bonus: check this [miQC: An adaptive probabilistic framework for quality control of single-cell RNA-sequencing data](https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1009290)
+
+Read also [Biology-inspired data-driven quality control for scientific discovery in single-cell transcriptomics](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-022-02820-w)
+
+Check how many cells for each sample after filtering
+
+```{r}
+table(obj$sample)
+```
+
+## Routine Processing
+
+Now we're ready to run the standard Seurat workflow.
+
+### Why do we need dimensionality reduction?
+
+Our data has ~20,000 dimensions (one per gene). You can't cluster or visualize that directly. In high-dimensional space, distances become meaningless, noise dominates signal, and computation is slow. We need to reduce dimensions while keeping the interesting structure.
+
+We do this in two stages:
+
+First, **PCA** takes us from 20,000 genes down to ~30 principal components. PCA finds directions of maximum variance -- you can think of PCs as linear combinations of genes that capture co-expression patterns. Most of the biological signal lives in the first 20-30 PCs; the rest is mostly noise.
+
+Then, **UMAP** takes those 30 PCs down to 2 dimensions for visualization. UMAP preserves local neighborhood structure, so cells that are similar in 30-dimensional PC space stay close together in the 2D plot. It's faster than t-SNE and generally preserves global structure better.
+
+### Why we need integration (Harmony)
+
+Our four samples have technical variation -- different library prep, different sequencing runs, different donors. Without batch correction, cells can cluster by *sample* rather than by *cell type*, which is not what we want.
+
+Harmony works on the PC embeddings. Conceptually, it identifies cells that should be similar across batches, learns correction factors, and adjusts the embeddings to remove batch effects while preserving real biology (cell types, activation states).
+
+When should you integrate? When you have multiple samples with expected technical variation and you care about biological differences, not batch differences. If your samples mix well on the UMAP without integration, you might not need it at all.
+
+There are alternatives -- FastMNN (mutual nearest neighbors, the OSCA default), scVI (deep learning-based, more powerful but more complex), and Seurat's own CCA/RPCA methods. We use Harmony here because it's fast, simple, and works well for typical batch correction.
+
+#### But should you always integrate?
+
+This is one of the most common questions I get. You've got PBMCs from multiple donors -- do you integrate or not? The answer depends on your biological question.
+
+If you integrate, cells cluster by cell type rather than by donor. Donor-specific and batch-specific differences get smoothed out, and you get a unified UMAP where the same cell types from different samples sit together. This is great when you want to count cell types across donors, annotate clusters consistently, or build a reference atlas.
+
+If you don't integrate, cells tend to cluster by donor, even within the same cell type. You retain sample-specific variation, but alignment across samples is harder.
+
+Here's my rule of thumb:
+
+- Want to count B cells across donors? Integrate.
+- Want to find activated B cells that only appear in COVID patients? Don't integrate -- you might smooth away exactly the signal you're looking for.
+
+In practice, I often do both: integrate first to get consistent cluster labels, then go back to the uncorrected data to ask condition-specific questions.
+
+One important thing to understand about Harmony: it corrects only the PCA embeddings. It does not change the original count matrix or the normalized expression values. So after you get consistent cluster labels from the integrated analysis, you use the raw counts for differential expression across conditions within the same cell type. The integration affects clustering and UMAP, not the DE results.
+
+For more on when to integrate and when not to, read:
+
+- The OSCA book chapter on integration: https://bioconductor.org/books/3.20/OSCA.multisample/integrating-datasets.html#no-correction
+- Valentine Svensson's post on this topic: https://substack.com/@valentinesvensson/p-159305684
+
+### The pipeline in one code block
+
+Let's run everything at once, then we'll unpack each step later:
+
+```{r}
+#install.packages("harmony")
+library(harmony) 
+
+obj<- obj %>%
+  NormalizeData(normalization.method = "LogNormalize", scale.factor = 10000) %>%
+  FindVariableFeatures(selection.method = "vst", nfeatures = 2000) %>%
+  ScaleData() %>%
+  RunPCA() %>%
+  RunHarmony(group.by.vars = "sample", dims.use = 1:30) %>%
+  RunUMAP(reduction = "harmony", dims = 1:30) %>%
+  FindNeighbors(reduction = "harmony", dims = 1:30) %>%
+  FindClusters(resolution = 0.4)
+
+
+```
+
+We just ran 8 functions in sequence using the pipe (`%>%`). Each function returns a modified Seurat object, which gets passed to the next one. The `JoinLayers` call at the end is a Seurat v5 thing -- when you merge multiple samples, the data stays in separate layers (one per sample). Most functions handle this fine, but `FindAllMarkers` needs the layers joined into one. That's the whole pipeline.
+
+### How to choose parameters
+
+There's no single "correct" set of parameters, but there are principled ways to choose them. Let me walk through each choice we made:
+
+#### Normalization
+
+```r
+NormalizeData(normalization.method = "LogNormalize", scale.factor = 10000)
+```
+
+We're using `LogNormalize` here -- it's fast, interpretable, and good for exploratory analysis. The scale factor of 10,000 is just convention (makes normalized counts a similar scale to raw counts). Some people use 1e6 (CPM), but it doesn't matter much for downstream clustering.
+
+The main alternative is `SCTransform`, which does a better job of variance stabilization. Consider SCTransform if you have very heterogeneous datasets (lots of different cell types) or if you care about precise gene expression levels, not just clustering. It's more computationally intensive but often gives better results.
+
+#### Variable features
+
+```r
+FindVariableFeatures(selection.method = "vst", nfeatures = 2000)
+```
+
+We use `vst` (variance stabilizing transformation), which is the default and works well. 2,000 features is the standard -- it's a good balance of signal vs noise. You can go as low as 500-1,000 (faster, but might miss subtle populations) or up to 5,000+ (but at that point you're probably adding more noise than signal).
+
+You can check your choice by plotting the variable features:
+
+```{r eval=FALSE}
+# Identify the 10 most highly variable genes
+top10 <- head(VariableFeatures(obj), 10)
+
+# Plot variable features with labels
+VariableFeaturePlot(obj)
+LabelPoints(plot = VariableFeaturePlot(obj), points = top10, repel = TRUE)
+```
+
+#### PCA dimensions
+
+```r
+RunPCA()  # Computes 50 PCs by default
+# ...later: dims = 1:30
+```
+
+We use the first 30 PCs for downstream analysis. How do you decide? The elbow plot shows where adding more PCs stops explaining much variance:
+
+```{r eval=FALSE}
+ElbowPlot(obj, ndims = 50)
+```
+
+A sharp drop-off suggests a clear signal vs noise boundary. A gradual decline means biological signal extends to many PCs.
+
+As a rough guide: 10-15 PCs for small datasets with clear cell types (e.g., pure T cells), 20-30 for most datasets, and 40-50 for complex datasets with many cell types (e.g., whole organism atlas). We use 30 here -- conservative, captures most biological variation without including noise PCs.
+
+> For heterogeneous datasets, err on the side of using more PCs (30-50). For homogeneous datasets, fewer PCs (15-30) are usually fine. The elbow plot is your guide. See [sc-best-practices.org](https://www.sc-best-practices.org/) for more discussion.
+
+#### Clustering resolution
+
+```r
+FindClusters(resolution = 0.4)
+```
+
+Resolution = 0.4 gives us a moderate number of clusters. Lower resolution (0.1-0.4) gives fewer, broader clusters; higher resolution (0.8-2.0) gives many fine-grained clusters.
+
+The right resolution depends on your question. Want major cell types? Use 0.2-0.5. Want cell subtypes and states? Try 0.8-1.5. In my experience, the best approach is to try multiple resolutions and compare:
+
+```{r eval=FALSE}
+# Try multiple resolutions
+resolutions <- c(0.2, 0.4, 0.6, 0.8, 1.0)
+
+obj <- FindClusters(obj, resolution = resolutions)
+
+# Visualize with clustree
+library(clustree)
+clustree(obj, prefix = "RNA_snn_res.")
+```
+
+`clustree` shows how clusters split as resolution increases -- it helps you see which clusters are stable and which ones are artifacts of over-splitting.
+
+We went with 0.4 here, which gives ~10 clusters. That's reasonable granularity for PBMC T cells -- we expect CD4 T, CD8 T, possibly NK, and activation states.
+
+#### Integration
+
+```r
+RunHarmony(group.by.vars = "sample", dims.use = 1:30)
+```
+
+We're correcting for the `sample` effect using the first 30 PCs. But do you actually need integration? Check first:
+
+```{r eval=FALSE}
+# Before integration: compute UMAP on uncorrected PCs
+obj_uncorrected <- RunUMAP(obj, reduction = "pca", dims = 1:30)
+DimPlot(obj_uncorrected, group.by = "sample")
+
+# After integration: compute UMAP on Harmony-corrected PCs
+DimPlot(obj, group.by = "sample")
+```
+
+If samples already mix well before integration, you might not need it at all. Don't integrate just because everyone else does.
+
+If you do need it, you can also try FastMNN for stronger batch effects, or use `group.by.vars = c("sample", "donor")` to correct for multiple batch variables at once.
+
+### Our parameter choices for this dataset
+
+| Parameter | Value | Rationale |
+|-----------|-------|-----------|
+| Normalization | LogNormalize | Fast, good for exploration |
+| Variable features | 2,000 | Standard, balances signal/noise |
+| PCs used | 30 | Captures most variance (see elbow plot) |
+| Integration | Harmony on sample | Removes technical batch effects |
+| Clustering resolution | 0.4 | Moderate granularity (~10 clusters) |
+
+These aren't magic numbers -- they're informed choices. Always explore your data, try alternatives, and see what makes biological sense.
+
+
+## remove other low quality cells
+
+```{r}
+library(scCustomize)
+DimPlot_scCustom(obj)
+
+table(obj$seurat_clusters)
+```
+cluster 8 and 9 seems to be very different from other clusters. Let's do more investigation.
+
+```{r}
+Stacked_VlnPlot(seurat_object = obj, 
+                features = c("percent.mt", "percent.ribo"), 
+                x_lab_rotate = TRUE)
+```
+
+cluster 9 seems to have very low ribosomal gene content compared with others.
+
+```{r}
+Stacked_VlnPlot(seurat_object = obj, 
+                features = c("nCount_RNA", "nFeature_RNA"), 
+                x_lab_rotate = TRUE)
+```
+cluster 8 seems to have high RNA counts and cluster 9 has the lowest RNA counts.
+
+Let's see what are the marker genes for cluster 8 and 9.
+
+```{r}
+markers_seurat<- FindAllMarkers(obj)
+
+markers_seurat %>%
+  dplyr::filter(cluster == 9) %>%
+  arrange(p_val_adj) %>%
+  head(n=20)
+```
+The top marker gene for cluster 9 are `CSF2RB`, `FCGR2B`.
+
+I usually go to Human Protein Atlas to find out what are those marker genes. https://www.proteinatlas.org/ENSG00000100368-CSF2RB/immune+cell
+https://www.proteinatlas.org/ENSG00000072694-FCGR2B/immune+cell
+
+Both of them seems to be a marker for Basophil/Neutrophi.
+
+How about cluster 8?
+
+```{r}
+markers_seurat %>%
+  dplyr::filter(cluster == 8) %>%
+  arrange(p_val_adj) %>%
+  head(n = 20)
+```
+A couple of HLA genes followed by `FSCN1` and `LYN`. They are markers for Dendritic cells and monocytes.
+
+So cluster 8 and cluster 9 are possible contamination from the experiment. While the authors used magnetic negative selection for CD3+ T cells to enrich for T cells, it is not 100% pure. We'll remove them after doublet detection and ambient RNA removal below.
+
+Again, the decision we made here depends on our understanding of the experimental design and the biology background. Always work with a wet biologist closely when analyzing a dataset.
+
+## Understanding the math behind each step
+
+OK, so the pipeline above is only a couple lines of code, but there's a lot happening under the hood. Let's go through the important parts.
+
+### Why do we normalize?
+
+Different cells have different total UMI counts (library sizes). Some of this is technical (sequencing depth), some is biological (some cells are just more transcriptionally active). Here's the problem: a gene with 100 counts in cell A (10,000 total UMIs) vs 50 counts in cell B (5,000 total UMIs) looks differentially expressed -- but it's actually expressed at the same proportion. We normalize by library size to make cells comparable.
+
+### LogNormalize: what exactly does it do?
+
+`NormalizeData()` does three things: divide by library size (total UMIs per cell), multiply by a scale factor (default 10,000), and natural log transform (with a pseudocount of +1).
+
+The formula:
+
+$$
+\text{norm}_{ij} = \log\left(\frac{X_{ij}}{\sum_{j} X_{ij}} \times 10000 + 1\right)
+$$
+
+Where $X_{ij}$ is the raw count for gene $i$ in cell $j$, and $\sum_{j} X_{ij}$ is the total UMI count for cell $j$ (the library size).
+
+Why log transform? Three reasons: it stabilizes variance (raw counts have heavy tails), it turns fold changes into differences (easier for linear models), and it scales genes to similar ranges so highly expressed genes don't dominate PCA.
+
+Don't just take my word for it -- let's verify this manually:
+
+The raw counts for the first 6 cells:
+
+```{r}
+raw_counts<- obj@assays$RNA$counts[c("CD3D", "CD3E", "CD8B"), 1:6]
+
+# turn it to a dense matrix
+raw_counts<- as.matrix(raw_counts)
+```
+
+The normalized counts:
+
+```{r}
+norm_counts<- obj@assays$RNA$data[c("CD3D", "CD3E", "CD8B"), 1:6]
+norm_counts
+```
+
+the sum of all genes per cell:
+
+```{r}
+colSums(obj@assays$RNA$counts[ , 1:6])
+```
+
+divide the raw counts by the total counts per column. If you divide a matrix by a vector, it is by row; so we first transpose the matrix, divide it and then transpose it back
+
+add a psedocount of 1:
+
+```{r}
+t(t(raw_counts)/colSums(obj@assays$RNA$counts[ , 1:6]))
+```
+
+times a scaling factor (default is 10\^4) and then natural log:
+
+```{r}
+norm_manual<- log(t(t(raw_counts)/colSums(obj@assays$RNA$counts[ , 1:6])) * 10^4 +1)
+
+norm_manual
+```
+
+```{r}
+all.equal(norm_counts, as(norm_manual, "sparseMatrix"))
+```
+
+They match. This is pretty cool -- our manual calculation reproduces Seurat's normalization exactly. Now you know what's happening under the hood.
+
+### When to use different normalization methods
+
+LogNormalize is the default, but it's not always the best choice. Let me walk through the options.
+
+**LogNormalize** (what we used) is fast, memory-efficient, and interpretable. It works well for homogeneous datasets (e.g., all T cells, all neurons) and exploratory clustering. The downside: it doesn't model the mean-variance relationship and can be dominated by highly expressed genes.
+
+**SCTransform:**
+
+```{r eval=FALSE}
+obj <- SCTransform(obj, vars.to.regress = "percent.mt")
+```
+
+SCTransform uses a regularized negative binomial model for better variance stabilization. It accounts for the mean-variance relationship and can regress out technical covariates (MT%, cell cycle). It often improves clustering and DE testing. The tradeoff is that it's slower, more memory-intensive, and can over-correct if you're not careful.
+
+Use SCTransform for heterogeneous datasets with many cell types, when you need precise variance estimates, or when you want to regress out confounders. It's now recommended over LogNormalize for most analyses (see Choudhary & Satija 2022), and recent Seurat versions have made it faster.
+
+**scran normalization:**
+
+```{r eval=FALSE}
+library(scran)
+# Deconvolution-based normalization (OSCA approach)
+sce <- computeSumFactors(sce, clusters = quickCluster(sce))
+sce <- logNormCounts(sce)
+```
+
+scran uses deconvolution-based normalization that accounts for composition biases (different cell types have different total RNA content). It's the approach recommended by the OSCA book and works well for multi-sample experiments. The downside is you need to switch to the SingleCellExperiment framework.
+
+Use scran when you have strong composition biases (e.g., comparing embryonic stages) or when you want the theoretical guarantees that come with the OSCA approach.
+
+### Which normalization should you use?
+
+For this tutorial, we use LogNormalize because it's fast, interpretable, and our dataset is relatively homogeneous (all PBMCs, mostly T cells). For your own analysis, I'd suggest starting with LogNormalize to explore quickly. If clustering looks noisy or dominated by technical variation, try SCTransform. For publication-quality analysis, it's worth comparing results with multiple normalization methods.
+
+One nice trick -- you can store multiple normalized versions in the same Seurat object:
+
+```{r eval=FALSE}
+# Keep LogNormalize in the RNA assay
+obj <- NormalizeData(obj)
+
+# Add SCTransform as a separate assay
+obj <- SCTransform(obj, assay = "RNA", new.assay.name = "SCT")
+
+# Switch between them
+DefaultAssay(obj) <- "RNA"   # Use LogNormalize
+DefaultAssay(obj) <- "SCT"   # Use SCTransform
+```
+
+This lets you compare results without re-running the entire pipeline.
+
+### Find Variable Genes
+
+We have genes in the original count matrix, and not all of them are informative for downstream analysis. That's why `FindVariableFeatures` to find the top 2000 most variable genes. If you read the help page, `Seurat` implements the `selection.method`: `vst`, `mean.var.plot` and `dispersion`.
+
+variable here means big variance of the same gene across all cells.
+
+The exact implementation can be complicated, but you only need to get the gist of it (like I do).
+
+Given a random matrix:
+
+```{r}
+set.seed(123)
+
+mat_random<- matrix(rnorm(100, mean = 0, sd = 1), nrow = 20)
+
+mat_random
+```
+
+We can then calculate the variance per row
+
+```{r}
+library(ComplexHeatmap)
+
+gene_variance<- apply(mat_random, 1, var) 
+
+# order returns the index of each element in increasing order by default
+# use -gene_variance to get it by decreaseing order, or 
+# set decreasing = TRUE
+```
+
+```{r}
+order(-gene_variance)
+
+order(gene_variance, decreasing = TRUE)
+```
+
+This gives you the same result
+
+Let's take the top 10 genes
+
+```{r}
+top10_gene_indx<- order(-gene_variance)[1:10]
+
+Heatmap(mat_random[top10_gene_indx, ])
+```
+
+or use `genefilter` bioconductor package:
+
+```{r}
+# BiocManager::install("genefilter")
+library(genefilter)
+rv<- rowVars(mat_random)
+idx<- order(-rv)[1:10]
+Heatmap(mat_random[idx,])
+```
+
+They give you the same results.
+
+### visualization
+
+`scCustomize` is a package which provides richer visualization than the `Seurat` package. Let's use it.
+
+Disclaimer: I contributed several functions to this package.
+
+```{r}
+# install.packages("scCustomize")
+library(scCustomize)
+DimPlot_scCustom(obj)
+
+DimPlot_scCustom(obj, split.by= "donor")
+
+DimPlot_scCustom(obj, split.by= "condition")
+
+FeaturePlot_scCustom(obj, features = c("nCount_RNA", "nFeature_RNA", 
+                                       "percent.mt", "percent.ribo"))
+```
+
+Let's plot some marker genes.
+
+T cells : CD3D CD4T cells: CD4, CD8T cells: CD8A, CD8B
+
+```{r}
+# BiocManager::install("ComplexHeatmap")
+
+features_to_plot<- c("CD3D", "CD3E", "PTPRC", "CD4", "CD8A", "CD8B", "FOXP3",
+                     "TIGIT", "CTLA4", "PDCD1", "KLRB1",
+                     "PRF1", "GZMB","IL7R", "SELL", "NKG7",
+                     "MKI67")
+
+Clustered_DotPlot(obj, features = features_to_plot, plot_km_elbow = FALSE)
+
+table(features_to_plot %in% rownames(obj))
+```
+
+Is there any difference between the resting and activated conditions?
+
+```{r}
+Stacked_VlnPlot(obj, features = c("ISG15", "CD28"), 
+                split.by = "condition",
+                plot_legend = TRUE)
+```
+
+### Finding cluster markers with differential expression
+
+Now that we have clusters, the obvious question is: what genes define each cluster? We want to find genes that are highly expressed in one cluster and lowly expressed in others.
+
+#### Seurat's FindAllMarkers (default: Wilcoxon)
+
+```{r}
+# Seurat's built-in method
+markers_seurat <- FindAllMarkers(obj, only.pos = TRUE)
+
+head(markers_seurat)
+markers_seurat %>%
+        dplyr::filter(cluster == 0) %>%
+        dplyr::filter(gene == "GZMB")
+
+```
+
+For each cluster, this compares gene expression vs all other clusters using the Wilcoxon rank-sum test (non-parametric). It returns p-values, adjusted p-values (FDR), log2FC, pct.1 (percent of cells in the cluster expressing the gene), and pct.2 (percent in all other clusters).
+
+`FindAllMarkers` used to be painfully slow, but Seurat v5 integrated [BPCells](https://github.com/bnprks/BPCells/issues/45) and it's now much faster. Wilcoxon is robust (no normality assumption needed) and gives interpretable statistics. The caveats: it doesn't account for covariates (batch, donor), the p-values are overly optimistic because it treats cells as independent (they're not!), and the log2FC calculation has some nuances (more on that below).
+
+By default, `FindAllMarkers` uses Wilcoxon Rank Sum test. See `?FindAllMarkers` for other tests:
+- `test.use = "wilcox"`: Wilcoxon (default)
+- `test.use = "t"`: Student's t-test
+- `test.use = "negbinom"`: Negative binomial
+- `test.use = "MAST"`: Model-based analysis (slower, accounts for cellular detection rate)
+
+#### presto::wilcoxauc (much faster)
+
+```{r eval=FALSE}
+# remotes::install_github('immunogenomics/presto')
+library(presto)
+markers_presto <- wilcoxauc(obj, 'seurat_clusters')
+
+head(markers_presto)
+```
+
+Same Wilcoxon test as Seurat, but with a much faster C++ implementation. Use it when you have large datasets (>50k cells) and just need speed. The output format is slightly different (wide format), but the statistics are equivalent.
+
+#### Pseudo-bulk + DESeq2/edgeR (for multi-sample comparisons)
+
+Here's something important that a lot of people get wrong: each cell is not an independent observation. Cells from the same sample are correlated, so treating them as independent inflates false positives. For multi-sample/multi-condition comparisons, you should aggregate counts to pseudo-bulk per sample, then use DESeq2 or edgeR. See the [sc-best-practices.org differential expression chapter](https://www.sc-best-practices.org/) for more details.
+
+Use pseudo-bulk when you have biological replicates, when you want to compare conditions (activated vs resting T cells), or when you need proper statistical inference. For exploratory marker gene discovery within one sample, Wilcoxon is fine.
+
+We're doing exploratory marker discovery here, so Wilcoxon is appropriate. For comparing activated vs resting conditions properly, you'd want the pseudo-bulk approach. (we will go over it in the later of this chapter).
+
+#### Comparing DE methods
+
+| Method | Speed | Accounts for Replicates | Use Case |
+|--------|-------|-------------------------|----------|
+| FindAllMarkers (Wilcoxon) | Fast | No | Quick exploration, marker discovery |
+| presto | Very fast | No | Large datasets, need speed |
+| MAST | Slow | Partial | Single-cell DE with covariates |
+| Pseudo-bulk + DESeq2 | Medium | Yes | Multi-sample comparisons (proper stats) |
+
+Bottom line: for marker discovery (what we're doing), Wilcoxon is fast and fine. For condition comparisons, use the pseudo-bulk approach with proper replicates.
+
+Note that the p-values are very small. When you have hundreds or thousands of cells per cluster, the p-values will be very small. The p-value in statistical tests, including the Wilcoxon rank-sum test (also known as the Mann-Whitney U test), is influenced by both the sample size and the effect size (the magnitude of the difference between the groups being compared). 
+
+Generally, as the sample size increases, the p-value tends to decrease, assuming there is a non-zero effect size.
+
+#### How log2 Fold change is calculated?
+
+There is nuances in how the log2 Fold change is calculated. `Scanpy` and `Seurat`have different implementations. See this twitter thread https://twitter.com/lpachter/status/1694387749967847874
+
+Old Seurat formula:
+
+$R_{g}=\log_{2}(\frac{1}{n_{1}}\sum_{i\in G_{1}}(exp(Y_{ig})-1)+1)-log_{2}(\frac{1}{n_{2}}\sum_{i\in G_{2}}(exp(Y_{ig})-1)+1),$
+
+New Seurat formula (instead of plus 1, it uses a small value $\epsilon$:
+
+$R_{g}=\log_{2}(\frac{1}{n_{1}}\sum_{i\in G_{1}}(exp(Y_{ig})-1)+\epsilon)-log_{2}(\frac{1}{n_{2}}\sum_{i\in G_{2}}(exp(Y_{ig})-1)+\epsilon),$
+
+Scanpy formula:
+
+$P_{g}=\log_{2}(exp(\frac{1}{n_{1}}\sum_{i\in G_{1}}Y_{ig})-1+\epsilon)-log_{2}(exp(\frac{1}{n_{2}}\sum_{i\in G_{2}}Y_{ig})-1+\epsilon),$
+
+where $\epsilon=10^{-9}$.
+
+where $Y_{ig}$ are the log-transformed expression values for cell $i$ and gene $g$, $G_{1}$ and $G_{2}$ are the indices for two groups of cells, and $n_{1}$ and $n_{2}$ are the numbers of cells in the respective groups.
+
+Let's use `GZMB` as an example:
+
+```{r}
+log_normalized_data<- obj[["RNA"]]$data["GZMB", ]
+
+# a logical vector indicating the cells from cluster 0
+cluster_0_index<- obj$seurat_clusters == 0
+
+# negate it to get the cells from all other clusters
+other_clusters_index<- !cluster_0_index
+
+# the natural log normalized counts for gene x from cluster 0
+cluster_0_norm_data<- log_normalized_data[cluster_0_index]
+        
+# the natural log normalized counts for gene x from all other clusters
+other_cluster_norm_data<- log_normalized_data[other_clusters_index]
+
+# exp it back and minus 1 to get the lib normalized counts without log transform
+# take the mean across cells plus a tiny number, then log2 transform
+# cells from cluster 0
+
+log2_mean_cluster0<- log2(mean(expm1(cluster_0_norm_data) + 10^-9))
+
+## expm1(x) commputes exp(x)-1 accurately also for |x|<<1
+## see Seurat code https://github.com/satijalab/seurat/blob/master/R/differential_expression.R#L1070
+
+# cells from all other clusters 
+log2_mean_other_cluster<- log2(mean(expm1(other_cluster_norm_data) + 10^-9))
+
+# log2 fold change
+log2_mean_cluster0 - log2_mean_other_cluster
+```
+
+```{r}
+markers_seurat %>%
+        dplyr::filter(cluster == 0) %>%
+        dplyr::filter(gene == "GZMB")
+```
+hmm, it is very close, but a little different..
+
+
+Let's calculate the percentage in and percentage out of `GZMB` cells:
+
+```{r}
+
+pct.in<- mean(cluster_0_norm_data != 0)
+pct.in
+
+pct.out<- mean(other_cluster_norm_data !=0)
+pct.out
+```
+
+This is the same as the `FindAllMarkers` results.
+
+
+If we use the old Seurat formula:
+
+```{r}
+log2(mean(exp(cluster_0_norm_data)-1) + 1) -
+        log2(mean(exp(other_cluster_norm_data)-1) + 1)
+```
+
+The log2 fold change is way different.
+
+## Doublet detection
+
+In droplet-based scRNA-seq, sometimes two cells get captured in the same droplet. The resulting "cell" has a mixed transcriptome from both, and it can really mess up your analysis -- doublets often end up between clusters on a UMAP, or they form their own weird cluster that looks like a hybrid cell type that doesn't actually exist.
+
+The expected doublet rate depends on how many cells you load. For 10x Genomics, it's roughly 0.8% per 1,000 cells captured. So if you captured 10,000 cells, expect around 8% doublets. That's not trivial.
+
+There are several computational doublet detection tools. A [benchmarking paper by Xi and Li (2021)](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-020-02136-7) compared many of them. I like `scDblFinder` -- it's fast, accurate, and works well in practice. See also the [OSCA chapter on doublet detection](https://bioconductor.org/books/3.15/OSCA.advanced/doublet-detection.html) for a thorough discussion of the different approaches.
+
+The basic idea: `scDblFinder` simulates artificial doublets by combining random pairs of cells, then trains a classifier to distinguish real cells from these artificial doublets. Cells that look similar to the artificial doublets get flagged.
+
+```{r}
+# BiocManager::install("scDblFinder")
+# BiocManager::install("scater")
+library(scDblFinder)
+```
+
+`scDblFinder` works with `SingleCellExperiment` objects, so we convert from Seurat first. We pass `clusters = "ident"` so it knows the cluster assignments -- this helps it avoid flagging cells that sit between clusters as doublets when they're actually real transitional states.
+
+```{r}
+sce<- as.SingleCellExperiment(obj)
+
+colData(sce)
+
+sce.dbl <- scDblFinder(sce, clusters = "ident")
+
+scater::plotUMAP(sce.dbl, colour_by="scDblFinder.score")
+
+colData(sce.dbl)
+
+```
+
+Look at the UMAP colored by doublet score. You'll often see higher scores at the boundaries between clusters, which makes sense -- that's where you'd expect doublets from two different cell types to land.
+
+Now we transfer the doublet scores back to our Seurat object. I always double-check that the cell barcodes are in the same order before copying metadata between objects. Bugs from mismatched cell orders are silent and painful to debug.
+
+```{r}
+all.equal(colData(sce.dbl) %>% row.names(),
+          obj@meta.data %>% row.names())
+
+obj$scDblFinder.score<- sce.dbl$scDblFinder.score
+obj$scDblFinder.class<- sce.dbl$scDblFinder.class
+
+head(obj@meta.data)
+```
+
+Let's see how many doublets were detected and remove them:
+
+```{r}
+table(obj$scDblFinder.class)
+
+obj<- obj[, obj$scDblFinder.class == "singlet"]
+
+DimPlot_scCustom(obj)
+```
+
+Check how many cells you lost. If doublet detection is removing 20-30% of your cells, something is off -- either you loaded way too many cells, or the parameters need tuning. For a typical experiment, losing 5-10% is normal.
+
+
+## Ambient RNA removal
+
+Here's a problem most beginners don't think about: when cells are lysed during the droplet capture process, their mRNA spills into the surrounding solution. This "ambient RNA" or "soup" gets captured in every droplet, so every cell's expression profile is contaminated with background signal from the most highly expressed genes in the lysed cells.
+
+In practice, this means you'll see low-level expression of hemoglobin genes in your T cells, or mitochondrial genes everywhere. It's not real expression -- it's contamination. If you don't correct for it, you might call a cluster "T cells with some erythroid features" when really it's just T cells swimming in hemoglobin soup.
+
+Two popular tools for this: [SoupX](https://github.com/constantAmateur/SoupX) and [decontX](https://github.com/campbio/celda). SoupX needs the unfiltered (raw) count matrix in addition to the filtered one, because it estimates the ambient profile from the empty droplets. `decontX` doesn't need the raw matrix, which makes it easier to use when you only have the filtered counts. I'll use `decontX` here.
+
+For more background, see [10x Genomics' guide on ambient RNA](https://www.10xgenomics.com/resources/analysis-guides/introduction-to-ambient-rna-correction) and the [decontX vignette](https://github.com/campbio/celda/blob/master/vignettes/articles/decontX_pbmc4k.Rmd).
+
+`decontX` uses a Bayesian model to estimate the contamination fraction in each cell and produces corrected counts. We first need to subset the SCE object to match our doublet-filtered Seurat object:
+
+```{r}
+#BiocManager::install("celda")
+library(Seurat)
+library(celda)
+library(SingleCellExperiment)
+
+# run decontX on singlets only
+sce<- sce[, sce.dbl$scDblFinder.class == "singlet"]
+sce <- decontX(sce)
+
+sce@colData %>%
+  head()
+```
+
+You'll see a new `decontX_contamination` column in the metadata. This is a number between 0 and 1 representing the estimated fraction of each cell's counts that came from ambient RNA. Higher values mean more contamination.
+
+Now we store the corrected counts as a new assay in our Seurat object. I round them because `decontX` returns continuous values but most downstream tools expect integer counts. We keep the original RNA assay untouched -- you can always switch between them.
+
+```{r}
+obj[["decontXcounts"]] <- CreateAssayObject(counts = round(decontXcounts(sce)))
+
+obj[["decontXcounts"]]@counts[1:5, 1:5]
+
+# double check the cell id and gene order are the same
+all.equal(colnames(obj[["decontXcounts"]]@counts),colnames(obj[["RNA"]]$counts))
+all.equal(rownames(obj[["decontXcounts"]]@counts),rownames(obj[["RNA"]]$counts))
+
+# obj<- AddMetaData(obj, metadata = as.data.frame(colData(sce)))
+
+obj$decontX_contamination<- sce$decontX_contamination
+```
+
+Let's visualize the contamination levels across our clusters:
+
+```{r}
+scCustomize::DimPlot_scCustom(obj)
+scCustomize::FeaturePlot_scCustom(obj, features = "decontX_contamination", raster = TRUE)
+
+#ggsave(here("results/CITE-seq_contamination.pdf"), width = 4, height = 4)
+
+scCustomize::VlnPlot_scCustom(obj, features = "decontX_contamination")
+```
+
+Notice how cluster 9 has high ambient RNA contamination -- another sign that it's not a real cell population. This is consistent with what we saw earlier when we examined marker genes for that cluster.
+
+Whether you actually use the decontX-corrected counts for downstream analysis depends on how bad the contamination is. For most PBMC datasets, the contamination is moderate and the original counts work fine. But if you're working with tissues that have a lot of cell death during dissociation (like solid tumors), ambient RNA correction can make a real difference. See also [this walkthrough by Tim Burns](https://tjburns08.github.io/scrna_seq_piepline_pbmc_3k.html) for another example.
+
+## Remove contaminating clusters
+
+Now that we've done doublet detection and ambient RNA estimation, let's circle back to those suspicious clusters 8 and 9. We already saw that their marker genes point to dendritic cells/monocytes and basophils -- not T cells. And cluster 9 had high ambient RNA contamination. Let's remove them for our downstream analysis.
+
+```{r}
+obj<- obj[, !obj$seurat_clusters %in% c(8,9)]
+table(obj$seurat_clusters)
+```
+You still see cluster 8 and 9 with 0 cells. We need to drop the unused levels.
+
+```{r}
+obj$seurat_clusters<- droplevels(obj$seurat_clusters)
+table(obj$seurat_clusters)
+DimPlot_scCustom(obj)
+```
+
+Save the cleaned Seurat object so you can pick up from here in later chapters without re-running everything.
+
+```{r eval=FALSE}
+# save the seurat object as an rds file
+
+saveRDS(obj, file = here("data/pbmc_seurat_obj.rds"))
+```
+
+## Pseudo-bulk differential expression with DESeq2
+
+Earlier, I mentioned that `FindAllMarkers` treats each cell as an independent observation. That's fine for exploratory marker discovery ("what genes define this cluster?"), but it's wrong for testing differences between conditions ("do activated T cells express more cytokines than resting T cells?").
+
+Why? Because cells from the same sample are not independent. If you have 2,000 CD4 T cells from donor A and 1,500 from donor B, you don't have 3,500 independent observations -- you have 2 biological replicates. Treating cells as independent massively inflates your false positive rate. This is one of the most common mistakes I see in single-cell papers. See [Squair et al. (2021)](https://www.nature.com/articles/s41467-021-25960-2), "Confronting false discoveries in single-cell differential expression."
+
+The solution: aggregate counts from all cells of the same type within a sample into a "pseudo-bulk" profile, then use standard bulk RNA-seq tools like DESeq2 or edgeR. This is called **pseudo-bulk analysis**, and it's the recommended approach for multi-sample, multi-condition comparisons.
+
+I wrote a blog post about this: https://divingintogeneticsandgenomics.com/post/how-to-create-pseudobulk-from-single-cell-rnaseq-data/
+
+Let's walk through the full workflow with our PBMC data.
+
+### Step 1: Aggregate counts to pseudo-bulk
+
+The idea is simple: for each cell type (cluster) in each sample, add up the raw counts across all cells. If you have 500 CD4 T cells from sample SRX5329394, you sum their counts gene-by-gene into one column. This gives you one "pseudo-bulk" profile per cluster per sample.
+
+```{r}
+# We'll use the obj that's already in memory from the pipeline above
+# Make sure the default assay is RNA and layers are joined
+DefaultAssay(obj) <- "RNA"
+obj <- JoinLayers(obj)
+
+# check our metadata - we need condition and donor info
+table(obj$condition, obj$sample)
+table(obj$seurat_clusters, obj$sample)
+```
+
+Seurat v5 has `AggregateExpression` for this:
+
+```{r}
+# Aggregate raw counts by cluster and sample
+# This sums counts across all cells of the same cluster in the same sample
+pseudo_bulk <- AggregateExpression(obj,
+                                   assays = "RNA",
+                                   group.by = c("seurat_clusters", "sample"),
+                                   return.seurat = FALSE)$RNA
+
+# take a look at the column names
+head(colnames(pseudo_bulk))
+
+# the columns are named "cluster_sample"
+dim(pseudo_bulk)
+```
+
+Each column is now a pseudo-bulk profile: one per cluster-sample combination. With ~8 clusters and 4 samples, we should have around 32 columns.
+
+You can also use `presto::collapse_counts()` for this. I use `presto` when I want more control over the aggregation, but `AggregateExpression` is convenient within the Seurat ecosystem.
+
+### Step 2: Prepare metadata for DESeq2
+
+DESeq2 needs a sample-level metadata table (not cell-level). Let's create one:
+
+```{r}
+# Parse cluster and sample from the column names
+pseudo_meta <- data.frame(
+  id = colnames(pseudo_bulk)
+) %>%
+  tidyr::separate(id, into = c("cluster", "sample"), sep = "_", remove = FALSE)
+
+# Add condition and donor info
+pseudo_meta <- pseudo_meta %>%
+  mutate(condition = case_when(
+    sample %in% c("SRX5329394", "SRX5329396") ~ "activated",
+    sample %in% c("SRX5329395", "SRX5329397") ~ "resting"
+  )) %>%
+  mutate(donor = case_when(
+    sample %in% c("SRX5329394", "SRX5329395") ~ "donorA",
+    sample %in% c("SRX5329396", "SRX5329397") ~ "donorB"
+  ))
+
+rownames(pseudo_meta) <- pseudo_meta$id
+head(pseudo_meta)
+```
+
+### Step 3: Run DESeq2 for one cluster
+
+Let's test for differential expression between activated vs resting in cluster 0. This is the proper way to do a condition comparison.
+
+```{r}
+library(DESeq2)
+
+# Pick one cluster to demonstrate
+# Note: Seurat adds a "g" prefix to cluster IDs in AggregateExpression output
+cluster_id <- "g0"
+
+# Subset to just this cluster
+cluster_cols <- pseudo_meta %>%
+  dplyr::filter(cluster == cluster_id) %>%
+  pull(id)
+
+counts_sub <- pseudo_bulk[, cluster_cols]
+meta_sub <- pseudo_meta[cluster_cols, ]
+
+# How many replicates per condition?
+table(meta_sub$condition)
+```
+
+We have 2 replicates per condition (one per donor). That's the minimum for DESeq2. More replicates give more statistical power, but 2 is enough to demonstrate the workflow.
+
+```{r}
+# Create DESeq2 object
+# We test for condition effect while accounting for donor
+dds <- DESeqDataSetFromMatrix(countData = counts_sub,
+                               colData = meta_sub,
+                               design = ~ condition)
+
+# Filter low-count genes (keep genes with at least 10 counts total)
+keep <- rowSums(counts(dds)) >= 10
+dds <- dds[keep, ]
+
+# Run DESeq2
+dds <- DESeq(dds)
+
+# Get results
+res <- results(dds, contrast = c("condition", "activated", "resting"))
+res_df <- as.data.frame(res) %>%
+  tibble::rownames_to_column("gene") %>%
+  arrange(padj)
+
+head(res_df, 20)
+```
+
+With only 2 replicates per condition, the statistical power is limited. But you see the pattern -- the genes with smallest adjusted p-values are the ones most consistently different between activated and resting cells in this cluster.
+
+### Step 4: Run DESeq2 for all clusters with purrr
+
+You see the pattern -- we wrote code for one cluster, now we can iterate over all clusters. Same principle as Chapter 2.
+
+```{r}
+run_deseq2_cluster <- function(cluster_id, pseudo_bulk, pseudo_meta) {
+  # Subset to this cluster
+  cluster_cols <- pseudo_meta %>%
+    dplyr::filter(cluster == cluster_id) %>%
+    pull(id)
+
+  counts_sub <- pseudo_bulk[, cluster_cols]
+  meta_sub <- pseudo_meta[cluster_cols, ]
+
+  # Need at least 2 samples per condition
+  if (any(table(meta_sub$condition) < 2)) {
+    return(NULL)
+  }
+
+  # Create DESeq2 object
+  dds <- DESeqDataSetFromMatrix(countData = counts_sub,
+                                 colData = meta_sub,
+                                 design = ~ condition)
+
+  # Filter low-count genes
+  keep <- rowSums(counts(dds)) >= 10
+  dds <- dds[keep, ]
+
+  # Run DESeq2
+  dds <- DESeq(dds)
+
+  # Get results
+  res <- results(dds, contrast = c("condition", "activated", "resting"))
+  res_df <- as.data.frame(res) %>%
+    tibble::rownames_to_column("gene") %>%
+    arrange(padj) %>%
+    mutate(cluster = cluster_id)
+
+  return(res_df)
+}
+
+# Run for all clusters
+all_clusters <- unique(pseudo_meta$cluster)
+
+pseudobulk_de_results <- purrr::map(all_clusters,
+                                     ~run_deseq2_cluster(.x, pseudo_bulk, pseudo_meta)) %>%
+  purrr::compact() %>%  # remove NULLs (clusters with too few samples)
+  bind_rows()
+
+# How many significant genes per cluster?
+pseudobulk_de_results %>%
+  dplyr::filter(padj < 0.05) %>%
+  dplyr::count(cluster) %>%
+  arrange(desc(n))
+```
+
+This is pretty cool -- one function, one `purrr::map()` call, and you have proper pseudo-bulk DE results for every cluster.
+
+### Step 5: Visualize the results
+
+```{r}
+library(ggplot2)
+
+# Volcano plot for one cluster
+cluster0_res <- pseudobulk_de_results %>%
+  dplyr::filter(cluster == "g0")
+
+ggplot(cluster0_res, aes(x = log2FoldChange, y = -log10(pvalue))) +
+  geom_point(aes(color = padj < 0.05), size = 0.5) +
+  scale_color_manual(values = c("grey70", "red")) +
+  labs(title = "Cluster g0: Activated vs Resting",
+       x = "log2 Fold Change", y = "-log10(p-value)") +
+  theme_bw(base_size = 14)
+```
+
+### When to use pseudo-bulk vs FindAllMarkers
+
+To be clear about when to use each:
+
+- `FindAllMarkers`: "What genes define this cluster?" -- comparing one cluster vs all others. Good for marker discovery. Each cell is a data point, and that's OK here because you're characterizing clusters, not testing conditions.
+
+- Pseudo-bulk DESeq2: "What genes change between conditions within this cell type?" -- comparing activated vs resting within CD4 T cells, for example. You must aggregate to pseudo-bulk because cells within a sample are not independent.
+
+I see people use `FindMarkers(obj, ident.1 = "activated", ident.2 = "resting")` to compare conditions. This is wrong if you have multiple samples. You'll get tons of "significant" genes, but most are false positives. Use pseudo-bulk.
+
+For more details, read:
+
+- My blog post: https://divingintogeneticsandgenomics.com/post/how-to-create-pseudobulk-from-single-cell-rnaseq-data/
+- Squair et al. (2021): https://www.nature.com/articles/s41467-021-25960-2
+- The muscat paper: https://www.nature.com/articles/s41467-020-19894-4
+- sc-best-practices.org DE chapter: https://www.sc-best-practices.org/conditions/differential_gene_expression.html
+
+---
+
+## What we covered
+
+This was a big chapter. We went from filtered count matrices to a clustered Seurat object -- creating the object, adding metadata, doing additional QC, running the full pipeline (normalize, variable genes, scale, PCA, Harmony integration, UMAP, clustering), finding markers, and removing low-quality clusters. We dug into the math behind normalization and log2FC calculations, talked about how to choose parameters, and ran a proper pseudo-bulk DESeq2 workflow for condition comparisons.
+
+The cleaned Seurat object is saved at `data/pbmc_seurat_obj.rds` and is ready for cell type annotation in Chapter 4 (using SingleR, clustifyr, and Seurat label transfer).
+
+### Things that go wrong
+
+I've seen all of these in practice:
+
+- **Blindly using default parameters.** Always check elbow plots, try multiple resolutions, visualize before and after integration. Don't just copy-paste the pipeline and call it a day.
+- **Over-integrating.** Too aggressive integration removes real biological signal. After integrating, check that your condition effects (activated vs resting) are still there.
+- **Treating Wilcoxon p-values as definitive.** These assume cell independence, which is violated in scRNA-seq. Use them for ranking markers, not for hypothesis testing.
+- **Not plotting QC metrics on your clusters.** Always plot percent.mt, nFeature_RNA on your final UMAP. I've caught artifact clusters this way more than once.
+- **Ignoring doublets and ambient RNA.** These confound everything downstream. Check doublet scores and contamination levels.
+- **Sticking with one normalization method.** When in doubt, try SCTransform and compare. Sometimes it reveals populations that LogNormalize misses.
+
+### Further reading
+
+**Official documentation:**
+
+- **Seurat tutorials**: https://satijalab.org/seurat/articles/pbmc3k_tutorial.html. 
+- **Seurat v5 new features**: https://satijalab.org/seurat/articles/seurat5_essential_commands. 
+- **BPCells integration**: https://satijalab.org/seurat/articles/seurat5_bpcells_interaction_vignette. 
+
+**Best practices guides:**
+
+- **sc-best-practices.org - Preprocessing**: https://www.sc-best-practices.org/preprocessing_visualization/normalization.html. 
+- **sc-best-practices.org - Integration**: https://www.sc-best-practices.org/integration/integrating-datasets.html. 
+- **OSCA book - Normalization**: https://bioconductor.org/books/release/OSCA.basic/normalization.html. 
+- **OSCA book - Feature selection**: https://bioconductor.org/books/release/OSCA.basic/feature-selection.html. 
+
+**Key papers:**
+- **Harmony**: Korsunsky et al. (2019), "Fast, sensitive and accurate integration of single-cell data with Harmony". 
+- **SCTransform**: Choudhary & Satija (2022), "Comparison and evaluation of statistical error models for scRNA-seq". 
+- **Pseudo-bulk DE**: Squair et al. (2021), "Confronting false discoveries in single-cell differential expression". 
+- **Wilcoxon nuances**: Soneson & Robinson (2018), "Bias, robustness and scalability in single-cell differential expression analysis". 
+
+**My blog posts:**
+- **S3 and S4 objects in R**: https://divingintogeneticsandgenomics.com/post/s3-and-s4-objects-in-r-explained/
+- *Note: Check out more scRNA-seq posts on my blog for practical tips and pitfalls!*
+
+### Key takeaways
+
+- The standard pipeline is a template, not gospel. Adjust parameters based on your data.
+- Always visualize. Elbow plots, UMAPs colored by batch and QC metrics -- look at your data with your eyes.
+- Integration is not always necessary. Check if you actually have batch effects first.
+- Normalization method matters. LogNormalize is fast but SCTransform is often better.
+- Resolution is subjective. Try multiple values, use clustree to see what's stable.
+- Use Wilcoxon for marker discovery, pseudo-bulk for proper condition comparisons.
+- QC is iterative. You might need to remove low-quality clusters even after initial filtering.
+- Understanding the math (how log2FC is calculated, what normalization does) helps you interpret results and catch problems.
+
+## Session Information {-}
+
+```{r session-info-seurat}
+sessionInfo()
+```

@@ -1,0 +1,660 @@
+--- 
+always_allow_html: true
+webshot: true
+---
+
+```{r include=FALSE}
+knitr::opts_chunk$set(
+  warning = FALSE,
+  message = FALSE
+)
+```
+
+# Quality Control
+
+## Before you filter: think about what you're throwing away
+
+I've seen people lose entire cell populations because they applied QC thresholds without thinking. So before we get into the code, let me share how I think about quality control.
+
+The temptation is to be strict. Remove anything that looks questionable. But here's the problem: a cell with low gene counts might be a dying cell, or it might be a perfectly healthy naive T cell that just doesn't express many genes. How do you tell the difference?
+
+You look at multiple metrics together. Not just gene counts. Not just UMI counts. You look at UMI counts, number of detected genes, mitochondrial percentage, and ribosomal percentage -- jointly. A quiescent cell will have low UMI counts but normal mitochondrial percentage. A dying cell will have low UMI counts *and* high mitochondrial percentage, because the cytoplasmic RNA leaks out while mitochondrial RNA stays trapped.
+
+> Be permissive during quality control to preserve rare cell subpopulations. Never filter on a single metric in isolation. -- sc-best-practices.org
+
+### What counts as "normal" depends on your biology
+
+This is something people don't think about enough. Naive T cells have low transcriptional activity, so low UMI counts are expected. Plasma B cells are antibody factories with extremely high ribosomal content. Activated T cells are metabolically active and will have higher UMI counts than resting cells. Red blood cell precursors naturally have high mitochondrial content.
+
+If you blindly filter "cells with <500 genes detected," you might wipe out your naive T cells. If you filter "cells with >20% mitochondrial reads," you might lose erythroid lineages. I've seen this happen in real datasets.
+
+### Fixed thresholds vs adaptive thresholds
+
+There are two ways to set QC cutoffs. Fixed thresholds are simple and interpretable -- "keep cells with 200-5000 genes detected." They work fine when you know your data well. But they don't adapt to biological heterogeneity.
+
+Adaptive thresholds use median absolute deviation (MAD) to set data-driven cutoffs. The idea is: flag cells that are more than N MADs from the median for each QC metric. This automatically adjusts to your data's distribution. We'll demonstrate both approaches in this chapter.
+
+### The knee plot
+
+Before applying any cutoffs, we visualize the data with a knee plot -- a ranked plot of UMI counts per barcode. It shows you where real cells (high counts) transition to empty droplets (background). A sharp knee means clear separation; a gradual knee means you'll need more sophisticated methods like `emptyDrops()`.
+
+### The empty droplet problem
+
+During 10x encapsulation, not every droplet captures a cell. Empty droplets still have some counts from ambient RNA floating in solution (from cells that lysed during sample prep). So you need to distinguish real cells from empty droplets from damaged cells.
+
+You could just set a fixed UMI threshold -- "anything above 1000 UMIs is a cell." But that's arbitrary and tissue-dependent. A better approach is `DropletUtils::emptyDrops()`, which statistically tests whether each barcode's expression profile differs from the ambient RNA pool. This preserves small cells while removing background.
+
+### QC is iterative
+
+One thing I want to emphasize: QC is not a one-and-done step. You do initial filtering, cluster the data, look at QC metrics per cluster, and then go back and re-evaluate. If you see a cluster where 80% of cells have high mitochondrial content, that's probably dying cells -- remove them and re-cluster.
+
+---
+
+## A note on preparing the computing environment
+
+Let's be honest: one of the hardest parts of single-cell analysis is not the biology or the statistics -- it's getting the software installed in the first place.
+
+I want you to read this blog post by Aron Gyenge: [How difficult is it to start your single-cell analysis as a beginner?](https://notarocketscientist.xyz/posts/2024-01-18-how-difficult-is-it-to-start-your-single-cell-analysis-as-a-beginner/). He tried installing Seurat and the OSCA packages on a fresh Ubuntu machine and documented every failure along the way. The installation log was over 13,000 lines long. That's not a typo.
+
+The problem is that R packages like Seurat depend on compiled C/C++/Fortran code, which in turn depends on system libraries that your operating system may not have. When these are missing, you get cryptic error messages buried in thousands of lines of output. You'll see things like "dependency 'xyz' is not available" or a compilation error that makes no sense until you realize you're missing `libhdf5-dev` or `libharfbuzz-dev` on your system.
+
+Here's what I recommend:
+
+**If you're on macOS**, install [Homebrew](https://brew.sh/) first, then install the common system dependencies:
+
+```bash
+brew install libxml2 openssl curl libgit2 hdf5
+```
+
+**If you're on Ubuntu/Debian**, install these before you even open R:
+
+```bash
+sudo apt-get install -y \
+  libxml2-dev libssl-dev libcurl4-openssl-dev \
+  libfontconfig1-dev libfreetype6-dev libpng-dev \
+  libtiff5-dev libjpeg-dev libharfbuzz-dev \
+  libfribidi-dev libgit2-dev libhdf5-dev \
+  make gfortran liblzma-dev libbz2-dev
+```
+
+Install these *before* running `renv::restore()` or `BiocManager::install()`. It will save you a lot of frustration.
+
+**If you're on a shared cluster or HPC**, talk to your system admin. They've probably dealt with this before and may already have modules set up for you (`module load R/4.3` etc.).
+
+The good news is that this course uses `renv`, which locks all package versions. Once you get `renv::restore()` to succeed, you're done -- everything is reproducible from there. The bad news is that first `renv::restore()` can take 30-60 minutes and might fail a few times before you get all the system dependencies sorted out. Be patient. It's a one-time cost.
+
+
+## A note on project folder structure
+
+Before we start writing any analysis code, let me talk about something that will save you (and your collaborators) a lot of headaches: project organization and file paths.
+
+### Stop using `setwd()` and `rm(list = ls())`
+
+I see this at the top of so many R scripts:
+
+```{r eval=FALSE}
+setwd("/Users/tommy/Desktop/my_scrna_project/")
+rm(list = ls())
+```
+
+Both of these are bad habits. Let me explain why.
+
+`setwd()` hardcodes an absolute path that only works on your machine. As Jenny Bryan put it in her famous blog post [Project-oriented workflow](https://www.tidyverse.org/blog/2017/12/workflow-vs-script/): "The chance of the `setwd()` command having the desired effect...for anyone besides its author is 0%." When a collaborator (or future you on a different computer) tries to run your script, it breaks immediately.
+
+`rm(list = ls())` seems like it gives you a clean slate, but it doesn't. It clears user objects from your environment, but it does not unload packages, reset changed options, or restart R. You end up with hidden dependencies on things you ran earlier in the session. The real solution is to restart R frequently (Cmd/Ctrl + Shift + F10 in RStudio).
+
+The deeper issue is the distinction between **workflow** and **product**. Your workflow is personal -- which editor you use, where your home directory is, your screen layout. Your product -- the R scripts, the data, the results -- should be portable and self-contained. Don't bake your personal workflow into your product.
+
+### Use RStudio Projects and `here()`
+
+The fix is simple: organize each analysis as a self-contained project folder, and use the `here` package to build file paths.
+
+Our project folder looks like this:
+
+```
+practical_scRNAseq_analysis_with_R/
+├── index.Rmd
+├── 01-data-download-quantification.Rmd
+├── 02-quality-control.Rmd
+├── 03-seurat-workflow-explained.Rmd
+├── 04-cell-annotation.Rmd
+├── 05-gene-set-enrichment.Rmd
+├── data/                    # raw and processed data
+│   ├── SRX5329394_quant/
+│   ├── SRX5329395_quant/
+│   ├── SRX5329396_quant/
+│   ├── SRX5329397_quant/
+│   └── pbmc_seurat_obj.rds
+├── results/                 # analysis outputs
+│   └── QC/
+├── scripts/                 # helper scripts
+│   └── download_data.R
+├── images/                  # figures for the book
+├── bookdown-demo.Rproj      # RStudio project file
+└── DESCRIPTION
+```
+
+The `.Rproj` file marks the root of the project. When you open this file in RStudio, it automatically sets your working directory to the project root. No `setwd()` needed.
+
+The `here()` function builds file paths relative to the project root, no matter where your current script lives:
+
+```{r eval=FALSE}
+library(here)
+
+# this always works, on any machine, from any script
+here("data/SRX5329394_quant")
+#> [1] "/Users/tommy/githup_repo/practical_scRNAseq_analysis_with_R/data/SRX5329394_quant"
+
+# compare to the fragile alternative:
+"/Users/tommy/Desktop/my_project/data/SRX5329394_quant"  # breaks on every other machine
+```
+
+`here()` figures out the project root by looking for markers like `.Rproj`, `.git`, or `.here` files. It works the same way on Mac, Windows, and Linux. Throughout this book, you will see `here()` used everywhere for file paths. Get in the habit of using it -- your future self and your collaborators will thank you.
+
+For more on this topic, I highly recommend reading Jenny Bryan's blog post: https://www.tidyverse.org/blog/2017/12/workflow-vs-script/
+
+### Download the data
+
+If you skipped Chapter 1 or didn't have the compute resources to run `simpleaf` yourself, that's fine. You can download the pre-computed quantification output and pick up from here.
+
+Download the simpleaf output from: https://osf.io/r7cmk/
+
+After downloading, place the files in the `data/` folder at the root of your project so the directory structure looks like this:
+
+```
+practical_scRNAseq_analysis_with_R/
+└── data/
+    ├── SRX5329394_quant/
+    │   └── af_quant/
+    ├── SRX5329395_quant/
+    │   └── af_quant/
+    ├── SRX5329396_quant/
+    │   └── af_quant/
+    ├── SRX5329397_quant/
+    │   └── af_quant/
+    └── genes.gtf
+```
+
+Each `_quant` folder contains the `simpleaf` output for one sample, and `af_quant` inside it has the actual count matrix files. The `genes.gtf` file is used later for mapping ENSEMBL IDs to gene symbols.
+
+Make sure the folder names match exactly -- the code in this chapter uses `list.files(here("data/"), pattern = "quant")` to find them automatically. If the names don't match, nothing will be found.
+
+You can verify everything is in the right place by running:
+
+```{r eval=FALSE}
+library(here)
+list.files(here("data/"), pattern = "quant")
+#> [1] "SRX5329394_quant" "SRX5329395_quant" "SRX5329396_quant" "SRX5329397_quant"
+```
+
+If you see four folders listed, you're good to go.
+
+## Quality Control
+
+Now that we have the final count matrix, it is pivotal to do some quality control first.
+
+If you have used `cellranger` it gives you a nice html report on the number of genes detected per cell and mean number of reads per cell. see https://www.10xgenomics.com/analysis-guides/quality-assessment-using-the-cell-ranger-web-summary
+
+we will use [alevinQC](https://bioconductor.org/packages/release/bioc/html/alevinQC.html)
+
+I asked a question on it a few years ago. https://github.com/csoneson/alevinQC/issues/31
+You will need `R version > 4.3`.
+
+```{r eval=FALSE}
+install.packages("here")
+if (!require("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+
+BiocManager::install("alevinQC")
+
+#install.packages("tictoc")
+
+library(alevinQC)
+library(here)
+library(tictoc)
+
+dir.create(here("results/QC"), recursive = TRUE)
+
+tic()
+
+simpleafQCReport(here("data/SRX5329394_quant"), 
+                 sampleId = "SRX5329394",
+                 outputFile = here("results/QC/SRX5329394.html"),
+                 outputFormat = "html_document",
+                 outputDir = here("results/QC"))
+
+toc()
+
+```
+It should take you less than 1 min to finish the QC by `alevinQC`.
+
+
+Now, run it for all four samples.
+```{r eval=FALSE}
+all_quant_folders<- list.files(here("data/"), pattern = "quant")
+
+all_quant_folders
+
+samples<- stringr::str_replace(all_quant_folders, "_quant", "")
+
+samples
+
+for (quant in all_quant_folders){
+        sample<- stringr::str_replace(quant, "_quant", "")
+        simpleafQCReport(here(paste0("data/", quant)), 
+                 sampleId = sample,
+                 outputFile = here(paste0("results/QC/", sample,".html")),
+                 outputFormat = "html_document",
+                 outputDir = here("results/QC"),
+                 forceOverwrite = TRUE)     
+}
+```
+
+### Remove empty droplets
+
+When we ran `simpleaf`, we specified no filtering (`--unfiltered-pl`), so the count matrix contains all barcodes -- real cells and empty droplets alike. This is intentional. We want to apply statistical methods for cell calling rather than relying on arbitrary thresholds.
+
+Let's load the data and see what we're working with.
+
+```{r}
+# BiocManager::install("SingleCellExperiment")
+library(SingleCellExperiment)
+library(Seurat)
+library(here)
+library(dplyr)
+library(ggplot2)
+library(stringr)
+# BiocManager::install("fishpond")
+# load count matrix
+sce <- fishpond::loadFry(here("data/SRX5329394_quant/af_quant"))
+```
+
+`loadFry` read in the count matrix as a single-cell experiment object.
+Read https://bioconductor.org/books/3.18/OSCA.intro/the-singlecellexperiment-class.html
+to understand the object. We will use it in 
+
+Let's get the counts.
+```{r}
+raw_mtx<- counts(sce)
+
+raw_mtx[1:5, 1:5]
+```
+`raw_mtx` is a sparse matrix, and `.` means 0.
+
+filter the empty droplets using `DropletUtils` bioconductor package.
+
+```{r}
+set.seed(123)
+#BiocManager::install("DropletUtils")
+
+library(DropletUtils, quietly=T)
+out <- emptyDrops(raw_mtx) # get probability that each barcode is a cell
+keep <- out$FDR <= 0.05 # define threshold probability for calling a cell
+keep[is.na(keep)] <- FALSE
+filt_mtx <- raw_mtx[,keep] # subset raw mtx to remove empty drops
+
+dim(filt_mtx)
+```
+after filtering, only 5665 cells left.
+
+
+Let's calculate the total number of reads per cell/column.
+```{r}
+tot_counts <- colSums(raw_mtx)
+
+df <- tibble(total = tot_counts,
+             rank = row_number(dplyr::desc(total))) %>%
+      distinct() %>%
+      arrange(rank)
+
+head(df)
+```
+
+### The knee plot
+
+The knee plot is one of the first things I look at for any scRNA-seq dataset. It's a ranked plot of UMI counts per barcode (both axes on log scale), and it tells you a lot about your data quality.
+
+You see the pattern: real cells sit on a high plateau on the left (thousands of mRNA molecules). Then there's a sharp drop -- the "knee" -- and below that, empty droplets with just ambient RNA (10-100x less than real cells). A sharp knee means clean separation between cells and background. A gradual, mushy knee means trouble.
+
+Let's make one:
+
+```{r}
+ggplot(df, aes(rank, total)) +
+  geom_path() +
+  scale_x_log10() +
+  scale_y_log10() +
+  annotation_logticks() +
+  labs(x = "Barcode rank", y = "Total UMI count") +
+  geom_vline(xintercept = 5666, linetype = 2, color = "red") +
+  annotate("text", x=5665, y=1000, label="5665 cells", angle= 0, size= 5, color="blue")+
+  theme_bw(base_size = 14)
+
+```
+
+The red vertical line marks the 5,665 barcodes that `emptyDrops()` identified as cells. See how it captures the plateau and excludes the background? The knee is reasonably sharp here, which is a good sign.
+
+You could just say "keep all barcodes with >1,000 UMIs" and call it a day. But that's arbitrary. A dataset with small cells (like naive T cells) might have real cells below 1,000 UMIs, and you'd lose them. The `emptyDrops()` approach adapts to your data.
+
+
+### convert the ENSEMBL ID to gene symbol
+
+The rownames of the count matrix are ENSEMBL IDs, we want to convert them to 
+symbols.
+
+Of course, we can use functions such as `clusterprofiler::bitr()`. In this 
+example, let's use the gtf file to map the ENSEMBL ID to gene symbols.
+
+```{r}
+gene_dat<- rownames(filt_mtx) %>%
+  tibble::enframe(value = "gene_id") 
+head(gene_dat)
+
+# let's use the same gtf file when we build the simpleaf index
+# rtracklayer import function to read in the gtf file
+gtf <- rtracklayer::import(here("data/genes.gtf"))
+
+gtf
+```
+The metadata columns `gene_id` and `gene_name` are the mapping we need.
+
+convert the GRanges object to a dataframe
+```{r}
+gtf_df<- as.data.frame(gtf)
+
+filter_gene_names <- gtf_df %>% 
+  filter(type == "gene") %>%  # filter the gtf file to only genes
+  select(gene_id, gene_name) 
+
+head(filter_gene_names)
+```
+
+
+```{r}
+gene_dat <- left_join(gene_dat, filter_gene_names)
+
+# take a peek at the data
+head(gene_dat)
+
+# there are some duplicated gene_names
+gene_dat %>%
+        filter(duplicated(gene_dat$gene_name))
+```
+if there is a duplicated row for the `gene_name` column, it will return
+the row. We see there are 10 genes that have the same gene symobl but different
+ENSEMBL ID.
+
+Let's take a look at one example
+```{r}
+gene_dat %>%
+        filter(gene_name == "TBCE")
+```
+We see there are two ENSEMBL IDs mapped to the same `TBCE` gene.
+
+
+```{r}
+# make sure the rownames of the count matrix is the same as the gene_dat ENSEMBL ID
+all.equal(rownames(filt_mtx), gene_dat$gene_id)
+
+## change the rownames to gene symbol, 
+## use make.names function to make the names unique
+rownames(filt_mtx)<- make.names(gene_dat$gene_name, unique=TRUE)
+
+filt_mtx[1:5, 1:5]
+```
+
+See this [Youtube video on `make.names`](https://www.youtube.com/watch?v=eV-PCCsbnnE).
+
+### Adaptive thresholding with MAD (optional)
+
+So `emptyDrops()` handles the empty droplets. But what about filtering low-quality *cells* that made it past that step?
+
+You'll see recommendations like "remove cells with <200 genes" or "remove cells with >20% mitochondrial reads." These can work, but they're arbitrary. What if your data has a different distribution?
+
+A more principled approach uses median absolute deviation (MAD). For each QC metric, you calculate the median across all cells, calculate the MAD (a robust measure of spread), and flag cells more than N MADs from the median. Typically N=3 for stringent filtering, N=5 for permissive. The nice thing is it automatically adapts to your data.
+
+Here's how to do it with the `scuttle` package:
+
+```{r eval=FALSE}
+# BiocManager::install("scuttle")
+library(scuttle)
+
+# Convert our filtered matrix back to SCE for MAD filtering
+sce_filtered <- SingleCellExperiment(assays = list(counts = filt_mtx))
+
+# Calculate QC metrics
+# First, identify mitochondrial genes
+is_mito <- grepl("^MT\\.", rownames(sce_filtered))
+
+# Compute per-cell QC metrics
+qc_metrics <- perCellQCMetrics(sce_filtered, subsets = list(Mito = is_mito))
+
+# Look at the metrics
+head(qc_metrics)
+
+# Apply MAD-based filtering
+# nmads = 3 means "flag cells >3 MADs from median"
+qc_filter <- quickPerCellQC(qc_metrics,
+                             percent_subsets = "subsets_Mito_percent",
+                             nmads = 3)
+
+# See what would be filtered
+table(qc_filter$discard)
+
+# Visualize the thresholds
+library(scater)
+plotColData(sce_filtered, y = "detected", colour_by = I(qc_filter$discard)) +
+  ggtitle("Detected genes (MAD filtering)")
+
+# If you wanted to apply the filtering:
+# sce_filtered_mad <- sce_filtered[, !qc_filter$discard]
+```
+
+When should you use MAD vs fixed thresholds? I use MAD-based filtering when I have heterogeneous cell populations or when I'm working with a new tissue type and don't have good intuition for cutoffs. I use fixed thresholds when I'm following an established protocol and know what "normal" looks like for my system.
+
+In this tutorial, we'll stick with `emptyDrops()` for removing empty droplets and apply additional fixed-threshold QC in the Seurat workflow chapter. But it's good to have MAD in your toolkit for tricky datasets.
+
+One important note from the [OSCA](https://bioconductor.org/books/release/OSCA/) book: for multi-sample experiments, apply MAD filtering within each sample separately. Different samples can have different quality distributions, and you don't want one bad sample dragging down the thresholds for your good samples.
+
+### Do it for all four samples with purrr
+
+We've processed one sample. But we have four. The temptation is to copy-paste the code four times, changing the sample name each time. Don't do that.
+
+Why? It's error-prone (easy to forget to change a sample name), hard to maintain (fix a bug in 4 places?), and doesn't scale. What if you had 100 samples?
+
+The better approach: write the logic once, then iterate over all samples using `purrr`. The workflow is straightforward -- write code for one sample (done), figure out what varies (the sample name/path), wrap it in a function, and use `purrr::map()` to apply it to everything.
+
+Note my [Real World Bioinformatics with R course](https://chatomics.com/course/real-world-bioinformatics-with-r) teaches you `purrr`. 
+
+#### Get all sample paths
+
+```{r}
+all_quant_folders<- list.files(here("data/"), pattern = "*quant")
+
+all_quant_folders
+
+samples<- stringr::str_replace(all_quant_folders, "_quant", "")
+samples
+```
+
+We now have two vectors:
+- `all_quant_folders`: The directory names (with `_quant`)
+- `samples`: The sample IDs (without `_quant`)
+
+#### Load all samples with purrr::map()
+
+The `map()` function applies a function to each element of a vector/list and returns a list of results.
+```{r eval=FALSE}
+sces<- purrr::map(all_quant_folders,
+           ~fishpond::loadFry(here(paste0("data/", .x, "/af_quant"))))
+
+# give the elements of the list names
+names(sces)<- samples
+
+sces
+```
+
+What just happened? `purrr::map()` took each element of `all_quant_folders` (the `.x` placeholder) and applied the function to it. The `~` is shorthand for creating an anonymous function. This is equivalent to writing:
+```r
+sces <- map(all_quant_folders, function(folder) {
+  fishpond::loadFry(here(paste0("data/", folder, "/af_quant")))
+})
+```
+
+Now `sces` is a named list of 4 SingleCellExperiment objects, one per sample.
+
+#### Write a reusable function
+
+Now we wrap our single-sample code into a function. The idea is simple: take the code that works for one sample, figure out what varies (the `sce` object and the `sample` name), and make those the function parameters. The function body is almost identical to what we wrote above.
+
+One thing worth noting: the function removes mito/ribo genes *before* running `emptyDrops()`, but keeps them in the final filtered matrix. Why? Mitochondrial and ribosomal genes are often overrepresented in ambient RNA (from lysed cells), so they can confound empty droplet detection. See [DropletUtils issue #36](https://github.com/MarioniLab/DropletUtils/issues/36) for the discussion. But for downstream analysis, we want the full transcriptome -- mito/ribo genes are biologically informative (e.g., high MT% tells you about cell stress).
+
+```{r eval=FALSE}
+# we will need to use this gene name mapping file
+head(filter_gene_names)
+
+qc_alevin<- function(sce, sample){
+        # load count matrix
+        raw_mtx<- counts(sce)
+        
+        ### mapping gene names 
+        gene_dat<- rownames(raw_mtx) %>%
+                tibble::enframe(value = "gene_id") 
+
+        gene_dat <- left_join(gene_dat, filter_gene_names)
+
+        # there are some duplicated symbols 
+        all.equal(rownames(raw_mtx), gene_dat$gene_id)
+        
+        rownames(raw_mtx)<- make.names(gene_dat$gene_name, unique=TRUE)
+  
+        # mitochondrial genes
+        mito_genes<- rownames(raw_mtx) %>%
+                str_subset("^MT\\.")
+        
+        # ribosomal genes
+        rps_genes<- rownames(raw_mtx) %>%
+                str_subset("^RPS")
+        
+        rpl_genes<- rownames(raw_mtx) %>%
+                str_subset("^RPL")
+        
+        ## filter 
+        set.seed(123)
+        library(DropletUtils, quietly=T)
+        non_mito_ribo_genes<- !rownames(raw_mtx) %in% 
+                c(mito_genes, rps_genes, rpl_genes)
+        
+        out <- emptyDrops(raw_mtx[non_mito_ribo_genes, ]) 
+        keep <- out$FDR <= 0.05 
+        keep[is.na(keep)] <- FALSE
+        filt_mtx <- raw_mtx[,keep] # subset raw mtx to remove empty drops
+
+        dim(filt_mtx)
+        
+        # save the filtered matrix as a RDS file
+        saveRDS(filt_mtx, here(paste0("data/", 
+                                      sample, "_quant/filtered_mat.rds")))
+
+        cells_remain<- ncol(filt_mtx)
+
+        ### plotting
+
+        tot_counts <- colSums(raw_mtx)
+
+        df <- tibble(total = tot_counts, rank = row_number(desc(total))) %>%
+                distinct() %>%
+                arrange(rank)
+        
+        ggplot(df, aes(rank, total)) +
+                geom_path() +
+                scale_x_log10() + 
+                scale_y_log10() + 
+                annotation_logticks() +
+                labs(x = "Barcode rank", y = "Total UMI count") +
+                geom_vline(xintercept = cells_remain, linetype = 2, color = "red") +
+                annotate("text", x= cells_remain, y=1000, 
+                         label= paste0(cells_remain, " cells"), 
+                         angle= 0, size= 5, color="blue") +
+                theme_bw(base_size = 14) +
+                ggtitle(sample)
+        
+        ggsave(here(paste0("results/", sample, "_knee_plot.pdf")), 
+               width = 6, height = 4)
+  
+}
+
+```
+
+
+#### Apply the function to all samples with purrr::map2()
+
+Now we process all four samples in one line:
+
+```{r eval=FALSE}
+purrr::map2(sces, names(sces), qc_alevin)
+```
+
+Why `map2()` instead of `map()`? Our function needs two inputs: the `sce` object and the `sample` name. `map()` iterates over one vector; `map2()` iterates over two vectors in parallel:
+
+```r
+# Iteration 1: qc_alevin(sces[[1]], names(sces)[1]) -> qc_alevin(sce_obj1, "SRX5329394")
+# Iteration 2: qc_alevin(sces[[2]], names(sces)[2]) -> qc_alevin(sce_obj2, "SRX5329395")
+# Iteration 3: qc_alevin(sces[[3]], names(sces)[3]) -> qc_alevin(sce_obj3, "SRX5329396")
+# Iteration 4: qc_alevin(sces[[4]], names(sces)[4]) -> qc_alevin(sce_obj4, "SRX5329397")
+```
+
+Our `qc_alevin()` function doesn't return anything -- it saves files and creates plots (side effects). For functions like this, you could also use `purrr::walk2()`:
+
+```{r eval=FALSE}
+# Alternative: walk2 explicitly indicates we care about side effects, not return values
+purrr::walk2(sces, names(sces), qc_alevin)
+```
+
+`map2()` returns a list of results (which we ignore here). `walk2()` does the same thing but doesn't return anything -- it's more semantically correct when you only care about side effects.
+
+What if one sample fails? By default, the entire iteration stops. If you want to keep going even when one sample fails, wrap the function with `safely()`:
+
+```{r eval=FALSE}
+# Wrap the function with safely() to catch errors
+safe_qc <- purrr::safely(qc_alevin)
+
+# This will run all samples even if some fail
+results <- purrr::map2(sces, names(sces), safe_qc)
+
+# Check which samples succeeded
+purrr::map_lgl(results, ~is.null(.x$error))
+```
+
+Compare this to copy-pasting 200+ lines of code and changing sample names by hand. One function definition plus one line to apply it. As your experiments get bigger, this approach scales. I recommend investing time in learning `purrr` -- it pays off quickly.
+
+---
+
+### What we covered
+
+We generated QC reports with alevinQC, removed empty droplets with `emptyDrops()`, made knee plots, converted ENSEMBL IDs to gene symbols, and processed all four samples using `purrr`. We also looked at MAD-based thresholding as an alternative to fixed cutoffs.
+
+Files generated:
+
+- `results/QC/*.html` -- alevinQC reports
+- `data/*_quant/filtered_mat.rds` -- filtered count matrices (empty droplets removed)
+- `results/*_knee_plot.pdf` -- knee plots for each sample
+
+In Chapter 3, we'll create Seurat objects from these filtered matrices and do normalization, clustering, and integration. We'll also apply additional QC filters (mitochondrial %, gene counts) after seeing how they distribute across clusters.
+
+### Things to watch out for
+
+Don't use fixed UMI thresholds for cell calling -- use `emptyDrops()`. Don't filter aggressively on a single metric; a cell with low gene counts might be biologically quiescent, not low-quality. Always look at your knee plot. If it doesn't have a clear knee, your data might have quality issues. And please don't copy-paste code for each sample -- use `purrr`.
+
+### Further reading
+
+- The [sc-best-practices.org QC chapter](https://www.sc-best-practices.org/preprocessing_visualization/quality_control.html) -- a good overview of current recommendations
+- The [OSCA book QC chapter](https://bioconductor.org/books/release/OSCA.basic/quality-control.html) -- more statistical detail, particularly on MAD-based filtering. I find myself going back to this one often.
+- Lun et al. (2019), "EmptyDrops: distinguishing cells from empty droplets in droplet-based single-cell RNA sequencing data" -- the paper behind `emptyDrops()`
+- Jenny Bryan's [purrr tutorial](https://jennybc.github.io/purrr-tutorial/) -- the best intro to purrr I've found
+
+## Session Information {-}
+
+```{r session-info-qc}
+sessionInfo()
+```
+

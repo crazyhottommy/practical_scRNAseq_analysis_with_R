@@ -1,0 +1,707 @@
+--- 
+always_allow_html: true
+webshot: true
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r include=FALSE}
+knitr::opts_chunk$set(
+  warning = FALSE,
+  message = FALSE
+)
+```
+
+# Cell Annotation
+
+## There Is No Ground Truth
+
+We have our clusters. Now what are they?
+
+This is the cell annotation problem, and I want to be upfront: there is no perfect annotation. Unlike clustering, which is purely computational, annotation requires biological knowledge. You're mapping clusters to cell types, and reasonable people can disagree about the answer.
+
+Why is it so hard? Think about it. What counts as a "cell type" vs a "cell state"? Is an activated CD4 T cell a different type or the same cell doing something different? Biology is continuous -- differentiation gradients, activation spectra -- but we force discrete labels onto it. You could call a cluster "CD4 T cells" or "naive CD4 T cells" or "CCR7+ CD45RA+ naive CD4 T cells" and all are correct at different granularities. And scRNA-seq is noisy and sparse, so rare markers might drop out even when the cell type is present.
+
+Then there's the question nobody wants to hear: what if your dataset contains something nobody has seen before? No reference will help you there.
+
+> No single annotation method is definitive. Use multiple approaches and validate with marker gene visualization. See the "Annotation" chapter at sc-best-practices.org.
+
+### How we'll approach annotation
+
+There are broadly three strategies, and we'll use all of them:
+
+Manual annotation -- you look at known marker genes and assign identities based on expression patterns. This is the most trustworthy approach because you understand the evidence, but it requires domain knowledge and takes time.
+
+Reference-based annotation -- tools like SingleR, clustifyr, and Seurat label transfer compare your cells to pre-annotated reference datasets. Fast and unbiased, but only as good as the reference. They can't find novel cell types.
+
+Marker-based tools -- things like scGate and ProjectTILs use curated marker gene lists to score cell types. Transparent and customizable, but you need good marker databases for your tissue.
+
+My philosophy: start with automated methods for quick exploration, then always validate with manual marker visualization. When methods disagree, investigate manually.
+
+There are over 100 cell annotation tools out there. We focus on three widely-used R tools (SingleR, clustifyr, Seurat label transfer), but there are excellent alternatives in Python (celltypist, scVI, scANVI) and on the web (Azimuth, PanglaoDB). None work perfectly for every dataset.
+
+---
+
+## Manual Annotation
+
+Before we rely on any automated tool, let's annotate clusters the old-fashioned way -- by looking at known marker genes. This builds biological intuition, and you'll need it later to validate whatever the automated tools tell you.
+
+### Define a marker gene dictionary
+
+Based on literature and domain knowledge, we define marker genes for expected PBMC populations:
+
+```{r}
+library(Seurat)
+library(scCustomize)
+library(here)
+library(dplyr)
+
+# Load our cleaned Seurat object from Chapter 3
+obj <- readRDS(here("data/pbmc_seurat_obj.rds"))
+obj <- JoinLayers(obj)
+
+# Define marker dictionary for major PBMC populations
+markers <- list(
+  "CD4_T_cells" = c("CD3D", "CD3E", "CD4", "IL7R"),
+  "CD8_T_cells" = c("CD3D", "CD3E", "CD8A", "CD8B"),
+  "Naive_T_cells" = c("CCR7", "SELL", "IL7R", "TCF7"),
+  "Effector_T_cells" = c("GZMB", "PRF1", "NKG7", "GNLY"),
+  "Regulatory_T_cells" = c("FOXP3", "IL2RA", "CTLA4", "TIGIT"),
+  "Activated_T_cells" = c("CD69", "IL2RA", "ICOS"),
+  "Exhausted_T_cells" = c("PDCD1", "LAG3", "HAVCR2", "TIGIT"),
+  "Proliferating" = c("MKI67", "TOP2A", "STMN1"),
+  "NK_cells" = c("NKG7", "GNLY", "KLRD1", "NCAM1")
+) 
+```
+
+How do you build a dictionary like this? Literature review (PubMed, review papers), marker databases (PanglaoDB, CellMarker, Human Protein Atlas), previous studies in your tissue, and expert knowledge. If you're not an immunologist, talk to one.
+
+### Visualize markers systematically
+
+A cell type is defined by the intersection of multiple markers, not a single gene. Don't just check one marker and call it done.
+
+```{r eval=TRUE}
+# Create dotplot for all markers
+DotPlot(obj, features = unique(unlist(markers)), group.by = "seurat_clusters") +
+  RotatedAxis() +
+  labs(title = "Marker Gene Expression by Cluster")
+
+# Alternative: Clustered dotplot (groups similar clusters)
+Clustered_DotPlot(obj, features = unlist(markers), plot_km_elbow = FALSE)
+```
+
+How to interpret: dot size shows the percentage of cells expressing the gene, dot color shows the average expression level. Look for combinations -- CD3D+ CD4+ IL7R+ is likely CD4 T cells.
+
+### Use feature plots for spatial context
+
+```{r eval=TRUE}
+# Visualize key markers on UMAP
+FeaturePlot_scCustom(obj, features = c("CD3D", "CD4", "CD8A", "GZMB"))
+```
+
+```{r eval=FALSE}
+# For each expected cell type, create a combined plot
+library(purrr)
+walk(names(markers), function(cell_type) {
+  p <- FeaturePlot_scCustom(obj, features = markers[[cell_type]],
+                            num_columns = 2)
+  ggsave(here(paste0("results/manual_annotation_", cell_type, ".pdf")),
+         p, width = 10, height = 8)
+})
+```
+
+What to look for: do multiple markers co-localize on the UMAP? Are markers mutually exclusive (CD4 vs CD8)? Do markers match cluster boundaries?
+
+### Create a manual annotation table
+
+Based on what you see in the marker plots, here's how I'd call each cluster:
+
+| Cluster | Cell type | Evidence |
+|---------|-----------|----------|
+| 0 | Naive CD4 T | CCR7++, SELL++, TCF7++ |
+| 1 | Effector CD8 T | NKG7++, PRF1++, GNLY++, CD8B+, KLRD1+ |
+| 2 | Memory CD4 T | IL7R++, CD3E+ |
+| 3 | Activated CD4 T | IL2RA+, similar CD4 profile to clusters 0/2 |
+| 4 | Exhausted CD8 T | GZMB++, CD8A/B+, PDCD1+, CTLA4+ |
+| 5 | Naive CD8 T | CD8B++, CD8A+, SELL+, CCR7+ |
+| 6 | Treg | FOXP3++, TIGIT++, CTLA4++ |
+| 7 | Activated CD8 T | ICOS++, CD69++ |
+
+Your annotations might differ slightly -- that's fine. The point is that you can justify each call with specific markers. If you can't point to a clear marker pattern, that's a sign you need to dig deeper before labeling that cluster.
+
+```{r eval=TRUE}
+# Manual annotation based on marker inspection
+manual_annotation <- c(
+  "0" = "Naive CD4 T",
+  "1" = "Effector CD8 T",
+  "2" = "Memory CD4 T",
+  "3" = "Activated CD4 T",
+  "4" = "Exhausted CD8 T",
+  "5" = "Naive CD8 T",
+  "6" = "Treg",
+  "7" = "Activated CD8 T"
+)
+
+# Add to metadata - unname() so Seurat doesn't mistake cluster IDs for cell names
+obj$manual_annotation <- unname(manual_annotation[as.character(obj$seurat_clusters)])
+
+# Visualize
+DimPlot_scCustom(obj, group.by = "manual_annotation", label = TRUE)
+```
+
+This is your baseline -- the annotation you trust most because you understand the evidence.
+
+---
+
+## Automated Annotation Methods
+
+Now let's compare three automated annotation tools and see how well they agree with each other.
+
+## Method 1: SingleR (Reference-based Classification)
+
+### Choosing a reference dataset
+
+The most important decision in reference-based annotation is not the algorithm -- it's which reference you use. A poor reference will give you poor annotations, period.
+
+Things to think about when choosing a reference:
+
+Is the reference from the same tissue? A PBMC reference for PBMC data is great. A brain reference for PBMC data will give you nonsense. Same technology matters too -- scRNA-seq references capture cell-to-cell variation, bulk RNA-seq from sorted populations gives you clean labels but averaged expression, and microarray data is older with different dynamic range.
+
+Check the label quality. Read the paper. How were cells sorted or annotated? If you see labels like "Unknown" or "Mixed" that's a red flag. Also think about granularity -- does the reference include all the cell types you expect? Is it too coarse (just "T cells" when you want subtypes) or too fine (50 T cell subtypes when you have 5 clusters)?
+
+And don't forget sample quality. Were the reference samples healthy? Diseased samples have altered expression profiles.
+
+When possible, use multiple references and compare. Disagreement between references tells you something -- it means the annotation is uncertain (see the "Choosing References" chapter in the SingleR book).
+
+### Built-in references from celldex
+
+The `celldex` package provides several curated references:
+
+| Reference | Tissue | Source | Cell Types | Technology | Use Case |
+|-----------|--------|--------|------------|------------|----------|
+| `HumanPrimaryCellAtlasData` | Multiple | Microarray | ~40 cell types | Microarray | Broad annotation across tissues |
+| `BlueprintEncodeData` | Blood/immune | RNA-seq | ~24 immune types | Bulk RNA-seq | Immune cells |
+| `MonacoImmuneData` | Blood | RNA-seq | 29 immune types | Bulk RNA-seq | Fine-grained immune |
+| `DatabaseImmuneCellExpressionData` | Blood | Microarray | ~15 immune types | Microarray | Broad immune |
+| `NovershternHematopoieticData` | Blood | Microarray | 38 hematopoietic | Microarray | Hematopoiesis |
+
+For our PBMC data, `HumanPrimaryCellAtlasData` is a reasonable starting point (broad coverage), but `MonacoImmuneData` might give better resolution for immune subtypes.
+
+### Custom references
+
+You can also use your own reference:
+
+```{r eval=FALSE}
+# Option 1: From a published dataset
+published_ref <- readRDS("path/to/reference_seurat.rds")
+ref_counts <- GetAssayData(published_ref, slot = "data")
+ref_labels <- published_ref$cell_type
+
+predictions <- SingleR(test = sce,
+                       ref = ref_counts,
+                       labels = ref_labels)
+
+# Option 2: From sorted bulk RNA-seq
+# Just need a matrix (genes × cell types) and cell type labels
+```
+
+### How SingleR works
+
+Given a reference dataset with known labels, [`SingleR`](https://www.bioconductor.org/packages/release/bioc/html/SingleR.html) assigns labels to new cells based on expression similarity. The full tutorial is at https://bioconductor.org/books/devel/SingleRBook/
+
+Here's what happens under the hood: for each cell, SingleR calculates the Spearman correlation with all reference samples, using only informative marker genes. For each cell type, it takes the 80th percentile of those correlations as a score (this makes it robust to outliers). The cell gets assigned the label with the highest score.
+
+There's also a fine-tuning step (on by default) that narrows down to the top candidate labels and re-runs the comparison using only genes that distinguish those candidates. This helps when you have similar cell types.
+
+Why Spearman correlation? It's rank-based, so it handles batch effects and outliers better than Euclidean distance. It captures relative gene expression patterns and works well across technologies (scRNA-seq vs bulk).
+
+```{r cache=TRUE}
+library(Seurat)
+library(scCustomize)
+
+#if (!require("BiocManager", quietly = TRUE))
+#    install.packages("BiocManager")
+
+#BiocManager::install("SingleR")
+# BiocManager::install("celldex")
+
+library(SingleR)
+
+# This is our test dataset (we converted it from seurat object to a single cell Experiment object)
+
+sce<- as.SingleCellExperiment(obj)
+
+# Loading reference data with Ensembl annotations.
+library(celldex)
+library(tictoc)
+ref.data <- HumanPrimaryCellAtlasData(ensembl=FALSE)
+
+# Performing predictions.
+tic()
+predictions <- SingleR(test=sce, assay.type.test=1, 
+    ref=ref.data, labels=ref.data$label.fine)
+toc()
+```
+It takes a couple of minutes. 
+
+```{r}
+table(predictions$labels)
+```
+We know the authors used magnetic negative selection for CD3+ T cells to enrich for T cells, so most of them should be T cells. There are several cells that are labeled as monocytes and Neutrophil (1 cell), and there are some NK cells. 
+
+Add the cell type label back to the seurat object and clean up the label
+by removing the `T_cell` prefix:
+
+```{r}
+obj$label.fine<- predictions$labels %>%
+  stringr::str_remove("T_cell:")
+
+# visualize it 
+scCustomize::DimPlot_scCustom(obj, group.by = "label.fine")
+```
+
+The choice of reference data significantly affects annotation results. It's important to select a reference that includes all the cell types you expect in your test data. The accuracy of the labels in the reference is often assumed but can vary based on sample quality. Ideally, the reference should come from the same technology or protocol as your test dataset, although SingleR typically handles this well when working with clearly defined cell types.
+
+The `celldex` package provides many references data to use. Read [here](https://bioconductor.org/packages/3.20/data/experiment/vignettes/celldex/inst/doc/userguide.html) to understand what are they.
+
+It is also possible to supply your own reference datasets instead; all we need are log-expression values and a set of labels for the cells or samples.
+
+## clustifyr
+
+[clustifyr](https://github.com/rnabioco/clustifyr) classifies cells and clusters in single-cell RNA sequencing experiments using reference bulk RNA-seq data sets, sorted microarray expression data, single-cell gene signatures, or lists of marker genes.
+
+`cbmc_ref` is a built-in reference from the `clustifyr` package. 
+
+```{r}
+library(clustifyr)
+head(cbmc_ref)
+```
+The reference broadly classifies CD4T, CD8T, B cell and the myeloid cells.
+
+`clustifyr` can work directly with singleCellExpereiment or Seurat object
+```{r}
+#BiocManager::install("rnabioco/clustifyr")
+
+library(clustifyr)
+
+obj_anno<- clustify(
+    input = obj,
+    cluster_col = "RNA_snn_res.0.4",
+    ref_mat = cbmc_ref,
+    seurat_out = TRUE
+)
+```
+
+The cell annotation will be in the column `type`. 
+
+```{r}
+table(obj_anno$type)
+
+# visualize it 
+scCustomize::DimPlot_scCustom(obj_anno, group.by = "type")
+```
+Interestingly, `clustifyr` annotates large number of NK cells (almost 4000), which I do not think is right. 
+
+Again, the annotation results depends on the reference data used. Let's use another reference data.
+
+Similar to `SingleR` it has a companion package to download the references:
+https://github.com/rnabioco/clustifyrdatahub
+
+```{r}
+# BiocManager::install("clustifyrdatahub")
+
+library(ExperimentHub)
+eh <- ExperimentHub()
+
+## query
+refs <- query(eh, "clustifyrdatahub")
+refs
+```
+
+load the hema data
+```{r}
+ref_hema_microarray <- refs[["EH3450"]]  ## load by EH id
+
+ref_hema_microarray[1:5, ]
+```
+
+Let's use this reference data instead:
+
+```{r}
+obj_anno2<- clustify(
+    input = obj,
+    cluster_col = "RNA_snn_res.0.4",
+    ref_mat = ref_hema_microarray,
+    seurat_out = TRUE
+)
+
+table(obj_anno2$type)
+
+# visualize it 
+scCustomize::DimPlot_scCustom(obj_anno2, group.by = "type")
+```
+
+Using a different reference does not annotate any of them to be NK cells but only CD4 effector memory and CD8 effector memory cells.
+
+There is no perfect annotation.
+
+One thing I do notice is that `clustify` is super fast.
+
+## Seurat label transfer
+
+We can download the Seurat reference datasets from [`Azimuth`](https://azimuth.hubmapconsortium.org/references/), click the PBMC [Zenodo link](https://zenodo.org/records/4546839) and download the `Ref.Rds` file.
+
+read [here](https://github.com/satijalab/azimuth/wiki/Azimuth-Reference-Format) to understand the reference format.
+
+Follow the Seurat tutorial here https://satijalab.org/seurat/articles/integration_mapping
+
+I saved the file in the `data` folder.
+
+```{r}
+pbmc_ref<- readRDS(here("data/Ref.Rds"))
+pbmc_ref
+```
+
+```{r}
+pbmc_ref@meta.data %>% head()
+```
+The reference data has different levels of cell type labels: l1, l2 and l3.
+
+Level 2 split the CD4 T and CD8 T cells into different subtypes. 
+```{r}
+table(pbmc_ref$celltype.l2)
+```
+
+Let's take a look at the reference dataset.
+```{r}
+DimPlot(object = pbmc_ref, group.by = "celltype.l2", label = TRUE, 
+        label.size = 3, repel = TRUE) + 
+  NoLegend()
+```
+
+It has different subsets of CD4, CD8 T cells, NK cells, B cells and myeloid cells (mono/mac and DCs).
+
+```{r}
+pbmc_ref@reductions
+```
+
+The reference was normalized using `SCTransform()`, so we use the same approach to normalize the query here.
+
+```{r}
+options(future.globals.maxSize = 5000 * 1024^2) # Increases the limit to 5000 MB
+obj<- SCTransform(obj)
+```
+
+In data transfer, Seurat has an option (set by default) to project the PCA structure of a reference onto the query, instead of learning a joint structure with `CCA`. We generally suggest using this option when projecting data between scRNA-seq datasets.
+
+Note `CCA` is usually very slow and memory consuming. It is used for integration of multiple datasets.
+
+```{r error=TRUE}
+# Note, the reference.reduction is refDR as shown above
+pbmc.anchors <- FindTransferAnchors(reference = pbmc_ref,
+                                    query = obj,
+                                    dims = 1:30,
+                                    reference.reduction = "refDR",
+                                    features = rownames(pbmc_ref))
+```
+you will get an error:
+
+```
+Error in validObject(object = object) : 
+  invalid class “DimReduc” object: colnames for ‘feature.loadings’ must start with reduction key (refdr_)
+```
+
+Let's take a look at the feature loading for the reference data
+
+```{r}
+head(pbmc_ref@reductions$refDR@feature.loadings)
+```
+  
+The column names are prefixed with `SPC`. we need to fix them to prefix with refdr.
+
+```{r}
+colnames(pbmc_ref@reductions$refDR@feature.loadings)
+
+colnames(pbmc_ref@reductions$refDR@feature.loadings)<- stringr::str_replace(colnames(pbmc_ref@reductions$refDR@feature.loadings),
+                                                                            "SPC", "refdr")
+
+colnames(pbmc_ref@reductions$refDR@feature.loadings)
+```
+
+rerun the same `FindTransferAnchors` command:
+
+```{r}
+pbmc.anchors <- FindTransferAnchors(reference = pbmc_ref, 
+                                    query = obj, 
+                                    dims = 1:30,
+                                    reference.reduction = "refDR", 
+                                    features = rownames(pbmc_ref))
+```
+
+Now, there is no error. and we can do the prediction.
+
+Once you’ve identified the common "anchors" (similarities between the datasets), `TransferData` uses those anchors to project or transfer information from one dataset to the other. This could mean transferring cell labels, gene expression values, or other information from a well-annotated reference dataset to a new dataset. Essentially, you’re using the information from one dataset to annotate the other.
+
+```{r}
+predictions <- TransferData(anchorset = pbmc.anchors, 
+                            refdata = pbmc_ref$celltype.l2, 
+                            dims = 1:30)
+```
+
+It’s like once you've aligned the maps using anchors, you can now fill in missing details on one map using information from the other.
+
+After finding anchors, we use the `TransferData()` function to classify the query cells based on reference data (a vector of reference cell type labels). `TransferData()` returns a matrix with predicted IDs and prediction scores, which we can add to the query metadata by `AddMetaData`.
+
+Differences Between PCA and CCA in These Functions:
+
+* PCA: When used, Seurat is primarily focusing on the variation within each dataset separately and then comparing how those variations align between the two datasets. It works well when the datasets are from similar technologies or not too dissimilar.
+
+* CCA: When used, Seurat specifically looks at how features are correlated across the datasets, finding patterns that exist between them. This method is more powerful for aligning datasets from different technologies or when the datasets vary a lot.
+
+**Bonus**, what is `CCA`? and what's difference between CCA and PCA? read this post https://xinmingtu.cn/blog/2022/CCA_dual_PCA/
+
+```{r}
+obj <- AddMetaData(obj, metadata = predictions)
+```
+
+
+Let's visualize the predicted cell type in our query dataset:
+```{r}
+DimPlot(obj, group.by = "predicted.id")
+```
+
+
+```{r}
+table(obj$predicted.id)
+```
+
+There are a few NK cells which may be contamination from the column purification. 
+
+**Note**, you can also follow the multimodal annotation at https://satijalab.org/seurat/articles/multimodal_reference_mapping.html
+
+---
+
+## Comparing Annotation Methods
+
+We've now run three different annotation methods on the same data. How do we decide which to trust? The short answer: when methods agree, you can be more confident. When they disagree, dig deeper.
+
+### Create a comparison table
+
+Let's organize all annotations in one dataframe:
+
+```{r}
+library(dplyr)
+library(tidyr)
+
+# Extract annotations from our three methods
+annotation_comparison <- tibble(
+  cell_id = colnames(obj),
+  cluster = obj$seurat_clusters,
+  manual = obj$manual_annotation,  # From our manual marker-based annotation
+  singleR = obj$label.fine,         # From SingleR
+  clustifyr_cbmc = obj_anno$type,   # From clustifyr with cbmc_ref
+  clustifyr_hema = obj_anno2$type,  # From clustifyr with hema reference
+  seurat = obj$predicted.id         # From Seurat label transfer
+)
+
+head(annotation_comparison)
+```
+
+### Calculate agreement
+
+For each cluster, what's the consensus?
+now, we just check if they are concordant at high-level (CD4T vs CD8T).
+but in real work, you would check the more granulized annotaiton.
+
+You get the idea
+```{r}
+consensus <- annotation_comparison %>%
+  group_by(cluster) %>%
+  summarize(
+    n_cells = n(),
+    manual = names(which.max(table(manual)))[1],
+    singleR = names(which.max(table(singleR)))[1],
+    clustifyr_cbmc = names(which.max(table(clustifyr_cbmc)))[1],
+    clustifyr_hema = names(which.max(table(clustifyr_hema)))[1],
+    seurat = names(which.max(table(seurat)))[1],
+    # Calculate agreement score (how many methods agree with manual?)
+    agreement = mean(c(
+      grepl("CD4|CD8", singleR) == grepl("CD4|CD8", manual),
+      grepl("CD4|CD8", clustifyr_cbmc) == grepl("CD4|CD8", manual),
+      grepl("CD4|CD8", seurat) == grepl("CD4|CD8", manual)
+    ))
+  )
+
+print(consensus)
+```
+
+### Visualize side by side
+
+Create side-by-side UMAPs to visually compare methods:
+
+```{r}
+p1 <- DimPlot_scCustom(obj, group.by = "manual_annotation", label = TRUE) +
+  ggtitle("Manual (Marker-based)")
+
+p2 <- DimPlot_scCustom(obj, group.by = "label.fine", label = TRUE) +
+  ggtitle("SingleR")
+
+p3 <- DimPlot_scCustom(obj_anno, group.by = "type", label = TRUE) +
+  ggtitle("clustifyr")
+
+p4 <- DimPlot_scCustom(obj, group.by = "predicted.id", label = TRUE) +
+  ggtitle("Seurat Transfer")
+
+p1
+p2
+p3
+p4
+
+```
+
+### Investigate discrepancies
+
+When methods disagree, dig deeper:
+
+```{r}
+# Find cells with conflicting annotations
+conflicting_cells <- annotation_comparison %>%
+  filter(
+    # Example: SingleR says CD4 but Seurat says CD8
+    (grepl("CD4", singleR) & grepl("CD8", seurat)) |
+    (grepl("CD8", singleR) & grepl("CD4", seurat))
+  )
+
+# What clusters are these?
+table(conflicting_cells$cluster)
+
+# Visualize marker genes for these cells
+subset_obj <- obj[, conflicting_cells$cell_id]
+FeaturePlot_scCustom(subset_obj, features = c("CD4", "CD8A", "CD8B"))
+```
+Most of the cells express high CD8A and CD8B. Also I noticed that in single-cell
+RNAseq data, CD4 mRNA expression level is low in CD4 T cells. It could be just the 
+biology. I know the CD4 protein is high in CD4 T cells according to CITE-seq data.
+
+Similiarily, NK cell marker CD56/NCAM mRNA is usually not that high in NK cells
+but it is high at the protein level.
+
+How to think about it: if your manual annotation agrees with the automated methods, great -- high confidence. If automated methods disagree with each other, trust your manual inspection because you understand the biology
+and technical artifacts. If all automated methods agree but your manual call is unclear, go back and review the markers again. And if a rare population only shows up in one method, validate it with marker genes before you trust it.
+
+### Make a final annotation decision
+
+```{r}
+# Create final annotation by combining methods
+obj$final_annotation <- case_when(
+  # When manual and Seurat agree, use that
+  obj$manual_annotation == obj$predicted.id ~ obj$manual_annotation,
+
+  # When manual is confident (based on clear markers), trust it
+  obj$seurat_clusters %in% c(0, 1, 2) ~ obj$manual_annotation,
+
+  # For ambiguous clusters, defer to Seurat (best reference)
+  TRUE ~ obj$predicted.id
+)
+
+# Visualize final annotation
+DimPlot_scCustom(obj, group.by = "final_annotation", label = TRUE) +
+  ggtitle("Final Annotation (Consensus)")
+
+# Save annotated object
+#saveRDS(obj, here("data/pbmc_annotated.rds"))
+```
+
+### Method comparison
+
+| Method | Speed | Pros | Cons | Best For |
+|--------|-------|------|------|----------|
+| Manual | Slow | Transparent, most trustworthy | Subjective, requires expertise | Validation, novel cell types |
+| SingleR | Fast | Easy, many references | Reference-dependent | Quick exploration |
+| clustifyr | Very fast | Ultra-fast, flexible | Limited references | Large datasets, need speed |
+| Seurat | Medium | Hierarchical labels, integrates well | Slow, needs good reference | Final annotation, multi-level |
+
+Which approach to use depends on your situation. For well-studied tissues like PBMCs or brain, Seurat label transfer with Azimuth references works well -- just validate with manual markers. For poorly-studied tissues, you really need to start with manual annotation. Don't trust automated methods blindly when good references don't exist.
+
+If you have 100k+ cells and need to explore quickly, clustifyr is your friend. For publication-quality annotations, run all three methods, report where they agree and disagree, and validate with independent evidence (flow cytometry, immunofluorescence) if you can.
+
+Always report which annotation method you used and which reference. Annotation is subjective -- transparency is critical (sc-best-practices.org makes this point well).
+
+---
+
+## Deeper Understanding of the Anchor Finding and Label Transfer Step 
+
+Read this tutorial by me https://crazyhottommy.github.io/single-cell-RNAseq-PCA-CCA-cell-annotation/
+It self can be a whole chapter here. But I will leave it to you if you want to understand the math 
+behind PCA projection and CCA data integration. 
+
+## Other Annotation Approaches
+
+### Marker-based tools
+
+If you have high-quality marker gene lists for your tissue, these are worth trying:
+
+* [scGate](https://github.com/carmonalab/scGate) -- marker-based purification where you define positive/negative markers
+* [ProjectTILs](https://github.com/carmonalab/ProjecTILs) -- specialized for tumor-infiltrating lymphocytes
+* [easybio](https://www.biorxiv.org/content/10.1101/2024.09.14.609619v1) -- newer marker-based tool (2024)
+* [scType](https://github.com/IanevskiAleksandr/sc-type) -- marker gene scoring approach
+
+The nice thing about these is that the annotation is transparent -- you know exactly which markers drove the decision.
+
+### Deep learning approaches
+
+Tools like scVI/scANVI (semi-supervised), CellTypist (pre-trained models, very fast), and SingleCellNet (random forest) are more powerful but less interpretable. They're best for very large datasets where you need scalability.
+
+---
+
+## Things to watch out for
+
+A few mistakes I see people make repeatedly:
+
+Don't trust one method blindly. Run multiple approaches and compare. And don't use an inappropriate reference -- a PBMC reference for brain data will give you nonsense results.
+
+Be careful about over-interpreting fine-grained labels. "CD4 Effector Memory RA+" might be more specific than your noisy scRNA-seq data can support. Check `prediction.score.max` from Seurat -- low scores mean the algorithm itself isn't confident.
+
+Always report which annotation method and reference you used. This sounds obvious but a surprising number of papers don't do it.
+
+Remember that cell types are not always discrete. Biology is continuous. Some cells are genuinely intermediate or transitional, and that's okay. And if you see a cluster that no method annotates well, don't just force a label on it -- it might be a novel cell state worth investigating.
+
+In the next chapter, we'll use these cell type annotations for gene set enrichment analysis.
+
+### Further reading
+
+Official documentation:
+
+- SingleR book: https://bioconductor.org/books/devel/SingleRBook/
+- clustifyr: https://rnabioco.github.io/clustifyr/
+- Seurat label transfer: https://satijalab.org/seurat/articles/integration_mapping.html
+- Azimuth: https://azimuth.hubmapconsortium.org/
+
+Best practices guides:
+
+- sc-best-practices.org, Annotation chapter: https://www.sc-best-practices.org/cellular_structure/annotation.html
+- OSCA book, Cell Type Annotation: https://bioconductor.org/books/release/OSCA.basic/cell-type-annotation.html
+
+Key papers:
+
+- Abdelaal et al. (2019) -- benchmarks 22 annotation methods, a good overview of what's out there
+- Aran et al. (2019) -- the SingleR paper
+- Fu et al. (2020) -- the clustifyr paper
+- Stuart et al. (2019) -- "Comprehensive Integration of Single-Cell Data" (Seurat anchors)
+
+Reference databases:
+
+- celldex: https://bioconductor.org/packages/celldex/
+- PanglaoDB: https://panglaodb.se/
+- CellMarker: http://biocc.hrbmu.edu.cn/CellMarker/
+- Human Protein Atlas: https://www.proteinatlas.org/
+
+The bottom line: there is no perfect annotation. Use multiple methods, validate with markers, report what you did, and remember that the goal is biological insight, not perfect labels. When in doubt, talk to your collaborators who know the biology.
+
+## Session Information {-}
+
+```{r session-info-annotation}
+sessionInfo()
+```
+
+

@@ -1,0 +1,453 @@
+--- 
+always_allow_html: true
+webshot: true
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r include=FALSE}
+knitr::opts_chunk$set(
+  warning = FALSE,
+  message = FALSE
+)
+```
+
+# Gene set analysis
+
+## Why think in gene sets?
+
+So you've identified your clusters and annotated your cell types. Now what? The obvious next step is to ask: what biological processes are actually different between these cell populations?
+
+You could look at differentially expressed genes one by one, and that's fine up to a point. But single genes are noisy, and biology rarely works through one gene at a time. Pathways, cellular processes, molecular programs -- these involve coordinated regulation of many genes. That's where gene set analysis comes in.
+
+There are several good reasons to think in terms of gene sets rather than individual genes:
+
+Pathways are more robust. If 15 out of 20 glycolysis genes show moderate upregulation, that's stronger evidence than one gene showing high upregulation. Knowing that "interferon signaling" is enriched is also more interpretable than seeing IRF1, STAT1, and MX1 are upregulated and having to mentally connect them yourself.
+
+Aggregating across related genes can also detect subtle but consistent changes that individual gene tests would miss entirely. This is especially important in single-cell data, which is sparse -- individual genes may have zero counts in many cells due to dropout. Pathways aggregate signal across multiple genes and reduce noise.
+
+## Two approaches: ORA vs GSEA
+
+I see people confuse these two all the time, so let me be clear about the distinction. They answer different questions and take different inputs. Read [this chapter](https://yulab-smu.top/biomedical-knowledge-mining-book/02-Enrichment.html) from the clusterProfiler book for a thorough treatment.
+
+### Over-Representation Analysis (ORA)
+
+ORA is the simpler approach. You start with a list of "interesting" genes -- typically your significant DEGs (e.g., padj < 0.05 and |logFC| > 0.5). Then you ask: are genes from a particular pathway over-represented in my list compared to what you'd expect by chance?
+
+The math behind it is a hypergeometric test (or equivalently, Fisher's exact test). Think of it like drawing balls from an urn. You have 20,000 genes total, 200 are in the "interferon response" pathway, you drew 500 DEGs, and 30 of them are interferon genes. Is 30 out of 500 more than you'd expect if you randomly drew 500 genes from 20,000?
+
+In clusterProfiler, ORA functions are: `enrichGO()`, `enrichKEGG()`, `enricher()` (for custom gene sets).
+
+The limitation: ORA throws away information. By requiring a significance cutoff, you lose all the genes that just barely missed the threshold. A gene with padj = 0.06 contributes nothing, even though it's nearly as informative as one with padj = 0.04. The choice of cutoff is arbitrary and can change your results.
+
+### Gene Set Enrichment Analysis (GSEA)
+
+GSEA takes a different approach. Instead of a filtered gene list, it uses ALL genes ranked by a metric that captures both effect size and significance. No arbitrary cutoff needed.
+
+The core question: are genes in a particular pathway concentrated toward the top (or bottom) of the ranked list, more than you'd expect by chance?
+
+Here's a way to think about it. Imagine you have a deck of 20,000 cards (genes), and you've marked 50 of them as "interferon response genes." You lay out all cards in order from most upregulated to most downregulated. If most of those 50 interferon cards are near the top, that's unlikely to be random -- it suggests the interferon response pathway is activated.
+
+In clusterProfiler, GSEA functions are: `gseGO()`, `gseKEGG()`, `GSEA()` (for custom gene sets).
+
+We'll use GSEA (not ORA) in this chapter because it uses all the information in our data. But both are valid -- ORA is faster and simpler, GSEA is more sensitive to subtle but coordinated changes.
+
+### The GSEA algorithm in three steps
+
+Step 1: Rank all genes. You create a ranked list of all genes -- not just the significant ones. You rank by a statistic that combines effect size and significance. A common ranking metric:
+
+```
+rank_statistic = sign(logFC) x -log10(p-value)
+```
+
+Positive values mean upregulated genes, negative values mean downregulated genes, and the magnitude reflects both fold-change and statistical confidence.
+
+Step 2: Calculate the Enrichment Score (ES). For each gene set (e.g., "Interferon Response"), walk down the ranked list. When you encounter a gene that IS in the set, increase a running score (weighted by its rank). When you encounter a gene NOT in the set, decrease the score. The ES is the maximum deviation from zero during this walk.
+
+An ES near +1 means the gene set is enriched at the top (pathway activated). Near -1 means enriched at the bottom (suppressed). Near 0 means genes are randomly distributed -- no enrichment.
+
+Step 3: Assess statistical significance. GSEA uses permutation testing: randomly shuffle gene labels, recalculate ES, repeat 1,000 times to build a null distribution, then compare your observed ES to that distribution.
+
+GSEA reports a Normalized Enrichment Score (NES), which adjusts for gene set size so you can compare across sets, and FDR (False Discovery Rate) to account for multiple testing. Typical cutoffs are |NES| > 1.5 and FDR < 0.25.
+
+### Gene signature scoring (per-cell)
+
+At the end of this chapter, we'll also cover a third approach: gene signature scoring. This is different from both ORA and GSEA -- instead of comparing groups, it scores each individual cell for pathway activity. Methods like UCell assign every cell a score for every pathway. This lets you visualize pathway activity on a UMAP and spot heterogeneity within clusters.
+
+## Choosing Gene Sets
+
+The gene sets you choose determine the questions you can answer, so it's worth knowing what's out there.
+
+### Major Gene Set Resources
+
+MSigDB (Molecular Signatures Database) is the gold standard for human gene sets. It's organized into collections: H (Hallmark) has 50 well-defined biological states with minimal redundancy; C2 has curated pathway databases like KEGG, Reactome, and BioCarta; C3 has regulatory targets (transcription factors, microRNAs); C5 has Gene Ontology sets; C7 has immunologic signatures; and C8 has cell type signatures.
+
+For our PBMC data, we'll use Blood Transcription Modules (BTM) -- these are particularly relevant for immune cells. They were derived from [a systems biology study of human vaccine responses](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3946932/) and represent coordinated gene expression patterns in blood, including things like inflammation, T cell activation, B cell activation, NK cell functions, and monocyte activation. Since these gene sets were specifically designed for blood cells, they're ideal for interpreting PBMC scRNA-seq data.
+
+Other resources worth knowing about: KEGG/Reactome for metabolic and signaling pathways, GO (Gene Ontology) which is comprehensive but highly redundant, CellMarker/PanglaoDB for cell type-specific markers, and of course you can always define custom gene sets from the literature.
+
+My recommendation: start with focused, well-curated collections like Hallmark or BTM before going to larger, more redundant collections like GO. Smaller, high-quality gene sets are easier to interpret and you're less likely to run into multiple testing issues (see [sc-best-practices.org](https://www.sc-best-practices.org/conditions/gsea_pathway.html)).
+
+## Loading Gene Sets
+
+### Blood Transcription Modules
+
+Download the `gmt` file from the [BTM repository](https://github.com/shuzhao-li/BTM/tree/master) and load it using `clusterProfiler`:
+
+```{r}
+library(here)
+#download.file("https://raw.githubusercontent.com/shuzhao-li/BTM/master/BTM/datasets/BTM_for_GSEA_20131008.gmt", 
+#              destfile = here("data/BTM_for_GSEA_20131008.gmt"))
+
+
+immune_signatures<- clusterProfiler::read.gmt(here("data/BTM_for_GSEA_20131008.gmt"))
+
+head(immune_signatures)
+```
+
+### MSigDB Hallmark Gene Sets
+
+The Hallmark gene sets from MSigDB are particularly useful -- 50 well-defined biological states with minimal redundancy. Let's load them using the `msigdbr` package:
+
+```{r}
+# install.packages("msigdbr")
+library(msigdbr)
+
+# all gene sets for human
+m_df <- msigdbr(species = "Homo sapiens")
+head(m_df)
+
+# only the Hallmark gene set
+m_t2g <- msigdbr(species = "Homo sapiens", category = "H") %>% 
+  dplyr::select(gs_name, gene_symbol)
+
+head(m_t2g)
+```
+
+## Preparing Data for GSEA
+
+Now that we have gene sets loaded, we need to prepare our single-cell data. GSEA requires marker genes for each cluster (differential expression results) and a ranked gene list for each cluster.
+
+Let's load our Seurat object and calculate marker genes.
+
+### Calculate Marker Genes with presto
+
+```{r}
+obj<- readRDS(here("data/pbmc_seurat_obj.rds"))
+library(Seurat)
+library(dplyr)
+markers_seurat<- presto::wilcoxauc(obj, group_by = "seurat_clusters")
+
+head(markers_seurat)
+#SeuratWrappers::RunPresto
+```
+
+### Organizing Data with Nested Dataframes
+
+We have marker genes for all 10 clusters. We could copy-paste the GSEA code 10 times, but you see the pattern here -- that's a lot of repetition. As we discussed in Chapter 2, the "Do Not Repeat Yourself" principle saves us.
+
+Instead, we'll use nested dataframes with list columns. This keeps everything organized and eliminates code repetition. Let's nest the markers by cluster:
+
+```{r}
+markers_nested<- markers_seurat %>% 
+        group_by(group) %>% 
+        tidyr::nest()
+
+markers_nested
+
+# markers for cluster 0
+markers_nested$data[[1]]
+```
+
+We then have a list-column for the markers of each cluster/the group column. 
+
+Note that `presto` returns all genes for each cluster -- all 36,601 of them. This is exactly what GSEA needs! Remember: GSEA uses the entire ranked gene list, not a filtered subset. If you pre-filter to only significant genes, you're doing ORA, not GSEA. Don't pre-filter your gene list!
+
+### Creating a Ranked Gene List
+
+For GSEA, we need to rank all genes by a metric that captures both effect size (logFC) and statistical significance (p-value). We'll use:
+
+```
+rank_statistic = sign(logFC) × -log10(p-value)
+```
+
+This way, upregulated genes with strong evidence get high positive scores, downregulated genes with strong evidence get high negative scores, and genes with weak evidence (high p-values) get scores near zero.
+
+Let's write a function to create this ranked list:
+
+```{r}
+# let's write a function for that
+
+# install it from bioconductor, if you do not have it. we will use it to map gene names
+library(org.Hs.eg.db)
+rank_genes<- function(deg, symbol= TRUE){
+   genes<- deg$feature
+   
+   #some gene sets require ENTREZID instead of gene symbol, let's map them
+   gene_map<- clusterProfiler::bitr(genes,fromType = "SYMBOL", toType = "ENTREZID", OrgDb = org.Hs.eg.db)
+   
+   res_df<- inner_join(deg, gene_map, by = c("feature" = "SYMBOL")) %>%
+           filter(!pval==0) %>%
+           mutate(signed_rank_stats = sign(logFC) * -log10(pval)) %>%
+           arrange(desc(signed_rank_stats))
+   
+   if (symbol){
+     gene_list<- res_df$signed_rank_stats
+     names(gene_list)<- res_df$feature
+   } else {
+     gene_list<- res_df$signed_rank_stats
+     names(gene_list)<- res_df$ENTREZID
+   }
+   
+   return(gene_list)
+   
+}
+```
+
+This function will return a ranked gene list
+
+```{r}
+markers_nested$data[[1]] %>% head()
+
+# returns a ranked gene list with gene symbols
+rank_genes(markers_nested$data[[1]]) %>% head()
+
+# returns a ranked gene list with ENTREZID
+rank_genes(markers_nested$data[[1]], symbol = FALSE) %>% head()
+```
+
+```{r}
+library(clusterProfiler)
+library(enrichplot)
+
+em1 <- GSEA(rank_genes(markers_nested$data[[1]]), TERM2GENE= m_t2g)
+
+em1@result %>% head()
+
+```
+
+we can do it for cluster 1:
+
+```{r}
+em2<- GSEA(rank_genes(markers_nested$data[[2]]), TERM2GENE= m_t2g)
+dotplot(em2)
+```
+
+## Running GSEA for All Clusters with purrr
+
+We've run GSEA for clusters 0 and 1 manually. But we have 10 clusters total. Are we going to copy-paste this 8 more times?
+
+```r
+# Don't do this!
+em1 <- GSEA(rank_genes(markers_nested$data[[1]]), TERM2GENE= m_t2g)
+em2 <- GSEA(rank_genes(markers_nested$data[[2]]), TERM2GENE= m_t2g)
+em3 <- GSEA(rank_genes(markers_nested$data[[3]]), TERM2GENE= m_t2g)
+# ... and so on for all 10 clusters
+```
+
+This is tedious, error-prone, and hard to maintain. Change the gene set? Update 10 lines. What if you had 50 clusters?
+
+Instead, we'll use `purrr::map()` to iterate over all clusters -- the same principle we used in Chapter 2 for batch processing samples. Create a nested dataframe (one row per cluster), use `map()` to apply functions to each row, store results in list columns, and everything stays organized in one tidy dataframe.
+
+### Create ranked gene lists for all clusters
+
+```{r}
+library(purrr)
+markers_nested<- markers_nested %>%
+        mutate(ranked_genes = map(data, rank_genes)) %>%
+        mutate(hallmark_em = map(ranked_genes, ~ GSEA(.x, TERM2GENE= m_t2g)))
+
+
+markers_nested
+```
+
+This is pretty cool! All gene set enrichment results for all 8 clusters are organized in a single tidy dataframe. Each row contains the cluster ID, its marker genes, the ranked gene list, and the GSEA results object. No code repetition. And if you later decide to use a different gene set collection, you change one line.
+
+For cluster 3:
+
+```{r}
+markers_nested$hallmark_em[[4]]@result
+```
+
+We can even save the figures in to the same dataframe
+
+```{r}
+markers_nested<- markers_nested %>%
+        mutate(dotplots = map(hallmark_em, dotplot))
+
+
+markers_nested
+```
+
+The new list column contains a list of ggplot2 objects!
+
+Let's view the dotplot for cluster 2:
+
+```{r}
+markers_nested$dotplots[[3]]
+```
+
+## Interpreting GSEA Results
+
+Now that we have results, let's understand what they mean. Each GSEA result contains several key columns:
+
+```{r}
+# Look at cluster 3 results (4th element because 0-indexing)
+cluster3_results <- markers_nested$hallmark_em[[4]]@result
+
+# Show top enriched pathways
+cluster3_results %>%
+  filter(p.adjust < 0.05) %>%
+  arrange(desc(NES)) %>%
+  select(Description, setSize, NES, pvalue, p.adjust) %>%
+  head(10)
+```
+
+Here's what the key columns mean:
+
+NES (Normalized Enrichment Score): Positive NES means the gene set is enriched at the top of your ranked list (pathway activated in this cluster). Negative NES means it's enriched at the bottom (suppressed). 
+
+p.adjust (FDR): Adjusted p-value accounting for multiple testing. The standard cutoff for GSEA is FDR < 0.25, which is more permissive than what you'd use for individual DE genes. FDR < 0.05 is more stringent if you want to be conservative.
+
+setSize: Number of genes in the pathway found in your dataset. I'd be skeptical of pathways with very few genes (<15) -- they have inflated variance. Very large pathways (>500) may be too general to be informative.
+
+### Biological Interpretation
+
+When interpreting GSEA results, the first thing to ask is: does this make biological sense? If cluster 3 is CD8+ T cells, seeing "Interferon Response" is expected. Unexpected pathways might reveal novel biology -- or batch effects. Always check.
+
+Pay attention to the effect size. High NES (|NES| > 1.2) with low FDR (< 0.05) is a confident result. Moderate NES (~1) with borderline FDR (~0.2) is suggestive but needs verification.
+
+Also look at whether related pathways are enriched together. Multiple immune pathways enriched together is a consistent signal. An isolated significant pathway by itself might be spurious.
+
+And don't forget to check the leading edge genes -- these are the genes that actually drive the enrichment. Do they make sense for your cell type?
+
+### Visualizing Results Across Clusters
+
+Let's create a heatmap showing top pathways across all clusters:
+
+```{r}
+library(tidyr)
+library(tibble)
+
+# Extract top pathways per cluster
+top_pathways_all <- markers_nested %>%
+  mutate(results = map(hallmark_em, ~.x@result)) %>%
+  unnest(results) %>%
+  filter(p.adjust < 0.05) %>%  # FDR cutoff
+  group_by(group) %>%
+  slice_max(abs(NES), n = 5) %>%  # Top 5 by absolute NES
+  ungroup()
+
+# Create a matrix for heatmap
+pathway_matrix <- top_pathways_all %>%
+  select(group, Description, NES) %>%
+  pivot_wider(names_from = group, values_from = NES, values_fill = 0) %>%
+  column_to_rownames("Description") %>%
+  as.matrix()
+
+# Heatmap
+library(ComplexHeatmap)
+library(circlize)
+
+Heatmap(pathway_matrix,
+        name = "NES",
+        col = colorRamp2(c(-2, 0, 2), c("blue", "white", "red")),
+        cluster_rows = TRUE,
+        cluster_columns = FALSE,
+        column_title = "GSEA Results Across Clusters",
+        row_names_gp = gpar(fontsize = 9),
+        column_names_gp = gpar(fontsize = 10))
+```
+
+This visualization is really useful. You can spot cluster-specific signatures, pathways shared across multiple clusters, and pathways that go in opposite directions -- activated in some clusters, suppressed in others.
+
+A few things to watch out for: many gene sets overlap heavily (e.g., multiple interferon-related sets), so don't count them as independent evidence. If a pathway is enriched in clusters that all come from one batch, that's probably technical noise, not biology. And always cross-check enriched pathways against known marker genes for your cell types.
+
+## Alternative Approach: Gene Signature Scoring
+
+So far, we've used GSEA to compare pathways between clusters. But what if you want to know pathway activity within individual cells?
+
+Signature scoring quantifies pathway activity per cell -- "how active is this pathway in each individual cell?" rather than "is this pathway different between groups?" You can visualize pathway activity on UMAP, identify heterogeneity within clusters, track continuous states like cell cycle or activation, and correlate pathway scores with metadata like treatment condition.
+
+### Methods for Signature Scoring
+
+One important note: don't use bulk RNA-seq methods (ssGSEA, GSVA, singscore) for single-cell data. They weren't designed for the sparsity and dropout you see in scRNA-seq.
+
+For single-cell, you have a few options: AUCell ranks genes per cell and calculates Area Under the Curve for the signature. Seurat's `AddModuleScore` does simple averaging (basic but fast). But I'd recommend UCell, which uses the Mann-Whitney U test and is robust to dropout (see [Andreatta & Carmona, 2021](https://pubmed.ncbi.nlm.nih.gov/34285779/)).
+
+### How UCell Works
+
+UCell assigns a score to each cell for each gene signature. It ranks genes within each cell by expression, then for a given signature, it compares the ranks of genes in the signature vs. genes not in the signature using a Mann-Whitney U test. The U-statistic is then normalized to [0, 1].
+
+The nice thing about this approach is that it uses ranks instead of absolute expression, so it's robust to technical variation. It compares within each cell, so it naturally accounts for cell-specific library size. It's non-parametric, so no assumptions about expression distributions. And it handles dropout well because zero values still get ranks.
+
+For interpretation: a score of 1 means signature genes are maximally enriched (all ranked at top), 0.5 means they're randomly distributed, and 0 means they're depleted.
+
+### Practical Example with UCell
+
+Let's score some biologically relevant signatures in our PBMC data:
+
+```{r}
+# Install if needed
+# BiocManager::install("UCell")
+library(UCell)
+
+# Define signatures of interest
+signatures <- list(
+  Interferon_Response = c("ISG15", "ISG20", "IFIT1", "IFIT3", "MX1", "OAS1", "STAT1", "IRF7"),
+  T_Cell_Activation = c("CD69", "IL2RA", "ICOS", "TNFRSF9", "CD38"),
+  Cell_Cycle = c("MKI67", "TOP2A", "PCNA", "CCNB1", "CDK1"),
+  Inflammatory_Response = c("IL1B", "TNF", "IL6", "CXCL8", "CCL2")
+)
+
+# Score signatures in all cells
+obj <- AddModuleScore_UCell(obj, features = signatures, name = NULL)
+
+# Visualize on UMAP
+FeaturePlot(obj,
+            features = names(signatures),
+            ncol = 2,
+            cols = c("lightgrey", "red"))
+
+# Violin plots by cluster
+VlnPlot(obj,
+        features = names(signatures),
+        ncol = 2,
+        pt.size = 0)
+```
+
+This reveals which individual cells (not just clusters) have active pathways. You'll see that not all CD8+ T cells are equally activated, and things like cell cycle show continuous variation rather than binary on/off states.
+
+### When to Use GSEA vs. Signature Scoring
+
+Use GSEA when you're comparing clusters or conditions and want statistical significance testing -- "are interferon pathways more active in cluster 3 vs others?"
+
+Use signature scoring when you want per-cell pathway activity, want to visualize patterns on UMAP, or want to identify heterogeneity within populations -- "which individual cells have high interferon scores?"
+
+In practice, use both. GSEA identifies differentially active pathways, then signature scoring reveals cell-level heterogeneity within those pathways.
+
+## Things to Remember
+
+GSEA and ORA are different methods. GSEA uses the entire ranked gene list (clusterProfiler's `GSEA()`, `gseGO()`, `gseKEGG()`). ORA uses a filtered list of significant genes (clusterProfiler's `enrichGO()`, `enrichKEGG()`, `enricher()`). Don't mix them up -- if you're using `GSEA()`, never pre-filter your gene list.
+
+Gene sets give you biological context that individual genes lack. But choose them carefully -- well-curated, tissue-relevant collections like BTM for blood or Hallmark for general biology will serve you better than large, redundant databases like the full GO.
+
+The nested dataframe approach with `purrr::map()` is how I'd organize any analysis that needs to run across multiple groups. No code repetition, easy to maintain, and it scales.
+
+When interpreting results, be skeptical. High NES + low FDR suggests real biology, but always validate with known markers. Watch out for redundant pathways (correlated enrichment does not mean independent evidence), tiny gene sets (<15 genes), and batch effects masquerading as biology. Different normalization methods can also yield different GSEA results, so keep that in mind.
+
+And always visualize. Heatmaps across clusters and UMAPs within cells reveal patterns that statistics alone miss.
+
+## Further Reading
+
+- [Subramanian et al., 2005](https://www.pnas.org/doi/10.1073/pnas.0506580102) - The original GSEA paper
+- [Andreatta & Carmona, 2021](https://pubmed.ncbi.nlm.nih.gov/34285779/) - UCell for robust signature scoring
+- [GSEA and Pathway Analysis chapter](https://www.sc-best-practices.org/conditions/gsea_pathway.html) on sc-best-practices.org
+- [Borch et al., 2021](https://elifesciences.org/articles/71994) - The escape package for single-cell pathway analysis
+
+## Session Information {-}
+
+```{r session-info-gsea, echo=FALSE}
+sessioninfo::session_info()
+```
+
