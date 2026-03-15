@@ -1,0 +1,1596 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+<head>
+
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>Chapter 4 Cell Annotation | Practical scRNAseq Analysis with R</title>
+  <meta name="description" content="A comprehensive, reproducible guide for single-cell RNA-seq analysis using R, covering data quantification, quality control, clustering, cell annotation, and functional enrichment using real-world datasets." />
+  <meta name="generator" content="bookdown 0.40 and GitBook 2.6.7" />
+
+  <meta property="og:title" content="Chapter 4 Cell Annotation | Practical scRNAseq Analysis with R" />
+  <meta property="og:type" content="book" />
+  
+  <meta property="og:description" content="A comprehensive, reproducible guide for single-cell RNA-seq analysis using R, covering data quantification, quality control, clustering, cell annotation, and functional enrichment using real-world datasets." />
+  <meta name="github-repo" content="crazyhottommy/practical_scRNAseq_analysis_with_R" />
+
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Chapter 4 Cell Annotation | Practical scRNAseq Analysis with R" />
+  
+  <meta name="twitter:description" content="A comprehensive, reproducible guide for single-cell RNA-seq analysis using R, covering data quantification, quality control, clustering, cell annotation, and functional enrichment using real-world datasets." />
+  
+
+<meta name="author" content="Ming Tommy Tang" />
+
+
+<meta name="date" content="2026-03-15" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+  
+  
+<link rel="prev" href="seurat-workflow.html"/>
+<link rel="next" href="gene-set-analysis.html"/>
+<script src="libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fuse.js@6.4.6/dist/fuse.min.js"></script>
+<link href="libs/gitbook-2.6.7/css/style.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-table.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-bookdown.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-highlight.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-search.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-fontsettings.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-clipboard.css" rel="stylesheet" />
+
+
+
+
+
+
+
+
+<link href="libs/anchor-sections-1.1.0/anchor-sections.css" rel="stylesheet" />
+<link href="libs/anchor-sections-1.1.0/anchor-sections-hash.css" rel="stylesheet" />
+<script src="libs/anchor-sections-1.1.0/anchor-sections.js"></script>
+
+
+<style type="text/css">
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #aaaaaa;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code span.at { color: #7d9029; } /* Attribute */
+code span.bn { color: #40a070; } /* BaseN */
+code span.bu { color: #008000; } /* BuiltIn */
+code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #4070a0; } /* Char */
+code span.cn { color: #880000; } /* Constant */
+code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code span.dt { color: #902000; } /* DataType */
+code span.dv { color: #40a070; } /* DecVal */
+code span.er { color: #ff0000; font-weight: bold; } /* Error */
+code span.ex { } /* Extension */
+code span.fl { color: #40a070; } /* Float */
+code span.fu { color: #06287e; } /* Function */
+code span.im { color: #008000; font-weight: bold; } /* Import */
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code span.op { color: #666666; } /* Operator */
+code span.ot { color: #007020; } /* Other */
+code span.pp { color: #bc7a00; } /* Preprocessor */
+code span.sc { color: #4070a0; } /* SpecialChar */
+code span.ss { color: #bb6688; } /* SpecialString */
+code span.st { color: #4070a0; } /* String */
+code span.va { color: #19177c; } /* Variable */
+code span.vs { color: #4070a0; } /* VerbatimString */
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+</style>
+
+<style type="text/css">
+  
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+</style>
+
+<link rel="stylesheet" href="style.css" type="text/css" />
+</head>
+
+<body>
+
+
+
+  <div class="book without-animation with-summary font-size-2 font-family-1" data-basepath=".">
+
+    <div class="book-summary">
+      <nav role="navigation">
+
+<ul class="summary">
+<li><a href="./">Practical scRNAseq Analysis with R</a></li>
+
+<li class="divider"></li>
+<li class="chapter" data-level="" data-path="index.html"><a href="index.html"><i class="fa fa-check"></i>Prerequisites</a>
+<ul>
+<li class="chapter" data-level="" data-path="index.html"><a href="index.html#what-youll-learn"><i class="fa fa-check"></i>What You’ll Learn</a></li>
+<li class="chapter" data-level="" data-path="index.html"><a href="index.html#what-you-need-before-starting"><i class="fa fa-check"></i>What You Need Before Starting</a></li>
+<li class="chapter" data-level="" data-path="index.html"><a href="index.html#computing-resources"><i class="fa fa-check"></i>Computing Resources</a></li>
+<li class="chapter" data-level="" data-path="index.html"><a href="index.html#system-dependencies"><i class="fa fa-check"></i>System Dependencies</a></li>
+<li class="chapter" data-level="" data-path="index.html"><a href="index.html#how-to-use-this-book"><i class="fa fa-check"></i>How to Use This Book</a></li>
+<li class="chapter" data-level="" data-path="index.html"><a href="index.html#the-dataset"><i class="fa fa-check"></i>The Dataset</a></li>
+<li class="chapter" data-level="" data-path="index.html"><a href="index.html#reproducibility"><i class="fa fa-check"></i>Reproducibility</a></li>
+<li class="chapter" data-level="" data-path="index.html"><a href="index.html#acknowledgments"><i class="fa fa-check"></i>Acknowledgments</a></li>
+<li class="chapter" data-level="" data-path="index.html"><a href="index.html#license"><i class="fa fa-check"></i>License</a></li>
+</ul></li>
+<li class="chapter" data-level="1" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html"><i class="fa fa-check"></i><b>1</b> Download Data and Quantification</a>
+<ul>
+<li class="chapter" data-level="1.1" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html#what-is-single-cell-rna-seq"><i class="fa fa-check"></i><b>1.1</b> What is single-cell RNA-seq?</a>
+<ul>
+<li class="chapter" data-level="1.1.1" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html#but-do-you-really-need-single-cell-rna-seq"><i class="fa fa-check"></i><b>1.1.1</b> But do you really need single-cell RNA-seq?</a></li>
+<li class="chapter" data-level="1.1.2" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html#the-10x-genomics-chromium-platform"><i class="fa fa-check"></i><b>1.1.2</b> The 10x Genomics Chromium platform</a></li>
+<li class="chapter" data-level="1.1.3" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html#why-umis-matter"><i class="fa fa-check"></i><b>1.1.3</b> Why UMIs matter</a></li>
+<li class="chapter" data-level="1.1.4" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html#cell-barcodes"><i class="fa fa-check"></i><b>1.1.4</b> Cell barcodes</a></li>
+<li class="chapter" data-level="1.1.5" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html#sparse-matrices"><i class="fa fa-check"></i><b>1.1.5</b> Sparse matrices</a></li>
+<li class="chapter" data-level="1.1.6" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html#from-fastq-to-count-matrix"><i class="fa fa-check"></i><b>1.1.6</b> From FASTQ to count matrix</a></li>
+<li class="chapter" data-level="1.1.7" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html#why-alevin-fry"><i class="fa fa-check"></i><b>1.1.7</b> Why alevin-fry?</a></li>
+<li class="chapter" data-level="1.1.8" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html#the-splici-index"><i class="fa fa-check"></i><b>1.1.8</b> The splici index</a></li>
+</ul></li>
+<li class="chapter" data-level="1.2" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html#description-of-the-data"><i class="fa fa-check"></i><b>1.2</b> Description of the Data</a></li>
+<li class="chapter" data-level="1.3" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html#download-the-fastq-files-using-fastq-dl"><i class="fa fa-check"></i><b>1.3</b> Download the fastq files using fastq-dl</a>
+<ul>
+<li class="chapter" data-level="1.3.1" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html#a-note-on-the-fastq-files"><i class="fa fa-check"></i><b>1.3.1</b> A note on the fastq files</a></li>
+<li class="chapter" data-level="1.3.2" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html#alignment-and-quantification-using-simpleaf"><i class="fa fa-check"></i><b>1.3.2</b> alignment and quantification using simpleaf</a></li>
+<li class="chapter" data-level="1.3.3" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html#quantification"><i class="fa fa-check"></i><b>1.3.3</b> Quantification</a></li>
+<li class="chapter" data-level="1.3.4" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html#check-the-output"><i class="fa fa-check"></i><b>1.3.4</b> Check the output</a></li>
+</ul></li>
+<li class="chapter" data-level="1.4" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html#troubleshooting"><i class="fa fa-check"></i><b>1.4</b> Troubleshooting</a></li>
+<li class="chapter" data-level="1.5" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html#alternative-quantification-workflows"><i class="fa fa-check"></i><b>1.5</b> Alternative quantification workflows</a></li>
+<li class="chapter" data-level="1.6" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html#summary"><i class="fa fa-check"></i><b>1.6</b> Summary</a>
+<ul>
+<li class="chapter" data-level="1.6.1" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html#further-reading"><i class="fa fa-check"></i><b>1.6.1</b> Further reading</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html#session-information"><i class="fa fa-check"></i>Session Information</a></li>
+</ul></li>
+<li class="chapter" data-level="2" data-path="quality-control.html"><a href="quality-control.html"><i class="fa fa-check"></i><b>2</b> Quality Control</a>
+<ul>
+<li class="chapter" data-level="2.1" data-path="quality-control.html"><a href="quality-control.html#before-you-filter-think-about-what-youre-throwing-away"><i class="fa fa-check"></i><b>2.1</b> Before you filter: think about what you’re throwing away</a>
+<ul>
+<li class="chapter" data-level="2.1.1" data-path="quality-control.html"><a href="quality-control.html#what-counts-as-normal-depends-on-your-biology"><i class="fa fa-check"></i><b>2.1.1</b> What counts as “normal” depends on your biology</a></li>
+<li class="chapter" data-level="2.1.2" data-path="quality-control.html"><a href="quality-control.html#fixed-thresholds-vs-adaptive-thresholds"><i class="fa fa-check"></i><b>2.1.2</b> Fixed thresholds vs adaptive thresholds</a></li>
+<li class="chapter" data-level="2.1.3" data-path="quality-control.html"><a href="quality-control.html#the-knee-plot"><i class="fa fa-check"></i><b>2.1.3</b> The knee plot</a></li>
+<li class="chapter" data-level="2.1.4" data-path="quality-control.html"><a href="quality-control.html#the-empty-droplet-problem"><i class="fa fa-check"></i><b>2.1.4</b> The empty droplet problem</a></li>
+<li class="chapter" data-level="2.1.5" data-path="quality-control.html"><a href="quality-control.html#qc-is-iterative"><i class="fa fa-check"></i><b>2.1.5</b> QC is iterative</a></li>
+</ul></li>
+<li class="chapter" data-level="2.2" data-path="quality-control.html"><a href="quality-control.html#a-note-on-preparing-the-computing-environment"><i class="fa fa-check"></i><b>2.2</b> A note on preparing the computing environment</a></li>
+<li class="chapter" data-level="2.3" data-path="quality-control.html"><a href="quality-control.html#a-note-on-project-folder-structure"><i class="fa fa-check"></i><b>2.3</b> A note on project folder structure</a>
+<ul>
+<li class="chapter" data-level="2.3.1" data-path="quality-control.html"><a href="quality-control.html#stop-using-setwd-and-rmlist-ls"><i class="fa fa-check"></i><b>2.3.1</b> Stop using <code>setwd()</code> and <code>rm(list = ls())</code></a></li>
+<li class="chapter" data-level="2.3.2" data-path="quality-control.html"><a href="quality-control.html#use-rstudio-projects-and-here"><i class="fa fa-check"></i><b>2.3.2</b> Use RStudio Projects and <code>here()</code></a></li>
+<li class="chapter" data-level="2.3.3" data-path="quality-control.html"><a href="quality-control.html#download-the-data"><i class="fa fa-check"></i><b>2.3.3</b> Download the data</a></li>
+</ul></li>
+<li class="chapter" data-level="2.4" data-path="quality-control.html"><a href="quality-control.html#quality-control-1"><i class="fa fa-check"></i><b>2.4</b> Quality Control</a>
+<ul>
+<li class="chapter" data-level="2.4.1" data-path="quality-control.html"><a href="quality-control.html#remove-empty-droplets"><i class="fa fa-check"></i><b>2.4.1</b> Remove empty droplets</a></li>
+<li class="chapter" data-level="2.4.2" data-path="quality-control.html"><a href="quality-control.html#the-knee-plot-1"><i class="fa fa-check"></i><b>2.4.2</b> The knee plot</a></li>
+<li class="chapter" data-level="2.4.3" data-path="quality-control.html"><a href="quality-control.html#convert-the-ensembl-id-to-gene-symbol"><i class="fa fa-check"></i><b>2.4.3</b> convert the ENSEMBL ID to gene symbol</a></li>
+<li class="chapter" data-level="2.4.4" data-path="quality-control.html"><a href="quality-control.html#adaptive-thresholding-with-mad-optional"><i class="fa fa-check"></i><b>2.4.4</b> Adaptive thresholding with MAD (optional)</a></li>
+<li class="chapter" data-level="2.4.5" data-path="quality-control.html"><a href="quality-control.html#do-it-for-all-four-samples-with-purrr"><i class="fa fa-check"></i><b>2.4.5</b> Do it for all four samples with purrr</a></li>
+<li class="chapter" data-level="2.4.6" data-path="quality-control.html"><a href="quality-control.html#what-we-covered"><i class="fa fa-check"></i><b>2.4.6</b> What we covered</a></li>
+<li class="chapter" data-level="2.4.7" data-path="quality-control.html"><a href="quality-control.html#things-to-watch-out-for"><i class="fa fa-check"></i><b>2.4.7</b> Things to watch out for</a></li>
+<li class="chapter" data-level="2.4.8" data-path="quality-control.html"><a href="quality-control.html#further-reading-1"><i class="fa fa-check"></i><b>2.4.8</b> Further reading</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="quality-control.html"><a href="quality-control.html#session-information-1"><i class="fa fa-check"></i>Session Information</a></li>
+</ul></li>
+<li class="chapter" data-level="3" data-path="seurat-workflow.html"><a href="seurat-workflow.html"><i class="fa fa-check"></i><b>3</b> Seurat workflow</a>
+<ul>
+<li class="chapter" data-level="3.1" data-path="seurat-workflow.html"><a href="seurat-workflow.html#what-we-are-doing-in-this-chapter"><i class="fa fa-check"></i><b>3.1</b> What we are doing in this chapter</a>
+<ul>
+<li class="chapter" data-level="3.1.1" data-path="seurat-workflow.html"><a href="seurat-workflow.html#how-i-structured-this-chapter"><i class="fa fa-check"></i><b>3.1.1</b> How I structured this chapter</a></li>
+</ul></li>
+<li class="chapter" data-level="3.2" data-path="seurat-workflow.html"><a href="seurat-workflow.html#read-in-the-filtered-matrices-and-make-a-seurat-object"><i class="fa fa-check"></i><b>3.2</b> Read in the filtered matrices and make a Seurat object</a></li>
+<li class="chapter" data-level="3.3" data-path="seurat-workflow.html"><a href="seurat-workflow.html#alternative-input-formats-to-make-a-seurat-object"><i class="fa fa-check"></i><b>3.3</b> alternative input formats to make a seurat object</a>
+<ul>
+<li class="chapter" data-level="3.3.1" data-path="seurat-workflow.html"><a href="seurat-workflow.html#cellranger-input"><i class="fa fa-check"></i><b>3.3.1</b> cellranger input</a></li>
+</ul></li>
+<li class="chapter" data-level="3.4" data-path="seurat-workflow.html"><a href="seurat-workflow.html#add-metadata-to-the-seurat-object"><i class="fa fa-check"></i><b>3.4</b> add metadata to the seurat object</a></li>
+<li class="chapter" data-level="3.5" data-path="seurat-workflow.html"><a href="seurat-workflow.html#more-quality-control"><i class="fa fa-check"></i><b>3.5</b> more quality control</a></li>
+<li class="chapter" data-level="3.6" data-path="seurat-workflow.html"><a href="seurat-workflow.html#routine-processing"><i class="fa fa-check"></i><b>3.6</b> Routine Processing</a>
+<ul>
+<li class="chapter" data-level="3.6.1" data-path="seurat-workflow.html"><a href="seurat-workflow.html#why-do-we-need-dimensionality-reduction"><i class="fa fa-check"></i><b>3.6.1</b> Why do we need dimensionality reduction?</a></li>
+<li class="chapter" data-level="3.6.2" data-path="seurat-workflow.html"><a href="seurat-workflow.html#why-we-need-integration-harmony"><i class="fa fa-check"></i><b>3.6.2</b> Why we need integration (Harmony)</a></li>
+<li class="chapter" data-level="3.6.3" data-path="seurat-workflow.html"><a href="seurat-workflow.html#the-pipeline-in-one-code-block"><i class="fa fa-check"></i><b>3.6.3</b> The pipeline in one code block</a></li>
+<li class="chapter" data-level="3.6.4" data-path="seurat-workflow.html"><a href="seurat-workflow.html#how-to-choose-parameters"><i class="fa fa-check"></i><b>3.6.4</b> How to choose parameters</a></li>
+<li class="chapter" data-level="3.6.5" data-path="seurat-workflow.html"><a href="seurat-workflow.html#our-parameter-choices-for-this-dataset"><i class="fa fa-check"></i><b>3.6.5</b> Our parameter choices for this dataset</a></li>
+</ul></li>
+<li class="chapter" data-level="3.7" data-path="seurat-workflow.html"><a href="seurat-workflow.html#remove-other-low-quality-cells"><i class="fa fa-check"></i><b>3.7</b> remove other low quality cells</a></li>
+<li class="chapter" data-level="3.8" data-path="seurat-workflow.html"><a href="seurat-workflow.html#understanding-the-math-behind-each-step"><i class="fa fa-check"></i><b>3.8</b> Understanding the math behind each step</a>
+<ul>
+<li class="chapter" data-level="3.8.1" data-path="seurat-workflow.html"><a href="seurat-workflow.html#why-do-we-normalize"><i class="fa fa-check"></i><b>3.8.1</b> Why do we normalize?</a></li>
+<li class="chapter" data-level="3.8.2" data-path="seurat-workflow.html"><a href="seurat-workflow.html#lognormalize-what-exactly-does-it-do"><i class="fa fa-check"></i><b>3.8.2</b> LogNormalize: what exactly does it do?</a></li>
+<li class="chapter" data-level="3.8.3" data-path="seurat-workflow.html"><a href="seurat-workflow.html#when-to-use-different-normalization-methods"><i class="fa fa-check"></i><b>3.8.3</b> When to use different normalization methods</a></li>
+<li class="chapter" data-level="3.8.4" data-path="seurat-workflow.html"><a href="seurat-workflow.html#which-normalization-should-you-use"><i class="fa fa-check"></i><b>3.8.4</b> Which normalization should you use?</a></li>
+<li class="chapter" data-level="3.8.5" data-path="seurat-workflow.html"><a href="seurat-workflow.html#find-variable-genes"><i class="fa fa-check"></i><b>3.8.5</b> Find Variable Genes</a></li>
+<li class="chapter" data-level="3.8.6" data-path="seurat-workflow.html"><a href="seurat-workflow.html#visualization"><i class="fa fa-check"></i><b>3.8.6</b> visualization</a></li>
+<li class="chapter" data-level="3.8.7" data-path="seurat-workflow.html"><a href="seurat-workflow.html#finding-cluster-markers-with-differential-expression"><i class="fa fa-check"></i><b>3.8.7</b> Finding cluster markers with differential expression</a></li>
+</ul></li>
+<li class="chapter" data-level="3.9" data-path="seurat-workflow.html"><a href="seurat-workflow.html#doublet-detection"><i class="fa fa-check"></i><b>3.9</b> Doublet detection</a></li>
+<li class="chapter" data-level="3.10" data-path="seurat-workflow.html"><a href="seurat-workflow.html#ambient-rna-removal"><i class="fa fa-check"></i><b>3.10</b> Ambient RNA removal</a></li>
+<li class="chapter" data-level="3.11" data-path="seurat-workflow.html"><a href="seurat-workflow.html#remove-contaminating-clusters"><i class="fa fa-check"></i><b>3.11</b> Remove contaminating clusters</a></li>
+<li class="chapter" data-level="3.12" data-path="seurat-workflow.html"><a href="seurat-workflow.html#pseudo-bulk-differential-expression-with-deseq2"><i class="fa fa-check"></i><b>3.12</b> Pseudo-bulk differential expression with DESeq2</a>
+<ul>
+<li class="chapter" data-level="3.12.1" data-path="seurat-workflow.html"><a href="seurat-workflow.html#step-1-aggregate-counts-to-pseudo-bulk"><i class="fa fa-check"></i><b>3.12.1</b> Step 1: Aggregate counts to pseudo-bulk</a></li>
+<li class="chapter" data-level="3.12.2" data-path="seurat-workflow.html"><a href="seurat-workflow.html#step-2-prepare-metadata-for-deseq2"><i class="fa fa-check"></i><b>3.12.2</b> Step 2: Prepare metadata for DESeq2</a></li>
+<li class="chapter" data-level="3.12.3" data-path="seurat-workflow.html"><a href="seurat-workflow.html#step-3-run-deseq2-for-one-cluster"><i class="fa fa-check"></i><b>3.12.3</b> Step 3: Run DESeq2 for one cluster</a></li>
+<li class="chapter" data-level="3.12.4" data-path="seurat-workflow.html"><a href="seurat-workflow.html#step-4-run-deseq2-for-all-clusters-with-purrr"><i class="fa fa-check"></i><b>3.12.4</b> Step 4: Run DESeq2 for all clusters with purrr</a></li>
+<li class="chapter" data-level="3.12.5" data-path="seurat-workflow.html"><a href="seurat-workflow.html#step-5-visualize-the-results"><i class="fa fa-check"></i><b>3.12.5</b> Step 5: Visualize the results</a></li>
+<li class="chapter" data-level="3.12.6" data-path="seurat-workflow.html"><a href="seurat-workflow.html#when-to-use-pseudo-bulk-vs-findallmarkers"><i class="fa fa-check"></i><b>3.12.6</b> When to use pseudo-bulk vs FindAllMarkers</a></li>
+</ul></li>
+<li class="chapter" data-level="3.13" data-path="seurat-workflow.html"><a href="seurat-workflow.html#what-we-covered-1"><i class="fa fa-check"></i><b>3.13</b> What we covered</a>
+<ul>
+<li class="chapter" data-level="3.13.1" data-path="seurat-workflow.html"><a href="seurat-workflow.html#things-that-go-wrong"><i class="fa fa-check"></i><b>3.13.1</b> Things that go wrong</a></li>
+<li class="chapter" data-level="3.13.2" data-path="seurat-workflow.html"><a href="seurat-workflow.html#further-reading-2"><i class="fa fa-check"></i><b>3.13.2</b> Further reading</a></li>
+<li class="chapter" data-level="3.13.3" data-path="seurat-workflow.html"><a href="seurat-workflow.html#key-takeaways"><i class="fa fa-check"></i><b>3.13.3</b> Key takeaways</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="seurat-workflow.html"><a href="seurat-workflow.html#session-information-2"><i class="fa fa-check"></i>Session Information</a></li>
+</ul></li>
+<li class="chapter" data-level="4" data-path="cell-annotation.html"><a href="cell-annotation.html"><i class="fa fa-check"></i><b>4</b> Cell Annotation</a>
+<ul>
+<li class="chapter" data-level="4.1" data-path="cell-annotation.html"><a href="cell-annotation.html#there-is-no-ground-truth"><i class="fa fa-check"></i><b>4.1</b> There Is No Ground Truth</a>
+<ul>
+<li class="chapter" data-level="4.1.1" data-path="cell-annotation.html"><a href="cell-annotation.html#how-well-approach-annotation"><i class="fa fa-check"></i><b>4.1.1</b> How we’ll approach annotation</a></li>
+</ul></li>
+<li class="chapter" data-level="4.2" data-path="cell-annotation.html"><a href="cell-annotation.html#manual-annotation"><i class="fa fa-check"></i><b>4.2</b> Manual Annotation</a>
+<ul>
+<li class="chapter" data-level="4.2.1" data-path="cell-annotation.html"><a href="cell-annotation.html#define-a-marker-gene-dictionary"><i class="fa fa-check"></i><b>4.2.1</b> Define a marker gene dictionary</a></li>
+<li class="chapter" data-level="4.2.2" data-path="cell-annotation.html"><a href="cell-annotation.html#visualize-markers-systematically"><i class="fa fa-check"></i><b>4.2.2</b> Visualize markers systematically</a></li>
+<li class="chapter" data-level="4.2.3" data-path="cell-annotation.html"><a href="cell-annotation.html#use-feature-plots-for-spatial-context"><i class="fa fa-check"></i><b>4.2.3</b> Use feature plots for spatial context</a></li>
+<li class="chapter" data-level="4.2.4" data-path="cell-annotation.html"><a href="cell-annotation.html#create-a-manual-annotation-table"><i class="fa fa-check"></i><b>4.2.4</b> Create a manual annotation table</a></li>
+</ul></li>
+<li class="chapter" data-level="4.3" data-path="cell-annotation.html"><a href="cell-annotation.html#automated-annotation-methods"><i class="fa fa-check"></i><b>4.3</b> Automated Annotation Methods</a></li>
+<li class="chapter" data-level="4.4" data-path="cell-annotation.html"><a href="cell-annotation.html#method-1-singler-reference-based-classification"><i class="fa fa-check"></i><b>4.4</b> Method 1: SingleR (Reference-based Classification)</a>
+<ul>
+<li class="chapter" data-level="4.4.1" data-path="cell-annotation.html"><a href="cell-annotation.html#choosing-a-reference-dataset"><i class="fa fa-check"></i><b>4.4.1</b> Choosing a reference dataset</a></li>
+<li class="chapter" data-level="4.4.2" data-path="cell-annotation.html"><a href="cell-annotation.html#built-in-references-from-celldex"><i class="fa fa-check"></i><b>4.4.2</b> Built-in references from celldex</a></li>
+<li class="chapter" data-level="4.4.3" data-path="cell-annotation.html"><a href="cell-annotation.html#custom-references"><i class="fa fa-check"></i><b>4.4.3</b> Custom references</a></li>
+<li class="chapter" data-level="4.4.4" data-path="cell-annotation.html"><a href="cell-annotation.html#how-singler-works"><i class="fa fa-check"></i><b>4.4.4</b> How SingleR works</a></li>
+</ul></li>
+<li class="chapter" data-level="4.5" data-path="cell-annotation.html"><a href="cell-annotation.html#clustifyr"><i class="fa fa-check"></i><b>4.5</b> clustifyr</a></li>
+<li class="chapter" data-level="4.6" data-path="cell-annotation.html"><a href="cell-annotation.html#seurat-label-transfer"><i class="fa fa-check"></i><b>4.6</b> Seurat label transfer</a></li>
+<li class="chapter" data-level="4.7" data-path="cell-annotation.html"><a href="cell-annotation.html#comparing-annotation-methods"><i class="fa fa-check"></i><b>4.7</b> Comparing Annotation Methods</a>
+<ul>
+<li class="chapter" data-level="4.7.1" data-path="cell-annotation.html"><a href="cell-annotation.html#create-a-comparison-table"><i class="fa fa-check"></i><b>4.7.1</b> Create a comparison table</a></li>
+<li class="chapter" data-level="4.7.2" data-path="cell-annotation.html"><a href="cell-annotation.html#calculate-agreement"><i class="fa fa-check"></i><b>4.7.2</b> Calculate agreement</a></li>
+<li class="chapter" data-level="4.7.3" data-path="cell-annotation.html"><a href="cell-annotation.html#visualize-side-by-side"><i class="fa fa-check"></i><b>4.7.3</b> Visualize side by side</a></li>
+<li class="chapter" data-level="4.7.4" data-path="cell-annotation.html"><a href="cell-annotation.html#investigate-discrepancies"><i class="fa fa-check"></i><b>4.7.4</b> Investigate discrepancies</a></li>
+<li class="chapter" data-level="4.7.5" data-path="cell-annotation.html"><a href="cell-annotation.html#make-a-final-annotation-decision"><i class="fa fa-check"></i><b>4.7.5</b> Make a final annotation decision</a></li>
+<li class="chapter" data-level="4.7.6" data-path="cell-annotation.html"><a href="cell-annotation.html#method-comparison"><i class="fa fa-check"></i><b>4.7.6</b> Method comparison</a></li>
+</ul></li>
+<li class="chapter" data-level="4.8" data-path="cell-annotation.html"><a href="cell-annotation.html#deeper-understanding-of-the-anchor-finding-and-label-transfer-step"><i class="fa fa-check"></i><b>4.8</b> Deeper Understanding of the Anchor Finding and Label Transfer Step</a></li>
+<li class="chapter" data-level="4.9" data-path="cell-annotation.html"><a href="cell-annotation.html#other-annotation-approaches"><i class="fa fa-check"></i><b>4.9</b> Other Annotation Approaches</a>
+<ul>
+<li class="chapter" data-level="4.9.1" data-path="cell-annotation.html"><a href="cell-annotation.html#marker-based-tools"><i class="fa fa-check"></i><b>4.9.1</b> Marker-based tools</a></li>
+<li class="chapter" data-level="4.9.2" data-path="cell-annotation.html"><a href="cell-annotation.html#deep-learning-approaches"><i class="fa fa-check"></i><b>4.9.2</b> Deep learning approaches</a></li>
+</ul></li>
+<li class="chapter" data-level="4.10" data-path="cell-annotation.html"><a href="cell-annotation.html#things-to-watch-out-for-1"><i class="fa fa-check"></i><b>4.10</b> Things to watch out for</a>
+<ul>
+<li class="chapter" data-level="4.10.1" data-path="cell-annotation.html"><a href="cell-annotation.html#further-reading-3"><i class="fa fa-check"></i><b>4.10.1</b> Further reading</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="cell-annotation.html"><a href="cell-annotation.html#session-information-3"><i class="fa fa-check"></i>Session Information</a></li>
+</ul></li>
+<li class="chapter" data-level="5" data-path="gene-set-analysis.html"><a href="gene-set-analysis.html"><i class="fa fa-check"></i><b>5</b> Gene set analysis</a>
+<ul>
+<li class="chapter" data-level="5.1" data-path="gene-set-analysis.html"><a href="gene-set-analysis.html#why-think-in-gene-sets"><i class="fa fa-check"></i><b>5.1</b> Why think in gene sets?</a></li>
+<li class="chapter" data-level="5.2" data-path="gene-set-analysis.html"><a href="gene-set-analysis.html#two-approaches-ora-vs-gsea"><i class="fa fa-check"></i><b>5.2</b> Two approaches: ORA vs GSEA</a>
+<ul>
+<li class="chapter" data-level="5.2.1" data-path="gene-set-analysis.html"><a href="gene-set-analysis.html#over-representation-analysis-ora"><i class="fa fa-check"></i><b>5.2.1</b> Over-Representation Analysis (ORA)</a></li>
+<li class="chapter" data-level="5.2.2" data-path="gene-set-analysis.html"><a href="gene-set-analysis.html#gene-set-enrichment-analysis-gsea"><i class="fa fa-check"></i><b>5.2.2</b> Gene Set Enrichment Analysis (GSEA)</a></li>
+<li class="chapter" data-level="5.2.3" data-path="gene-set-analysis.html"><a href="gene-set-analysis.html#the-gsea-algorithm-in-three-steps"><i class="fa fa-check"></i><b>5.2.3</b> The GSEA algorithm in three steps</a></li>
+<li class="chapter" data-level="5.2.4" data-path="gene-set-analysis.html"><a href="gene-set-analysis.html#gene-signature-scoring-per-cell"><i class="fa fa-check"></i><b>5.2.4</b> Gene signature scoring (per-cell)</a></li>
+</ul></li>
+<li class="chapter" data-level="5.3" data-path="gene-set-analysis.html"><a href="gene-set-analysis.html#choosing-gene-sets"><i class="fa fa-check"></i><b>5.3</b> Choosing Gene Sets</a>
+<ul>
+<li class="chapter" data-level="5.3.1" data-path="gene-set-analysis.html"><a href="gene-set-analysis.html#major-gene-set-resources"><i class="fa fa-check"></i><b>5.3.1</b> Major Gene Set Resources</a></li>
+</ul></li>
+<li class="chapter" data-level="5.4" data-path="gene-set-analysis.html"><a href="gene-set-analysis.html#loading-gene-sets"><i class="fa fa-check"></i><b>5.4</b> Loading Gene Sets</a>
+<ul>
+<li class="chapter" data-level="5.4.1" data-path="gene-set-analysis.html"><a href="gene-set-analysis.html#blood-transcription-modules"><i class="fa fa-check"></i><b>5.4.1</b> Blood Transcription Modules</a></li>
+<li class="chapter" data-level="5.4.2" data-path="gene-set-analysis.html"><a href="gene-set-analysis.html#msigdb-hallmark-gene-sets"><i class="fa fa-check"></i><b>5.4.2</b> MSigDB Hallmark Gene Sets</a></li>
+</ul></li>
+<li class="chapter" data-level="5.5" data-path="gene-set-analysis.html"><a href="gene-set-analysis.html#preparing-data-for-gsea"><i class="fa fa-check"></i><b>5.5</b> Preparing Data for GSEA</a>
+<ul>
+<li class="chapter" data-level="5.5.1" data-path="gene-set-analysis.html"><a href="gene-set-analysis.html#calculate-marker-genes-with-presto"><i class="fa fa-check"></i><b>5.5.1</b> Calculate Marker Genes with presto</a></li>
+<li class="chapter" data-level="5.5.2" data-path="gene-set-analysis.html"><a href="gene-set-analysis.html#organizing-data-with-nested-dataframes"><i class="fa fa-check"></i><b>5.5.2</b> Organizing Data with Nested Dataframes</a></li>
+<li class="chapter" data-level="5.5.3" data-path="gene-set-analysis.html"><a href="gene-set-analysis.html#creating-a-ranked-gene-list"><i class="fa fa-check"></i><b>5.5.3</b> Creating a Ranked Gene List</a></li>
+</ul></li>
+<li class="chapter" data-level="5.6" data-path="gene-set-analysis.html"><a href="gene-set-analysis.html#running-gsea-for-all-clusters-with-purrr"><i class="fa fa-check"></i><b>5.6</b> Running GSEA for All Clusters with purrr</a>
+<ul>
+<li class="chapter" data-level="5.6.1" data-path="gene-set-analysis.html"><a href="gene-set-analysis.html#create-ranked-gene-lists-for-all-clusters"><i class="fa fa-check"></i><b>5.6.1</b> Create ranked gene lists for all clusters</a></li>
+</ul></li>
+<li class="chapter" data-level="5.7" data-path="gene-set-analysis.html"><a href="gene-set-analysis.html#interpreting-gsea-results"><i class="fa fa-check"></i><b>5.7</b> Interpreting GSEA Results</a>
+<ul>
+<li class="chapter" data-level="5.7.1" data-path="gene-set-analysis.html"><a href="gene-set-analysis.html#biological-interpretation"><i class="fa fa-check"></i><b>5.7.1</b> Biological Interpretation</a></li>
+<li class="chapter" data-level="5.7.2" data-path="gene-set-analysis.html"><a href="gene-set-analysis.html#visualizing-results-across-clusters"><i class="fa fa-check"></i><b>5.7.2</b> Visualizing Results Across Clusters</a></li>
+</ul></li>
+<li class="chapter" data-level="5.8" data-path="gene-set-analysis.html"><a href="gene-set-analysis.html#alternative-approach-gene-signature-scoring"><i class="fa fa-check"></i><b>5.8</b> Alternative Approach: Gene Signature Scoring</a>
+<ul>
+<li class="chapter" data-level="5.8.1" data-path="gene-set-analysis.html"><a href="gene-set-analysis.html#methods-for-signature-scoring"><i class="fa fa-check"></i><b>5.8.1</b> Methods for Signature Scoring</a></li>
+<li class="chapter" data-level="5.8.2" data-path="gene-set-analysis.html"><a href="gene-set-analysis.html#how-ucell-works"><i class="fa fa-check"></i><b>5.8.2</b> How UCell Works</a></li>
+<li class="chapter" data-level="5.8.3" data-path="gene-set-analysis.html"><a href="gene-set-analysis.html#practical-example-with-ucell"><i class="fa fa-check"></i><b>5.8.3</b> Practical Example with UCell</a></li>
+<li class="chapter" data-level="5.8.4" data-path="gene-set-analysis.html"><a href="gene-set-analysis.html#when-to-use-gsea-vs.-signature-scoring"><i class="fa fa-check"></i><b>5.8.4</b> When to Use GSEA vs. Signature Scoring</a></li>
+</ul></li>
+<li class="chapter" data-level="5.9" data-path="gene-set-analysis.html"><a href="gene-set-analysis.html#things-to-remember"><i class="fa fa-check"></i><b>5.9</b> Things to Remember</a></li>
+<li class="chapter" data-level="5.10" data-path="gene-set-analysis.html"><a href="gene-set-analysis.html#further-reading-4"><i class="fa fa-check"></i><b>5.10</b> Further Reading</a></li>
+<li class="chapter" data-level="" data-path="gene-set-analysis.html"><a href="gene-set-analysis.html#session-information-4"><i class="fa fa-check"></i>Session Information</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="references.html"><a href="references.html"><i class="fa fa-check"></i>References</a>
+<ul>
+<li class="chapter" data-level="5.11" data-path="references.html"><a href="references.html#determine-optimal-number-of-clusters"><i class="fa fa-check"></i><b>5.11</b> Determine optimal number of clusters</a></li>
+</ul></li>
+<li class="divider"></li>
+<li><a href="https://github.com/crazyhottommy/practical_scRNAseq_analysis_with_R" target="blank">View on GitHub</a></li>
+
+</ul>
+
+      </nav>
+    </div>
+
+    <div class="book-body">
+      <div class="body-inner">
+        <div class="book-header" role="navigation">
+          <h1>
+            <i class="fa fa-circle-o-notch fa-spin"></i><a href="./">Practical scRNAseq Analysis with R</a>
+          </h1>
+        </div>
+
+        <div class="page-wrapper" tabindex="-1" role="main">
+          <div class="page-inner">
+
+            <section class="normal" id="section-">
+<div id="cell-annotation" class="section level1 hasAnchor" number="4">
+<h1><span class="header-section-number">Chapter 4</span> Cell Annotation<a href="cell-annotation.html#cell-annotation" class="anchor-section" aria-label="Anchor link to header"></a></h1>
+<div id="there-is-no-ground-truth" class="section level2 hasAnchor" number="4.1">
+<h2><span class="header-section-number">4.1</span> There Is No Ground Truth<a href="cell-annotation.html#there-is-no-ground-truth" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>We have our clusters. Now what are they?</p>
+<p>This is the cell annotation problem, and I want to be upfront: there is no perfect annotation. Unlike clustering, which is purely computational, annotation requires biological knowledge. You’re mapping clusters to cell types, and reasonable people can disagree about the answer.</p>
+<p>Why is it so hard? Think about it. What counts as a “cell type” vs a “cell state”? Is an activated CD4 T cell a different type or the same cell doing something different? Biology is continuous – differentiation gradients, activation spectra – but we force discrete labels onto it. You could call a cluster “CD4 T cells” or “naive CD4 T cells” or “CCR7+ CD45RA+ naive CD4 T cells” and all are correct at different granularities. And scRNA-seq is noisy and sparse, so rare markers might drop out even when the cell type is present.</p>
+<p>Then there’s the question nobody wants to hear: what if your dataset contains something nobody has seen before? No reference will help you there.</p>
+<blockquote>
+<p>No single annotation method is definitive. Use multiple approaches and validate with marker gene visualization. See the “Annotation” chapter at sc-best-practices.org.</p>
+</blockquote>
+<div id="how-well-approach-annotation" class="section level3 hasAnchor" number="4.1.1">
+<h3><span class="header-section-number">4.1.1</span> How we’ll approach annotation<a href="cell-annotation.html#how-well-approach-annotation" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<p>There are broadly three strategies, and we’ll use all of them:</p>
+<p>Manual annotation – you look at known marker genes and assign identities based on expression patterns. This is the most trustworthy approach because you understand the evidence, but it requires domain knowledge and takes time.</p>
+<p>Reference-based annotation – tools like SingleR, clustifyr, and Seurat label transfer compare your cells to pre-annotated reference datasets. Fast and unbiased, but only as good as the reference. They can’t find novel cell types.</p>
+<p>Marker-based tools – things like scGate and ProjectTILs use curated marker gene lists to score cell types. Transparent and customizable, but you need good marker databases for your tissue.</p>
+<p>My philosophy: start with automated methods for quick exploration, then always validate with manual marker visualization. When methods disagree, investigate manually.</p>
+<p>There are over 100 cell annotation tools out there. We focus on three widely-used R tools (SingleR, clustifyr, Seurat label transfer), but there are excellent alternatives in Python (celltypist, scVI, scANVI) and on the web (Azimuth, PanglaoDB). None work perfectly for every dataset.</p>
+<hr />
+</div>
+</div>
+<div id="manual-annotation" class="section level2 hasAnchor" number="4.2">
+<h2><span class="header-section-number">4.2</span> Manual Annotation<a href="cell-annotation.html#manual-annotation" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>Before we rely on any automated tool, let’s annotate clusters the old-fashioned way – by looking at known marker genes. This builds biological intuition, and you’ll need it later to validate whatever the automated tools tell you.</p>
+<div id="define-a-marker-gene-dictionary" class="section level3 hasAnchor" number="4.2.1">
+<h3><span class="header-section-number">4.2.1</span> Define a marker gene dictionary<a href="cell-annotation.html#define-a-marker-gene-dictionary" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<p>Based on literature and domain knowledge, we define marker genes for expected PBMC populations:</p>
+<div class="sourceCode" id="cb224"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb224-1"><a href="cell-annotation.html#cb224-1" tabindex="-1"></a><span class="fu">library</span>(Seurat)</span>
+<span id="cb224-2"><a href="cell-annotation.html#cb224-2" tabindex="-1"></a><span class="fu">library</span>(scCustomize)</span>
+<span id="cb224-3"><a href="cell-annotation.html#cb224-3" tabindex="-1"></a><span class="fu">library</span>(here)</span>
+<span id="cb224-4"><a href="cell-annotation.html#cb224-4" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
+<span id="cb224-5"><a href="cell-annotation.html#cb224-5" tabindex="-1"></a></span>
+<span id="cb224-6"><a href="cell-annotation.html#cb224-6" tabindex="-1"></a><span class="co"># Load our cleaned Seurat object from Chapter 3</span></span>
+<span id="cb224-7"><a href="cell-annotation.html#cb224-7" tabindex="-1"></a>obj <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(<span class="fu">here</span>(<span class="st">&quot;data/pbmc_seurat_obj.rds&quot;</span>))</span>
+<span id="cb224-8"><a href="cell-annotation.html#cb224-8" tabindex="-1"></a>obj <span class="ot">&lt;-</span> <span class="fu">JoinLayers</span>(obj)</span>
+<span id="cb224-9"><a href="cell-annotation.html#cb224-9" tabindex="-1"></a></span>
+<span id="cb224-10"><a href="cell-annotation.html#cb224-10" tabindex="-1"></a><span class="co"># Define marker dictionary for major PBMC populations</span></span>
+<span id="cb224-11"><a href="cell-annotation.html#cb224-11" tabindex="-1"></a>markers <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb224-12"><a href="cell-annotation.html#cb224-12" tabindex="-1"></a>  <span class="st">&quot;CD4_T_cells&quot;</span> <span class="ot">=</span> <span class="fu">c</span>(<span class="st">&quot;CD3D&quot;</span>, <span class="st">&quot;CD3E&quot;</span>, <span class="st">&quot;CD4&quot;</span>, <span class="st">&quot;IL7R&quot;</span>),</span>
+<span id="cb224-13"><a href="cell-annotation.html#cb224-13" tabindex="-1"></a>  <span class="st">&quot;CD8_T_cells&quot;</span> <span class="ot">=</span> <span class="fu">c</span>(<span class="st">&quot;CD3D&quot;</span>, <span class="st">&quot;CD3E&quot;</span>, <span class="st">&quot;CD8A&quot;</span>, <span class="st">&quot;CD8B&quot;</span>),</span>
+<span id="cb224-14"><a href="cell-annotation.html#cb224-14" tabindex="-1"></a>  <span class="st">&quot;Naive_T_cells&quot;</span> <span class="ot">=</span> <span class="fu">c</span>(<span class="st">&quot;CCR7&quot;</span>, <span class="st">&quot;SELL&quot;</span>, <span class="st">&quot;IL7R&quot;</span>, <span class="st">&quot;TCF7&quot;</span>),</span>
+<span id="cb224-15"><a href="cell-annotation.html#cb224-15" tabindex="-1"></a>  <span class="st">&quot;Effector_T_cells&quot;</span> <span class="ot">=</span> <span class="fu">c</span>(<span class="st">&quot;GZMB&quot;</span>, <span class="st">&quot;PRF1&quot;</span>, <span class="st">&quot;NKG7&quot;</span>, <span class="st">&quot;GNLY&quot;</span>),</span>
+<span id="cb224-16"><a href="cell-annotation.html#cb224-16" tabindex="-1"></a>  <span class="st">&quot;Regulatory_T_cells&quot;</span> <span class="ot">=</span> <span class="fu">c</span>(<span class="st">&quot;FOXP3&quot;</span>, <span class="st">&quot;IL2RA&quot;</span>, <span class="st">&quot;CTLA4&quot;</span>, <span class="st">&quot;TIGIT&quot;</span>),</span>
+<span id="cb224-17"><a href="cell-annotation.html#cb224-17" tabindex="-1"></a>  <span class="st">&quot;Activated_T_cells&quot;</span> <span class="ot">=</span> <span class="fu">c</span>(<span class="st">&quot;CD69&quot;</span>, <span class="st">&quot;IL2RA&quot;</span>, <span class="st">&quot;ICOS&quot;</span>),</span>
+<span id="cb224-18"><a href="cell-annotation.html#cb224-18" tabindex="-1"></a>  <span class="st">&quot;Exhausted_T_cells&quot;</span> <span class="ot">=</span> <span class="fu">c</span>(<span class="st">&quot;PDCD1&quot;</span>, <span class="st">&quot;LAG3&quot;</span>, <span class="st">&quot;HAVCR2&quot;</span>, <span class="st">&quot;TIGIT&quot;</span>),</span>
+<span id="cb224-19"><a href="cell-annotation.html#cb224-19" tabindex="-1"></a>  <span class="st">&quot;Proliferating&quot;</span> <span class="ot">=</span> <span class="fu">c</span>(<span class="st">&quot;MKI67&quot;</span>, <span class="st">&quot;TOP2A&quot;</span>, <span class="st">&quot;STMN1&quot;</span>),</span>
+<span id="cb224-20"><a href="cell-annotation.html#cb224-20" tabindex="-1"></a>  <span class="st">&quot;NK_cells&quot;</span> <span class="ot">=</span> <span class="fu">c</span>(<span class="st">&quot;NKG7&quot;</span>, <span class="st">&quot;GNLY&quot;</span>, <span class="st">&quot;KLRD1&quot;</span>, <span class="st">&quot;NCAM1&quot;</span>)</span>
+<span id="cb224-21"><a href="cell-annotation.html#cb224-21" tabindex="-1"></a>) </span></code></pre></div>
+<p>How do you build a dictionary like this? Literature review (PubMed, review papers), marker databases (PanglaoDB, CellMarker, Human Protein Atlas), previous studies in your tissue, and expert knowledge. If you’re not an immunologist, talk to one.</p>
+</div>
+<div id="visualize-markers-systematically" class="section level3 hasAnchor" number="4.2.2">
+<h3><span class="header-section-number">4.2.2</span> Visualize markers systematically<a href="cell-annotation.html#visualize-markers-systematically" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<p>A cell type is defined by the intersection of multiple markers, not a single gene. Don’t just check one marker and call it done.</p>
+<div class="sourceCode" id="cb225"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb225-1"><a href="cell-annotation.html#cb225-1" tabindex="-1"></a><span class="co"># Create dotplot for all markers</span></span>
+<span id="cb225-2"><a href="cell-annotation.html#cb225-2" tabindex="-1"></a><span class="fu">DotPlot</span>(obj, <span class="at">features =</span> <span class="fu">unique</span>(<span class="fu">unlist</span>(markers)), <span class="at">group.by =</span> <span class="st">&quot;seurat_clusters&quot;</span>) <span class="sc">+</span></span>
+<span id="cb225-3"><a href="cell-annotation.html#cb225-3" tabindex="-1"></a>  <span class="fu">RotatedAxis</span>() <span class="sc">+</span></span>
+<span id="cb225-4"><a href="cell-annotation.html#cb225-4" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">&quot;Marker Gene Expression by Cluster&quot;</span>)</span></code></pre></div>
+<p><img src="practical_scRNAseq_analysis_files/figure-html/unnamed-chunk-117-1.png" width="100%" style="display: block; margin: auto;" /></p>
+<div class="sourceCode" id="cb226"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb226-1"><a href="cell-annotation.html#cb226-1" tabindex="-1"></a><span class="co"># Alternative: Clustered dotplot (groups similar clusters)</span></span>
+<span id="cb226-2"><a href="cell-annotation.html#cb226-2" tabindex="-1"></a><span class="fu">Clustered_DotPlot</span>(obj, <span class="at">features =</span> <span class="fu">unlist</span>(markers), <span class="at">plot_km_elbow =</span> <span class="cn">FALSE</span>)</span></code></pre></div>
+<p><img src="practical_scRNAseq_analysis_files/figure-html/unnamed-chunk-117-2.png" width="100%" style="display: block; margin: auto;" /></p>
+<p>How to interpret: dot size shows the percentage of cells expressing the gene, dot color shows the average expression level. Look for combinations – CD3D+ CD4+ IL7R+ is likely CD4 T cells.</p>
+</div>
+<div id="use-feature-plots-for-spatial-context" class="section level3 hasAnchor" number="4.2.3">
+<h3><span class="header-section-number">4.2.3</span> Use feature plots for spatial context<a href="cell-annotation.html#use-feature-plots-for-spatial-context" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<div class="sourceCode" id="cb227"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb227-1"><a href="cell-annotation.html#cb227-1" tabindex="-1"></a><span class="co"># Visualize key markers on UMAP</span></span>
+<span id="cb227-2"><a href="cell-annotation.html#cb227-2" tabindex="-1"></a><span class="fu">FeaturePlot_scCustom</span>(obj, <span class="at">features =</span> <span class="fu">c</span>(<span class="st">&quot;CD3D&quot;</span>, <span class="st">&quot;CD4&quot;</span>, <span class="st">&quot;CD8A&quot;</span>, <span class="st">&quot;GZMB&quot;</span>))</span></code></pre></div>
+<p><img src="practical_scRNAseq_analysis_files/figure-html/unnamed-chunk-118-1.png" width="100%" style="display: block; margin: auto;" /></p>
+<div class="sourceCode" id="cb228"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb228-1"><a href="cell-annotation.html#cb228-1" tabindex="-1"></a><span class="co"># For each expected cell type, create a combined plot</span></span>
+<span id="cb228-2"><a href="cell-annotation.html#cb228-2" tabindex="-1"></a><span class="fu">library</span>(purrr)</span>
+<span id="cb228-3"><a href="cell-annotation.html#cb228-3" tabindex="-1"></a><span class="fu">walk</span>(<span class="fu">names</span>(markers), <span class="cf">function</span>(cell_type) {</span>
+<span id="cb228-4"><a href="cell-annotation.html#cb228-4" tabindex="-1"></a>  p <span class="ot">&lt;-</span> <span class="fu">FeaturePlot_scCustom</span>(obj, <span class="at">features =</span> markers[[cell_type]],</span>
+<span id="cb228-5"><a href="cell-annotation.html#cb228-5" tabindex="-1"></a>                            <span class="at">num_columns =</span> <span class="dv">2</span>)</span>
+<span id="cb228-6"><a href="cell-annotation.html#cb228-6" tabindex="-1"></a>  <span class="fu">ggsave</span>(<span class="fu">here</span>(<span class="fu">paste0</span>(<span class="st">&quot;results/manual_annotation_&quot;</span>, cell_type, <span class="st">&quot;.pdf&quot;</span>)),</span>
+<span id="cb228-7"><a href="cell-annotation.html#cb228-7" tabindex="-1"></a>         p, <span class="at">width =</span> <span class="dv">10</span>, <span class="at">height =</span> <span class="dv">8</span>)</span>
+<span id="cb228-8"><a href="cell-annotation.html#cb228-8" tabindex="-1"></a>})</span></code></pre></div>
+<p>What to look for: do multiple markers co-localize on the UMAP? Are markers mutually exclusive (CD4 vs CD8)? Do markers match cluster boundaries?</p>
+</div>
+<div id="create-a-manual-annotation-table" class="section level3 hasAnchor" number="4.2.4">
+<h3><span class="header-section-number">4.2.4</span> Create a manual annotation table<a href="cell-annotation.html#create-a-manual-annotation-table" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<p>Based on what you see in the marker plots, here’s how I’d call each cluster:</p>
+<table>
+<thead>
+<tr>
+<th>Cluster</th>
+<th>Cell type</th>
+<th>Evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>Naive CD4 T</td>
+<td>CCR7++, SELL++, TCF7++</td>
+</tr>
+<tr>
+<td>1</td>
+<td>Effector CD8 T</td>
+<td>NKG7++, PRF1++, GNLY++, CD8B+, KLRD1+</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Memory CD4 T</td>
+<td>IL7R++, CD3E+</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Activated CD4 T</td>
+<td>IL2RA+, similar CD4 profile to clusters 0/2</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Exhausted CD8 T</td>
+<td>GZMB++, CD8A/B+, PDCD1+, CTLA4+</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Naive CD8 T</td>
+<td>CD8B++, CD8A+, SELL+, CCR7+</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Treg</td>
+<td>FOXP3++, TIGIT++, CTLA4++</td>
+</tr>
+<tr>
+<td>7</td>
+<td>Activated CD8 T</td>
+<td>ICOS++, CD69++</td>
+</tr>
+</tbody>
+</table>
+<p>Your annotations might differ slightly – that’s fine. The point is that you can justify each call with specific markers. If you can’t point to a clear marker pattern, that’s a sign you need to dig deeper before labeling that cluster.</p>
+<div class="sourceCode" id="cb229"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb229-1"><a href="cell-annotation.html#cb229-1" tabindex="-1"></a><span class="co"># Manual annotation based on marker inspection</span></span>
+<span id="cb229-2"><a href="cell-annotation.html#cb229-2" tabindex="-1"></a>manual_annotation <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
+<span id="cb229-3"><a href="cell-annotation.html#cb229-3" tabindex="-1"></a>  <span class="st">&quot;0&quot;</span> <span class="ot">=</span> <span class="st">&quot;Naive CD4 T&quot;</span>,</span>
+<span id="cb229-4"><a href="cell-annotation.html#cb229-4" tabindex="-1"></a>  <span class="st">&quot;1&quot;</span> <span class="ot">=</span> <span class="st">&quot;Effector CD8 T&quot;</span>,</span>
+<span id="cb229-5"><a href="cell-annotation.html#cb229-5" tabindex="-1"></a>  <span class="st">&quot;2&quot;</span> <span class="ot">=</span> <span class="st">&quot;Memory CD4 T&quot;</span>,</span>
+<span id="cb229-6"><a href="cell-annotation.html#cb229-6" tabindex="-1"></a>  <span class="st">&quot;3&quot;</span> <span class="ot">=</span> <span class="st">&quot;Activated CD4 T&quot;</span>,</span>
+<span id="cb229-7"><a href="cell-annotation.html#cb229-7" tabindex="-1"></a>  <span class="st">&quot;4&quot;</span> <span class="ot">=</span> <span class="st">&quot;Exhausted CD8 T&quot;</span>,</span>
+<span id="cb229-8"><a href="cell-annotation.html#cb229-8" tabindex="-1"></a>  <span class="st">&quot;5&quot;</span> <span class="ot">=</span> <span class="st">&quot;Naive CD8 T&quot;</span>,</span>
+<span id="cb229-9"><a href="cell-annotation.html#cb229-9" tabindex="-1"></a>  <span class="st">&quot;6&quot;</span> <span class="ot">=</span> <span class="st">&quot;Treg&quot;</span>,</span>
+<span id="cb229-10"><a href="cell-annotation.html#cb229-10" tabindex="-1"></a>  <span class="st">&quot;7&quot;</span> <span class="ot">=</span> <span class="st">&quot;Activated CD8 T&quot;</span></span>
+<span id="cb229-11"><a href="cell-annotation.html#cb229-11" tabindex="-1"></a>)</span>
+<span id="cb229-12"><a href="cell-annotation.html#cb229-12" tabindex="-1"></a></span>
+<span id="cb229-13"><a href="cell-annotation.html#cb229-13" tabindex="-1"></a><span class="co"># Add to metadata - unname() so Seurat doesn&#39;t mistake cluster IDs for cell names</span></span>
+<span id="cb229-14"><a href="cell-annotation.html#cb229-14" tabindex="-1"></a>obj<span class="sc">$</span>manual_annotation <span class="ot">&lt;-</span> <span class="fu">unname</span>(manual_annotation[<span class="fu">as.character</span>(obj<span class="sc">$</span>seurat_clusters)])</span>
+<span id="cb229-15"><a href="cell-annotation.html#cb229-15" tabindex="-1"></a></span>
+<span id="cb229-16"><a href="cell-annotation.html#cb229-16" tabindex="-1"></a><span class="co"># Visualize</span></span>
+<span id="cb229-17"><a href="cell-annotation.html#cb229-17" tabindex="-1"></a><span class="fu">DimPlot_scCustom</span>(obj, <span class="at">group.by =</span> <span class="st">&quot;manual_annotation&quot;</span>, <span class="at">label =</span> <span class="cn">TRUE</span>)</span></code></pre></div>
+<p><img src="practical_scRNAseq_analysis_files/figure-html/unnamed-chunk-120-1.png" width="100%" style="display: block; margin: auto;" /></p>
+<p>This is your baseline – the annotation you trust most because you understand the evidence.</p>
+<hr />
+</div>
+</div>
+<div id="automated-annotation-methods" class="section level2 hasAnchor" number="4.3">
+<h2><span class="header-section-number">4.3</span> Automated Annotation Methods<a href="cell-annotation.html#automated-annotation-methods" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>Now let’s compare three automated annotation tools and see how well they agree with each other.</p>
+</div>
+<div id="method-1-singler-reference-based-classification" class="section level2 hasAnchor" number="4.4">
+<h2><span class="header-section-number">4.4</span> Method 1: SingleR (Reference-based Classification)<a href="cell-annotation.html#method-1-singler-reference-based-classification" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<div id="choosing-a-reference-dataset" class="section level3 hasAnchor" number="4.4.1">
+<h3><span class="header-section-number">4.4.1</span> Choosing a reference dataset<a href="cell-annotation.html#choosing-a-reference-dataset" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<p>The most important decision in reference-based annotation is not the algorithm – it’s which reference you use. A poor reference will give you poor annotations, period.</p>
+<p>Things to think about when choosing a reference:</p>
+<p>Is the reference from the same tissue? A PBMC reference for PBMC data is great. A brain reference for PBMC data will give you nonsense. Same technology matters too – scRNA-seq references capture cell-to-cell variation, bulk RNA-seq from sorted populations gives you clean labels but averaged expression, and microarray data is older with different dynamic range.</p>
+<p>Check the label quality. Read the paper. How were cells sorted or annotated? If you see labels like “Unknown” or “Mixed” that’s a red flag. Also think about granularity – does the reference include all the cell types you expect? Is it too coarse (just “T cells” when you want subtypes) or too fine (50 T cell subtypes when you have 5 clusters)?</p>
+<p>And don’t forget sample quality. Were the reference samples healthy? Diseased samples have altered expression profiles.</p>
+<p>When possible, use multiple references and compare. Disagreement between references tells you something – it means the annotation is uncertain (see the “Choosing References” chapter in the SingleR book).</p>
+</div>
+<div id="built-in-references-from-celldex" class="section level3 hasAnchor" number="4.4.2">
+<h3><span class="header-section-number">4.4.2</span> Built-in references from celldex<a href="cell-annotation.html#built-in-references-from-celldex" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<p>The <code>celldex</code> package provides several curated references:</p>
+<table>
+<colgroup>
+<col width="18%" />
+<col width="13%" />
+<col width="13%" />
+<col width="19%" />
+<col width="19%" />
+<col width="16%" />
+</colgroup>
+<thead>
+<tr>
+<th>Reference</th>
+<th>Tissue</th>
+<th>Source</th>
+<th>Cell Types</th>
+<th>Technology</th>
+<th>Use Case</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>HumanPrimaryCellAtlasData</code></td>
+<td>Multiple</td>
+<td>Microarray</td>
+<td>~40 cell types</td>
+<td>Microarray</td>
+<td>Broad annotation across tissues</td>
+</tr>
+<tr>
+<td><code>BlueprintEncodeData</code></td>
+<td>Blood/immune</td>
+<td>RNA-seq</td>
+<td>~24 immune types</td>
+<td>Bulk RNA-seq</td>
+<td>Immune cells</td>
+</tr>
+<tr>
+<td><code>MonacoImmuneData</code></td>
+<td>Blood</td>
+<td>RNA-seq</td>
+<td>29 immune types</td>
+<td>Bulk RNA-seq</td>
+<td>Fine-grained immune</td>
+</tr>
+<tr>
+<td><code>DatabaseImmuneCellExpressionData</code></td>
+<td>Blood</td>
+<td>Microarray</td>
+<td>~15 immune types</td>
+<td>Microarray</td>
+<td>Broad immune</td>
+</tr>
+<tr>
+<td><code>NovershternHematopoieticData</code></td>
+<td>Blood</td>
+<td>Microarray</td>
+<td>38 hematopoietic</td>
+<td>Microarray</td>
+<td>Hematopoiesis</td>
+</tr>
+</tbody>
+</table>
+<p>For our PBMC data, <code>HumanPrimaryCellAtlasData</code> is a reasonable starting point (broad coverage), but <code>MonacoImmuneData</code> might give better resolution for immune subtypes.</p>
+</div>
+<div id="custom-references" class="section level3 hasAnchor" number="4.4.3">
+<h3><span class="header-section-number">4.4.3</span> Custom references<a href="cell-annotation.html#custom-references" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<p>You can also use your own reference:</p>
+<div class="sourceCode" id="cb230"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb230-1"><a href="cell-annotation.html#cb230-1" tabindex="-1"></a><span class="co"># Option 1: From a published dataset</span></span>
+<span id="cb230-2"><a href="cell-annotation.html#cb230-2" tabindex="-1"></a>published_ref <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(<span class="st">&quot;path/to/reference_seurat.rds&quot;</span>)</span>
+<span id="cb230-3"><a href="cell-annotation.html#cb230-3" tabindex="-1"></a>ref_counts <span class="ot">&lt;-</span> <span class="fu">GetAssayData</span>(published_ref, <span class="at">slot =</span> <span class="st">&quot;data&quot;</span>)</span>
+<span id="cb230-4"><a href="cell-annotation.html#cb230-4" tabindex="-1"></a>ref_labels <span class="ot">&lt;-</span> published_ref<span class="sc">$</span>cell_type</span>
+<span id="cb230-5"><a href="cell-annotation.html#cb230-5" tabindex="-1"></a></span>
+<span id="cb230-6"><a href="cell-annotation.html#cb230-6" tabindex="-1"></a>predictions <span class="ot">&lt;-</span> <span class="fu">SingleR</span>(<span class="at">test =</span> sce,</span>
+<span id="cb230-7"><a href="cell-annotation.html#cb230-7" tabindex="-1"></a>                       <span class="at">ref =</span> ref_counts,</span>
+<span id="cb230-8"><a href="cell-annotation.html#cb230-8" tabindex="-1"></a>                       <span class="at">labels =</span> ref_labels)</span>
+<span id="cb230-9"><a href="cell-annotation.html#cb230-9" tabindex="-1"></a></span>
+<span id="cb230-10"><a href="cell-annotation.html#cb230-10" tabindex="-1"></a><span class="co"># Option 2: From sorted bulk RNA-seq</span></span>
+<span id="cb230-11"><a href="cell-annotation.html#cb230-11" tabindex="-1"></a><span class="co"># Just need a matrix (genes × cell types) and cell type labels</span></span></code></pre></div>
+</div>
+<div id="how-singler-works" class="section level3 hasAnchor" number="4.4.4">
+<h3><span class="header-section-number">4.4.4</span> How SingleR works<a href="cell-annotation.html#how-singler-works" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<p>Given a reference dataset with known labels, <a href="https://www.bioconductor.org/packages/release/bioc/html/SingleR.html"><code>SingleR</code></a> assigns labels to new cells based on expression similarity. The full tutorial is at <a href="https://bioconductor.org/books/devel/SingleRBook/" class="uri">https://bioconductor.org/books/devel/SingleRBook/</a></p>
+<p>Here’s what happens under the hood: for each cell, SingleR calculates the Spearman correlation with all reference samples, using only informative marker genes. For each cell type, it takes the 80th percentile of those correlations as a score (this makes it robust to outliers). The cell gets assigned the label with the highest score.</p>
+<p>There’s also a fine-tuning step (on by default) that narrows down to the top candidate labels and re-runs the comparison using only genes that distinguish those candidates. This helps when you have similar cell types.</p>
+<p>Why Spearman correlation? It’s rank-based, so it handles batch effects and outliers better than Euclidean distance. It captures relative gene expression patterns and works well across technologies (scRNA-seq vs bulk).</p>
+<div class="sourceCode" id="cb231"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb231-1"><a href="cell-annotation.html#cb231-1" tabindex="-1"></a><span class="fu">library</span>(Seurat)</span>
+<span id="cb231-2"><a href="cell-annotation.html#cb231-2" tabindex="-1"></a><span class="fu">library</span>(scCustomize)</span>
+<span id="cb231-3"><a href="cell-annotation.html#cb231-3" tabindex="-1"></a></span>
+<span id="cb231-4"><a href="cell-annotation.html#cb231-4" tabindex="-1"></a><span class="co">#if (!require(&quot;BiocManager&quot;, quietly = TRUE))</span></span>
+<span id="cb231-5"><a href="cell-annotation.html#cb231-5" tabindex="-1"></a><span class="co">#    install.packages(&quot;BiocManager&quot;)</span></span>
+<span id="cb231-6"><a href="cell-annotation.html#cb231-6" tabindex="-1"></a></span>
+<span id="cb231-7"><a href="cell-annotation.html#cb231-7" tabindex="-1"></a><span class="co">#BiocManager::install(&quot;SingleR&quot;)</span></span>
+<span id="cb231-8"><a href="cell-annotation.html#cb231-8" tabindex="-1"></a><span class="co"># BiocManager::install(&quot;celldex&quot;)</span></span>
+<span id="cb231-9"><a href="cell-annotation.html#cb231-9" tabindex="-1"></a></span>
+<span id="cb231-10"><a href="cell-annotation.html#cb231-10" tabindex="-1"></a><span class="fu">library</span>(SingleR)</span>
+<span id="cb231-11"><a href="cell-annotation.html#cb231-11" tabindex="-1"></a></span>
+<span id="cb231-12"><a href="cell-annotation.html#cb231-12" tabindex="-1"></a><span class="co"># This is our test dataset (we converted it from seurat object to a single cell Experiment object)</span></span>
+<span id="cb231-13"><a href="cell-annotation.html#cb231-13" tabindex="-1"></a></span>
+<span id="cb231-14"><a href="cell-annotation.html#cb231-14" tabindex="-1"></a>sce<span class="ot">&lt;-</span> <span class="fu">as.SingleCellExperiment</span>(obj)</span>
+<span id="cb231-15"><a href="cell-annotation.html#cb231-15" tabindex="-1"></a></span>
+<span id="cb231-16"><a href="cell-annotation.html#cb231-16" tabindex="-1"></a><span class="co"># Loading reference data with Ensembl annotations.</span></span>
+<span id="cb231-17"><a href="cell-annotation.html#cb231-17" tabindex="-1"></a><span class="fu">library</span>(celldex)</span>
+<span id="cb231-18"><a href="cell-annotation.html#cb231-18" tabindex="-1"></a><span class="fu">library</span>(tictoc)</span>
+<span id="cb231-19"><a href="cell-annotation.html#cb231-19" tabindex="-1"></a>ref.data <span class="ot">&lt;-</span> <span class="fu">HumanPrimaryCellAtlasData</span>(<span class="at">ensembl=</span><span class="cn">FALSE</span>)</span>
+<span id="cb231-20"><a href="cell-annotation.html#cb231-20" tabindex="-1"></a></span>
+<span id="cb231-21"><a href="cell-annotation.html#cb231-21" tabindex="-1"></a><span class="co"># Performing predictions.</span></span>
+<span id="cb231-22"><a href="cell-annotation.html#cb231-22" tabindex="-1"></a><span class="fu">tic</span>()</span>
+<span id="cb231-23"><a href="cell-annotation.html#cb231-23" tabindex="-1"></a>predictions <span class="ot">&lt;-</span> <span class="fu">SingleR</span>(<span class="at">test=</span>sce, <span class="at">assay.type.test=</span><span class="dv">1</span>, </span>
+<span id="cb231-24"><a href="cell-annotation.html#cb231-24" tabindex="-1"></a>    <span class="at">ref=</span>ref.data, <span class="at">labels=</span>ref.data<span class="sc">$</span>label.fine)</span>
+<span id="cb231-25"><a href="cell-annotation.html#cb231-25" tabindex="-1"></a><span class="fu">toc</span>()</span></code></pre></div>
+<pre><code>#&gt; 147.654 sec elapsed</code></pre>
+<p>It takes a couple of minutes.</p>
+<div class="sourceCode" id="cb233"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb233-1"><a href="cell-annotation.html#cb233-1" tabindex="-1"></a><span class="fu">table</span>(predictions<span class="sc">$</span>labels)</span></code></pre></div>
+<pre><code>#&gt; 
+#&gt;        Monocyte:F._tularensis_novicida Neutrophil:uropathogenic_E._coli_UTI89 
+#&gt;                                      5                                      1 
+#&gt;                                NK_cell                   NK_cell:CD56hiCD62L+ 
+#&gt;                                     74                                      1 
+#&gt;                            NK_cell:IL2                            T_cell:CD4+ 
+#&gt;                                    413                                     35 
+#&gt;             T_cell:CD4+_central_memory            T_cell:CD4+_effector_memory 
+#&gt;                                   6950                                   2277 
+#&gt;                      T_cell:CD4+_Naive                            T_cell:CD8+ 
+#&gt;                                   4807                                   3976 
+#&gt;             T_cell:CD8+_Central_memory            T_cell:CD8+_effector_memory 
+#&gt;                                    182                                    356 
+#&gt;         T_cell:CD8+_effector_memory_RA                      T_cell:CD8+_naive 
+#&gt;                                     89                                    326 
+#&gt;                     T_cell:gamma-delta                      T_cell:Treg:Naive 
+#&gt;                                    293                                     20</code></pre>
+<p>We know the authors used magnetic negative selection for CD3+ T cells to enrich for T cells, so most of them should be T cells. There are several cells that are labeled as monocytes and Neutrophil (1 cell), and there are some NK cells.</p>
+<p>Add the cell type label back to the seurat object and clean up the label
+by removing the <code>T_cell</code> prefix:</p>
+<div class="sourceCode" id="cb235"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb235-1"><a href="cell-annotation.html#cb235-1" tabindex="-1"></a>obj<span class="sc">$</span>label.fine<span class="ot">&lt;-</span> predictions<span class="sc">$</span>labels <span class="sc">%&gt;%</span></span>
+<span id="cb235-2"><a href="cell-annotation.html#cb235-2" tabindex="-1"></a>  stringr<span class="sc">::</span><span class="fu">str_remove</span>(<span class="st">&quot;T_cell:&quot;</span>)</span>
+<span id="cb235-3"><a href="cell-annotation.html#cb235-3" tabindex="-1"></a></span>
+<span id="cb235-4"><a href="cell-annotation.html#cb235-4" tabindex="-1"></a><span class="co"># visualize it </span></span>
+<span id="cb235-5"><a href="cell-annotation.html#cb235-5" tabindex="-1"></a>scCustomize<span class="sc">::</span><span class="fu">DimPlot_scCustom</span>(obj, <span class="at">group.by =</span> <span class="st">&quot;label.fine&quot;</span>)</span></code></pre></div>
+<p><img src="practical_scRNAseq_analysis_files/figure-html/unnamed-chunk-124-1.png" width="100%" style="display: block; margin: auto;" /></p>
+<p>The choice of reference data significantly affects annotation results. It’s important to select a reference that includes all the cell types you expect in your test data. The accuracy of the labels in the reference is often assumed but can vary based on sample quality. Ideally, the reference should come from the same technology or protocol as your test dataset, although SingleR typically handles this well when working with clearly defined cell types.</p>
+<p>The <code>celldex</code> package provides many references data to use. Read <a href="https://bioconductor.org/packages/3.20/data/experiment/vignettes/celldex/inst/doc/userguide.html">here</a> to understand what are they.</p>
+<p>It is also possible to supply your own reference datasets instead; all we need are log-expression values and a set of labels for the cells or samples.</p>
+</div>
+</div>
+<div id="clustifyr" class="section level2 hasAnchor" number="4.5">
+<h2><span class="header-section-number">4.5</span> clustifyr<a href="cell-annotation.html#clustifyr" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p><a href="https://github.com/rnabioco/clustifyr">clustifyr</a> classifies cells and clusters in single-cell RNA sequencing experiments using reference bulk RNA-seq data sets, sorted microarray expression data, single-cell gene signatures, or lists of marker genes.</p>
+<p><code>cbmc_ref</code> is a built-in reference from the <code>clustifyr</code> package.</p>
+<div class="sourceCode" id="cb236"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb236-1"><a href="cell-annotation.html#cb236-1" tabindex="-1"></a><span class="fu">library</span>(clustifyr)</span>
+<span id="cb236-2"><a href="cell-annotation.html#cb236-2" tabindex="-1"></a><span class="fu">head</span>(cbmc_ref)</span></code></pre></div>
+<pre><code>#&gt;                 B CD14+ Mono CD16+ Mono     CD34+     CD4 T     CD8 T        DC
+#&gt; HBG2    1.0668542  1.2467965  1.0253991 0.8255312 1.8326043 0.9197132 0.7472545
+#&gt; HBG1    0.6229441  0.6806011  0.5027230 0.3279704 1.0287977 0.4414419 0.3731538
+#&gt; HLA-DRA 4.4557101  3.5158415  3.9460809 2.8281458 0.5888103 0.6263067 5.1399543
+#&gt; HBB     1.2344033  1.2618246  1.1139648 1.0590386 1.5509602 1.1220094 0.9526003
+#&gt; CST3    0.8749894  3.8200168  4.1390693 0.9110207 0.5952362 0.5029664 4.8028800
+#&gt; HBA1    0.5977980  0.6828271  0.5212046 0.6053780 0.8527734 0.6276198 0.5770306
+#&gt;            Eryth Memory CD4 T        Mk Naive CD4 T        NK      pDCs
+#&gt; HBG2    7.773846    1.9084869 1.8112314   1.2249129 1.0757351 1.2169419
+#&gt; HBG1    6.641268    0.7866344 0.9108557   0.0000000 0.4894052 0.3303419
+#&gt; HLA-DRA 1.246415    0.8374923 2.7843088   1.0780054 1.7775188 4.0032714
+#&gt; HBB     6.778164    1.0323561 1.2770665   1.1445562 1.2446169 1.0468256
+#&gt; CST3    1.139385    0.8944152 3.1801271   1.8717717 1.9015339 3.2542873
+#&gt; HBA1    5.890259    1.1033004 1.4229252   0.8635658 0.6211324 0.5330750</code></pre>
+<p>The reference broadly classifies CD4T, CD8T, B cell and the myeloid cells.</p>
+<p><code>clustifyr</code> can work directly with singleCellExpereiment or Seurat object</p>
+<div class="sourceCode" id="cb238"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb238-1"><a href="cell-annotation.html#cb238-1" tabindex="-1"></a><span class="co">#BiocManager::install(&quot;rnabioco/clustifyr&quot;)</span></span>
+<span id="cb238-2"><a href="cell-annotation.html#cb238-2" tabindex="-1"></a></span>
+<span id="cb238-3"><a href="cell-annotation.html#cb238-3" tabindex="-1"></a><span class="fu">library</span>(clustifyr)</span>
+<span id="cb238-4"><a href="cell-annotation.html#cb238-4" tabindex="-1"></a></span>
+<span id="cb238-5"><a href="cell-annotation.html#cb238-5" tabindex="-1"></a>obj_anno<span class="ot">&lt;-</span> <span class="fu">clustify</span>(</span>
+<span id="cb238-6"><a href="cell-annotation.html#cb238-6" tabindex="-1"></a>    <span class="at">input =</span> obj,</span>
+<span id="cb238-7"><a href="cell-annotation.html#cb238-7" tabindex="-1"></a>    <span class="at">cluster_col =</span> <span class="st">&quot;RNA_snn_res.0.4&quot;</span>,</span>
+<span id="cb238-8"><a href="cell-annotation.html#cb238-8" tabindex="-1"></a>    <span class="at">ref_mat =</span> cbmc_ref,</span>
+<span id="cb238-9"><a href="cell-annotation.html#cb238-9" tabindex="-1"></a>    <span class="at">seurat_out =</span> <span class="cn">TRUE</span></span>
+<span id="cb238-10"><a href="cell-annotation.html#cb238-10" tabindex="-1"></a>)</span></code></pre></div>
+<p>The cell annotation will be in the column <code>type</code>.</p>
+<div class="sourceCode" id="cb239"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb239-1"><a href="cell-annotation.html#cb239-1" tabindex="-1"></a><span class="fu">table</span>(obj_anno<span class="sc">$</span>type)</span></code></pre></div>
+<pre><code>#&gt; 
+#&gt; CD4 T CD8 T    NK 
+#&gt; 14775  1216  3814</code></pre>
+<div class="sourceCode" id="cb241"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb241-1"><a href="cell-annotation.html#cb241-1" tabindex="-1"></a><span class="co"># visualize it </span></span>
+<span id="cb241-2"><a href="cell-annotation.html#cb241-2" tabindex="-1"></a>scCustomize<span class="sc">::</span><span class="fu">DimPlot_scCustom</span>(obj_anno, <span class="at">group.by =</span> <span class="st">&quot;type&quot;</span>)</span></code></pre></div>
+<p><img src="practical_scRNAseq_analysis_files/figure-html/unnamed-chunk-127-1.png" width="100%" style="display: block; margin: auto;" />
+Interestingly, <code>clustifyr</code> annotates large number of NK cells (almost 4000), which I do not think is right.</p>
+<p>Again, the annotation results depends on the reference data used. Let’s use another reference data.</p>
+<p>Similar to <code>SingleR</code> it has a companion package to download the references:
+<a href="https://github.com/rnabioco/clustifyrdatahub" class="uri">https://github.com/rnabioco/clustifyrdatahub</a></p>
+<div class="sourceCode" id="cb242"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb242-1"><a href="cell-annotation.html#cb242-1" tabindex="-1"></a><span class="co"># BiocManager::install(&quot;clustifyrdatahub&quot;)</span></span>
+<span id="cb242-2"><a href="cell-annotation.html#cb242-2" tabindex="-1"></a></span>
+<span id="cb242-3"><a href="cell-annotation.html#cb242-3" tabindex="-1"></a><span class="fu">library</span>(ExperimentHub)</span>
+<span id="cb242-4"><a href="cell-annotation.html#cb242-4" tabindex="-1"></a>eh <span class="ot">&lt;-</span> <span class="fu">ExperimentHub</span>()</span>
+<span id="cb242-5"><a href="cell-annotation.html#cb242-5" tabindex="-1"></a></span>
+<span id="cb242-6"><a href="cell-annotation.html#cb242-6" tabindex="-1"></a><span class="do">## query</span></span>
+<span id="cb242-7"><a href="cell-annotation.html#cb242-7" tabindex="-1"></a>refs <span class="ot">&lt;-</span> <span class="fu">query</span>(eh, <span class="st">&quot;clustifyrdatahub&quot;</span>)</span>
+<span id="cb242-8"><a href="cell-annotation.html#cb242-8" tabindex="-1"></a>refs</span></code></pre></div>
+<pre><code>#&gt; ExperimentHub with 11 records
+#&gt; # snapshotDate(): 2024-04-29
+#&gt; # $dataprovider: figshare, S3, GitHub, GEO, washington.edu, UCSC
+#&gt; # $species: Mus musculus, Homo sapiens
+#&gt; # $rdataclass: data.frame
+#&gt; # additional mcols(): taxonomyid, genome, description,
+#&gt; #   coordinate_1_based, maintainer, rdatadateadded, preparerclass, tags,
+#&gt; #   rdatapath, sourceurl, sourcetype 
+#&gt; # retrieve records with, e.g., &#39;object[[&quot;EH3444&quot;]]&#39; 
+#&gt; 
+#&gt;            title                
+#&gt;   EH3444 | ref_MCA              
+#&gt;   EH3445 | ref_tabula_muris_drop
+#&gt;   EH3446 | ref_tabula_muris_facs
+#&gt;   EH3447 | ref_mouse.rnaseq     
+#&gt;   EH3448 | ref_moca_main        
+#&gt;   ...      ...                  
+#&gt;   EH3450 | ref_hema_microarray  
+#&gt;   EH3451 | ref_cortex_dev       
+#&gt;   EH3452 | ref_pan_indrop       
+#&gt;   EH3453 | ref_pan_smartseq2    
+#&gt;   EH3779 | ref_mouse_atlas</code></pre>
+<p>load the hema data</p>
+<div class="sourceCode" id="cb244"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb244-1"><a href="cell-annotation.html#cb244-1" tabindex="-1"></a>ref_hema_microarray <span class="ot">&lt;-</span> refs[[<span class="st">&quot;EH3450&quot;</span>]]  <span class="do">## load by EH id</span></span>
+<span id="cb244-2"><a href="cell-annotation.html#cb244-2" tabindex="-1"></a></span>
+<span id="cb244-3"><a href="cell-annotation.html#cb244-3" tabindex="-1"></a>ref_hema_microarray[<span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>, ]</span></code></pre></div>
+<pre><code>#&gt;        Basophils CD4+ Central Memory CD4+ Effector Memory CD8+ Central Memory
+#&gt; DDR1    6.084244            5.967502             5.933039            6.005278
+#&gt; RFC2    6.280044            6.028615             6.047005            5.992979
+#&gt; HSPA6   6.535444            5.811475             5.746326            5.928349
+#&gt; PAX8    6.669153            5.896401             6.118577            6.270870
+#&gt; GUCA1A  5.239230            5.232116             5.206960            5.227415
+#&gt;        CD8+ Effector Memory CD8+ Effector Memory RA
+#&gt; DDR1               5.895926                6.068653
+#&gt; RFC2               5.942426                6.079630
+#&gt; HSPA6              5.942670                6.197062
+#&gt; PAX8               6.323922                6.106530
+#&gt; GUCA1A             5.090882                5.414058
+#&gt;        Colony Forming Unit-Granulocyte  Colony Forming Unit-Megakaryocytic 
+#&gt; DDR1                           6.133158                            5.840055
+#&gt; RFC2                           6.339621                            6.223787
+#&gt; HSPA6                          5.926671                            6.118749
+#&gt; PAX8                           5.548961                            6.502735
+#&gt; GUCA1A                         5.169354                            5.203075
+#&gt;        Colony Forming Unit-Monocyte  Common myeloid progenitor Early B-cell
+#&gt; DDR1                        5.884078                  5.894468     6.391864
+#&gt; RFC2                        6.484200                  7.201365     6.508347
+#&gt; HSPA6                       7.414021                  6.047013     6.096143
+#&gt; PAX8                        6.734008                  6.835819     6.824184
+#&gt; GUCA1A                      5.306772                  5.257351     5.249690
+#&gt;        Eosinophill Erythroid_CD34- CD71- GlyA+ Erythroid_CD34- CD71+ GlyA-
+#&gt; DDR1      5.855112                    6.382039                    6.078574
+#&gt; RFC2      6.228770                    6.531500                    6.738282
+#&gt; HSPA6     6.323991                    6.409215                    6.066397
+#&gt; PAX8      6.156168                    6.028995                    5.834061
+#&gt; GUCA1A    5.287988                    5.597567                    5.391699
+#&gt;        Erythroid_CD34- CD71+ GlyA+ Erythroid_CD34- CD71lo GlyA+
+#&gt; DDR1                      6.318064                     6.213817
+#&gt; RFC2                      6.320205                     6.608802
+#&gt; HSPA6                     6.228563                     6.249870
+#&gt; PAX8                      6.218115                     6.535977
+#&gt; GUCA1A                    5.612716                     5.534305
+#&gt;        Erythroid_CD34+ CD71+ GlyA- Granulocyte (Neutrophil)
+#&gt; DDR1                      5.861679                 5.833917
+#&gt; RFC2                      6.969688                 6.576916
+#&gt; HSPA6                     5.882729                 7.792118
+#&gt; PAX8                      6.053497                 5.704660
+#&gt; GUCA1A                    5.283608                 5.150294
+#&gt;        Granulocyte (Neutrophilic Metamyelocyte) Granulocyte/monocyte progenitor
+#&gt; DDR1                                   5.833306                        5.839079
+#&gt; RFC2                                   6.553904                        6.767519
+#&gt; HSPA6                                  7.490526                        6.661685
+#&gt; PAX8                                   5.632423                        6.319374
+#&gt; GUCA1A                                 5.245884                        5.220135
+#&gt;        Hematopoietic stem cell_CD133+ CD34dim
+#&gt; DDR1                                 5.950970
+#&gt; RFC2                                 6.570751
+#&gt; HSPA6                                5.733596
+#&gt; PAX8                                 5.878362
+#&gt; GUCA1A                               5.274890
+#&gt;        Hematopoietic stem cell_CD38- CD34+ Mature B-cell class able to switch
+#&gt; DDR1                              5.885564                           6.387991
+#&gt; RFC2                              6.624798                           6.218705
+#&gt; HSPA6                             5.923514                           6.890074
+#&gt; PAX8                              5.670447                           5.760565
+#&gt; GUCA1A                            5.220075                           5.272567
+#&gt;        Mature B-cell class switched Mature B-cells
+#&gt; DDR1                       6.583029       6.716107
+#&gt; RFC2                       6.224177       6.447172
+#&gt; HSPA6                      6.498508       6.413854
+#&gt; PAX8                       5.846651       5.720587
+#&gt; GUCA1A                     5.395569       5.389500
+#&gt;        Mature NK cell_CD56- CD16- CD3- Mature NK cell_CD56- CD16+ CD3-
+#&gt; DDR1                          5.787686                        5.691603
+#&gt; RFC2                          6.346118                        6.345863
+#&gt; HSPA6                         6.024851                        8.741871
+#&gt; PAX8                          6.460078                        7.013351
+#&gt; GUCA1A                        5.143572                        5.176959
+#&gt;        Mature NK cell_CD56+ CD16+ CD3- Megakaryocyte
+#&gt; DDR1                          5.754366      5.987526
+#&gt; RFC2                          6.652667      6.147594
+#&gt; HSPA6                         6.561003      6.389242
+#&gt; PAX8                          6.797919      6.522839
+#&gt; GUCA1A                        5.119780      5.269424
+#&gt;        Megakaryocyte/ erythroid progenitor Monocyte Myeloid Dendritic Cell
+#&gt; DDR1                              5.741639 5.649500               5.881891
+#&gt; RFC2                              6.669614 6.726144               6.274899
+#&gt; HSPA6                             5.677596 8.205161               6.989158
+#&gt; PAX8                              6.188238 6.112065               6.965479
+#&gt; GUCA1A                            5.192397 5.064548               5.126334
+#&gt;        Naïve B-cells Naive CD4+ T-cell Naive CD8+ T-cell      NKT
+#&gt; DDR1        6.633327          6.199182          6.205459 5.918666
+#&gt; RFC2        6.380757          5.986070          5.822920 6.210981
+#&gt; HSPA6       5.996253          5.845853          5.650911 7.108207
+#&gt; PAX8        5.676502          5.907682          5.741445 7.447800
+#&gt; GUCA1A      5.249145          5.306274          5.243730 5.293263
+#&gt;        Plasmacytoid Dendritic Cell Pro B-cell
+#&gt; DDR1                      6.289158   6.092417
+#&gt; RFC2                      6.428834   6.665571
+#&gt; HSPA6                     6.189802   6.194375
+#&gt; PAX8                      7.708575   6.816063
+#&gt; GUCA1A                    5.358672   5.200036</code></pre>
+<p>Let’s use this reference data instead:</p>
+<div class="sourceCode" id="cb246"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb246-1"><a href="cell-annotation.html#cb246-1" tabindex="-1"></a>obj_anno2<span class="ot">&lt;-</span> <span class="fu">clustify</span>(</span>
+<span id="cb246-2"><a href="cell-annotation.html#cb246-2" tabindex="-1"></a>    <span class="at">input =</span> obj,</span>
+<span id="cb246-3"><a href="cell-annotation.html#cb246-3" tabindex="-1"></a>    <span class="at">cluster_col =</span> <span class="st">&quot;RNA_snn_res.0.4&quot;</span>,</span>
+<span id="cb246-4"><a href="cell-annotation.html#cb246-4" tabindex="-1"></a>    <span class="at">ref_mat =</span> ref_hema_microarray,</span>
+<span id="cb246-5"><a href="cell-annotation.html#cb246-5" tabindex="-1"></a>    <span class="at">seurat_out =</span> <span class="cn">TRUE</span></span>
+<span id="cb246-6"><a href="cell-annotation.html#cb246-6" tabindex="-1"></a>)</span>
+<span id="cb246-7"><a href="cell-annotation.html#cb246-7" tabindex="-1"></a></span>
+<span id="cb246-8"><a href="cell-annotation.html#cb246-8" tabindex="-1"></a><span class="fu">table</span>(obj_anno2<span class="sc">$</span>type)</span></code></pre></div>
+<pre><code>#&gt; 
+#&gt; CD4+ Effector Memory CD8+ Effector Memory 
+#&gt;                12101                 7704</code></pre>
+<div class="sourceCode" id="cb248"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb248-1"><a href="cell-annotation.html#cb248-1" tabindex="-1"></a><span class="co"># visualize it </span></span>
+<span id="cb248-2"><a href="cell-annotation.html#cb248-2" tabindex="-1"></a>scCustomize<span class="sc">::</span><span class="fu">DimPlot_scCustom</span>(obj_anno2, <span class="at">group.by =</span> <span class="st">&quot;type&quot;</span>)</span></code></pre></div>
+<p><img src="practical_scRNAseq_analysis_files/figure-html/unnamed-chunk-130-1.png" width="100%" style="display: block; margin: auto;" /></p>
+<p>Using a different reference does not annotate any of them to be NK cells but only CD4 effector memory and CD8 effector memory cells.</p>
+<p>There is no perfect annotation.</p>
+<p>One thing I do notice is that <code>clustify</code> is super fast.</p>
+</div>
+<div id="seurat-label-transfer" class="section level2 hasAnchor" number="4.6">
+<h2><span class="header-section-number">4.6</span> Seurat label transfer<a href="cell-annotation.html#seurat-label-transfer" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>We can download the Seurat reference datasets from <a href="https://azimuth.hubmapconsortium.org/references/"><code>Azimuth</code></a>, click the PBMC <a href="https://zenodo.org/records/4546839">Zenodo link</a> and download the <code>Ref.Rds</code> file.</p>
+<p>read <a href="https://github.com/satijalab/azimuth/wiki/Azimuth-Reference-Format">here</a> to understand the reference format.</p>
+<p>Follow the Seurat tutorial here <a href="https://satijalab.org/seurat/articles/integration_mapping" class="uri">https://satijalab.org/seurat/articles/integration_mapping</a></p>
+<p>I saved the file in the <code>data</code> folder.</p>
+<div class="sourceCode" id="cb249"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb249-1"><a href="cell-annotation.html#cb249-1" tabindex="-1"></a>pbmc_ref<span class="ot">&lt;-</span> <span class="fu">readRDS</span>(<span class="fu">here</span>(<span class="st">&quot;data/Ref.Rds&quot;</span>))</span>
+<span id="cb249-2"><a href="cell-annotation.html#cb249-2" tabindex="-1"></a>pbmc_ref</span></code></pre></div>
+<pre><code>#&gt; An object of class Seurat 
+#&gt; 5228 features across 36433 samples within 2 assays 
+#&gt; Active assay: refAssay (5000 features, 0 variable features)
+#&gt;  1 layer present: data
+#&gt;  1 other assay present: ADT
+#&gt;  2 dimensional reductions calculated: refUMAP, refDR</code></pre>
+<div class="sourceCode" id="cb251"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb251-1"><a href="cell-annotation.html#cb251-1" tabindex="-1"></a>pbmc_ref<span class="sc">@</span>meta.data <span class="sc">%&gt;%</span> <span class="fu">head</span>()</span></code></pre></div>
+<pre><code>#&gt;                     celltype.l1    celltype.l2           celltype.l3 ori.index
+#&gt; L1_AAACGAATCCTCACCA     other T            gdT                 gdT_3        27
+#&gt; L1_AAACGCTAGAGCATTA       CD8 T        CD8 TEM             CD8 TEM_2        30
+#&gt; L1_AAACGCTCAACGATCT       CD8 T        CD8 TCM             CD8 TCM_1        35
+#&gt; L1_AAACGCTGTGCTCGTG     other T            dnT                 dnT_2        40
+#&gt; L1_AAACGCTTCTTGGTCC           B B intermediate B intermediate lambda        42
+#&gt; L1_AAAGAACCAAGCGGAT       CD4 T        CD4 TCM             CD4 TCM_3        46
+#&gt;                     nCount_refAssay nFeature_refAssay
+#&gt; L1_AAACGAATCCTCACCA               0                 0
+#&gt; L1_AAACGCTAGAGCATTA               0                 0
+#&gt; L1_AAACGCTCAACGATCT               0                 0
+#&gt; L1_AAACGCTGTGCTCGTG               0                 0
+#&gt; L1_AAACGCTTCTTGGTCC               0                 0
+#&gt; L1_AAAGAACCAAGCGGAT               0                 0</code></pre>
+<p>The reference data has different levels of cell type labels: l1, l2 and l3.</p>
+<p>Level 2 split the CD4 T and CD8 T cells into different subtypes.</p>
+<div class="sourceCode" id="cb253"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb253-1"><a href="cell-annotation.html#cb253-1" tabindex="-1"></a><span class="fu">table</span>(pbmc_ref<span class="sc">$</span>celltype.l2)</span></code></pre></div>
+<pre><code>#&gt; 
+#&gt;              ASDC    B intermediate          B memory           B naive 
+#&gt;                16               899               597               903 
+#&gt;         CD14 Mono         CD16 Mono           CD4 CTL         CD4 Naive 
+#&gt;              3673               891               296              1403 
+#&gt; CD4 Proliferating           CD4 TCM           CD4 TEM         CD8 Naive 
+#&gt;                57             14889               703              1148 
+#&gt; CD8 Proliferating           CD8 TCM           CD8 TEM              cDC1 
+#&gt;                31              2883              1796               150 
+#&gt;              cDC2               dnT             Eryth               gdT 
+#&gt;               472               181                81               835 
+#&gt;              HSPC               ILC              MAIT                NK 
+#&gt;               300               131               600              1546 
+#&gt;  NK Proliferating     NK_CD56bright               pDC       Plasmablast 
+#&gt;               214               291               284               299 
+#&gt;          Platelet              Treg 
+#&gt;               566               298</code></pre>
+<p>Let’s take a look at the reference dataset.</p>
+<div class="sourceCode" id="cb255"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb255-1"><a href="cell-annotation.html#cb255-1" tabindex="-1"></a><span class="fu">DimPlot</span>(<span class="at">object =</span> pbmc_ref, <span class="at">group.by =</span> <span class="st">&quot;celltype.l2&quot;</span>, <span class="at">label =</span> <span class="cn">TRUE</span>, </span>
+<span id="cb255-2"><a href="cell-annotation.html#cb255-2" tabindex="-1"></a>        <span class="at">label.size =</span> <span class="dv">3</span>, <span class="at">repel =</span> <span class="cn">TRUE</span>) <span class="sc">+</span> </span>
+<span id="cb255-3"><a href="cell-annotation.html#cb255-3" tabindex="-1"></a>  <span class="fu">NoLegend</span>()</span></code></pre></div>
+<p><img src="practical_scRNAseq_analysis_files/figure-html/unnamed-chunk-134-1.png" width="100%" style="display: block; margin: auto;" /></p>
+<p>It has different subsets of CD4, CD8 T cells, NK cells, B cells and myeloid cells (mono/mac and DCs).</p>
+<div class="sourceCode" id="cb256"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb256-1"><a href="cell-annotation.html#cb256-1" tabindex="-1"></a>pbmc_ref<span class="sc">@</span>reductions</span></code></pre></div>
+<pre><code>#&gt; $refUMAP
+#&gt; A dimensional reduction object with key refumap_ 
+#&gt;  Number of dimensions: 2 
+#&gt;  Number of cells: 36433 
+#&gt;  Projected dimensional reduction calculated:  FALSE 
+#&gt;  Jackstraw run: FALSE 
+#&gt;  Computed using assay: SCT 
+#&gt; 
+#&gt; $refDR
+#&gt; A dimensional reduction object with key refdr_ 
+#&gt;  Number of dimensions: 50 
+#&gt;  Number of cells: 36433 
+#&gt;  Projected dimensional reduction calculated:  FALSE 
+#&gt;  Jackstraw run: FALSE 
+#&gt;  Computed using assay: refAssay</code></pre>
+<p>The reference was normalized using <code>SCTransform()</code>, so we use the same approach to normalize the query here.</p>
+<div class="sourceCode" id="cb258"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb258-1"><a href="cell-annotation.html#cb258-1" tabindex="-1"></a><span class="fu">options</span>(<span class="at">future.globals.maxSize =</span> <span class="dv">5000</span> <span class="sc">*</span> <span class="dv">1024</span><span class="sc">^</span><span class="dv">2</span>) <span class="co"># Increases the limit to 5000 MB</span></span>
+<span id="cb258-2"><a href="cell-annotation.html#cb258-2" tabindex="-1"></a>obj<span class="ot">&lt;-</span> <span class="fu">SCTransform</span>(obj)</span></code></pre></div>
+<p>In data transfer, Seurat has an option (set by default) to project the PCA structure of a reference onto the query, instead of learning a joint structure with <code>CCA</code>. We generally suggest using this option when projecting data between scRNA-seq datasets.</p>
+<p>Note <code>CCA</code> is usually very slow and memory consuming. It is used for integration of multiple datasets.</p>
+<div class="sourceCode" id="cb259"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb259-1"><a href="cell-annotation.html#cb259-1" tabindex="-1"></a><span class="co"># Note, the reference.reduction is refDR as shown above</span></span>
+<span id="cb259-2"><a href="cell-annotation.html#cb259-2" tabindex="-1"></a>pbmc.anchors <span class="ot">&lt;-</span> <span class="fu">FindTransferAnchors</span>(<span class="at">reference =</span> pbmc_ref,</span>
+<span id="cb259-3"><a href="cell-annotation.html#cb259-3" tabindex="-1"></a>                                    <span class="at">query =</span> obj,</span>
+<span id="cb259-4"><a href="cell-annotation.html#cb259-4" tabindex="-1"></a>                                    <span class="at">dims =</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">30</span>,</span>
+<span id="cb259-5"><a href="cell-annotation.html#cb259-5" tabindex="-1"></a>                                    <span class="at">reference.reduction =</span> <span class="st">&quot;refDR&quot;</span>,</span>
+<span id="cb259-6"><a href="cell-annotation.html#cb259-6" tabindex="-1"></a>                                    <span class="at">features =</span> <span class="fu">rownames</span>(pbmc_ref))</span></code></pre></div>
+<pre><code>#&gt; Error in validObject(object = object): invalid class &quot;DimReduc&quot; object: colnames for &#39;feature.loadings&#39; must start with reduction key (refdr_)</code></pre>
+<p>you will get an error:</p>
+<pre><code>Error in validObject(object = object) : 
+  invalid class “DimReduc” object: colnames for ‘feature.loadings’ must start with reduction key (refdr_)</code></pre>
+<p>Let’s take a look at the feature loading for the reference data</p>
+<div class="sourceCode" id="cb262"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb262-1"><a href="cell-annotation.html#cb262-1" tabindex="-1"></a><span class="fu">head</span>(pbmc_ref<span class="sc">@</span>reductions<span class="sc">$</span>refDR<span class="sc">@</span>feature.loadings)</span></code></pre></div>
+<pre><code>#&gt;              SPC_1        SPC_2       SPC_3       SPC_4       SPC_5
+#&gt; S100A9  0.17540890  0.024747662  0.05308178 -0.04386096 -0.16856850
+#&gt; GNLY   -0.05647381  0.188930102  0.06556480  0.18797505 -0.03838351
+#&gt; S100A8  0.15265061  0.028741117  0.05248713 -0.05241097 -0.21712741
+#&gt; LYZ     0.20067079  0.009777434  0.04840629 -0.02495563 -0.11889120
+#&gt; IGKC   -0.01963733 -0.112227604 -0.03628639  0.10893277 -0.06541687
+#&gt; NKG7   -0.06220261  0.199491164  0.06975626  0.19380036 -0.03093830
+#&gt;               SPC_6       SPC_7        SPC_8        SPC_9       SPC_10
+#&gt; S100A9 -0.009620442  0.01787194 -0.007563838  0.009727894 -0.032765709
+#&gt; GNLY   -0.011889564 -0.03625577  0.016350917  0.052509848 -0.032806499
+#&gt; S100A8 -0.010353481  0.03921075 -0.001564466  0.014827246 -0.048900561
+#&gt; LYZ     0.086924287 -0.15152238 -0.052590841  0.030525629  0.005253401
+#&gt; IGKC   -0.015615128  0.09104649  0.005555978 -0.027420239 -0.025492024
+#&gt; NKG7   -0.011939178 -0.04455563  0.003521557 -0.018778907 -0.064454282
+#&gt;              SPC_11       SPC_12       SPC_13       SPC_14       SPC_15
+#&gt; S100A9 -0.014060699 -0.013562042  0.009035644  0.028764150  0.003734663
+#&gt; GNLY    0.012471531  0.013059518 -0.025834026 -0.023061118 -0.018519609
+#&gt; S100A8 -0.024376365 -0.017540021  0.009337801  0.024542528 -0.011095065
+#&gt; LYZ     0.007633657 -0.016600545  0.025757894  0.018292670  0.040434463
+#&gt; IGKC    0.006231834  0.058322881  0.012749794  0.010292865  0.043666314
+#&gt; NKG7    0.060658313 -0.003873595 -0.079017025  0.009355687 -0.029615429
+#&gt;             SPC_16       SPC_17        SPC_18       SPC_19       SPC_20
+#&gt; S100A9 -0.06832236  0.018532635 -0.0330525231  0.001169086  0.062500636
+#&gt; GNLY   -0.03578241 -0.196766012 -0.2270024941  0.168089377 -0.103248147
+#&gt; S100A8 -0.03330613  0.009308634 -0.0250494076 -0.013167967  0.029261985
+#&gt; LYZ    -0.04453965  0.019200375  0.0127292332 -0.002276017  0.005643646
+#&gt; IGKC   -0.01911311 -0.024809200  0.0004316597  0.024890596  0.029753094
+#&gt; NKG7   -0.01596618 -0.037122589 -0.0451064418  0.056866155 -0.011216713
+#&gt;               SPC_21        SPC_22      SPC_23       SPC_24      SPC_25
+#&gt; S100A9 -0.0040679790  0.0107787400 -0.02229157 -0.034981512  0.07033714
+#&gt; GNLY    0.1735320215 -0.0005878844  0.05293453  0.087768030  0.13903340
+#&gt; S100A8  0.0001864844  0.0061391432 -0.01625055 -0.024285749  0.06154046
+#&gt; LYZ    -0.0110590103  0.0020625142  0.03836255  0.069328614 -0.02580749
+#&gt; IGKC   -0.0211730707 -0.5504117138 -0.03315757  0.018247114  0.05500481
+#&gt; NKG7    0.1548609500 -0.0082109623 -0.09363333 -0.008293414 -0.02671991
+#&gt;              SPC_26       SPC_27        SPC_28       SPC_29       SPC_30
+#&gt; S100A9 -0.001107902 -0.001132793  0.0007047881  0.027658625  0.001194392
+#&gt; GNLY    0.021093473 -0.017380719  0.0907164128 -0.112745310  0.050332229
+#&gt; S100A8  0.003914621 -0.013557549 -0.0513550451  0.003888556 -0.005332480
+#&gt; LYZ    -0.007732018  0.019689608 -0.0003352259 -0.039488246  0.007117379
+#&gt; IGKC   -0.018744459  0.077274377 -0.0039275780 -0.016416399  0.006222635
+#&gt; NKG7   -0.061762393  0.004760341 -0.0828432360  0.086827252 -0.026442595
+#&gt;              SPC_31       SPC_32      SPC_33       SPC_34      SPC_35
+#&gt; S100A9 -0.027763258 -0.011833178  0.03024119  0.056030234 -0.11839809
+#&gt; GNLY   -0.046912685  0.048614143 -0.08934106  0.093177381  0.07692647
+#&gt; S100A8 -0.038696862 -0.008222512  0.04469981  0.055762136 -0.12704391
+#&gt; LYZ     0.052203053 -0.014911128 -0.03442142  0.034581495 -0.07255828
+#&gt; IGKC    0.006300713 -0.012290828  0.01058911  0.012987003 -0.03370489
+#&gt; NKG7    0.128453737 -0.039872676  0.03263848 -0.004891762 -0.01543087
+#&gt;              SPC_36     SPC_37       SPC_38       SPC_39       SPC_40
+#&gt; S100A9 -0.002900716 0.07641366 -0.085872474 -0.031060393 -0.018935179
+#&gt; GNLY   -0.119070091 0.09971409  0.004483365 -0.009185792 -0.039971202
+#&gt; S100A8 -0.025488856 0.09754433 -0.065571376 -0.034492469 -0.031485604
+#&gt; LYZ    -0.006641142 0.02982453 -0.031114001  0.034221824  0.009257663
+#&gt; IGKC    0.005523306 0.01986347 -0.005962094  0.038239297  0.029223444
+#&gt; NKG7    0.044408244 0.04566426 -0.043270818  0.030254752  0.014833099
+#&gt;              SPC_41       SPC_42        SPC_43       SPC_44       SPC_45
+#&gt; S100A9  0.003970465 -0.014028208 -0.0637622129  0.064425921 -0.043576692
+#&gt; GNLY   -0.033580040 -0.053091516  0.0283453040 -0.001397313 -0.131978942
+#&gt; S100A8  0.015783887 -0.001720793 -0.0343491581  0.062912564 -0.056712214
+#&gt; LYZ     0.045086630 -0.048945009 -0.0141393372  0.040874733 -0.002686919
+#&gt; IGKC    0.014494110 -0.033980554 -0.0002369874 -0.009944878 -0.016609254
+#&gt; NKG7   -0.011388292 -0.080229205  0.0155926279 -0.012435703 -0.005424014
+#&gt;             SPC_46       SPC_47      SPC_48     SPC_49      SPC_50
+#&gt; S100A9  0.06821003  0.026420929 -0.03709120 0.09290078 -0.03323632
+#&gt; GNLY    0.13537960 -0.145628324  0.14618998 0.19283590  0.05026448
+#&gt; S100A8  0.05815011  0.031927477 -0.04791208 0.07993712 -0.05271768
+#&gt; LYZ     0.04162346 -0.002208263 -0.01349858 0.04022010 -0.03471571
+#&gt; IGKC    0.03234522  0.019037766 -0.03168980 0.05895159 -0.02018643
+#&gt; NKG7   -0.02877707  0.065795945  0.01027477 0.01193532  0.01831374</code></pre>
+<p>The column names are prefixed with <code>SPC</code>. we need to fix them to prefix with refdr.</p>
+<div class="sourceCode" id="cb264"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb264-1"><a href="cell-annotation.html#cb264-1" tabindex="-1"></a><span class="fu">colnames</span>(pbmc_ref<span class="sc">@</span>reductions<span class="sc">$</span>refDR<span class="sc">@</span>feature.loadings)</span></code></pre></div>
+<pre><code>#&gt;  [1] &quot;SPC_1&quot;  &quot;SPC_2&quot;  &quot;SPC_3&quot;  &quot;SPC_4&quot;  &quot;SPC_5&quot;  &quot;SPC_6&quot;  &quot;SPC_7&quot;  &quot;SPC_8&quot; 
+#&gt;  [9] &quot;SPC_9&quot;  &quot;SPC_10&quot; &quot;SPC_11&quot; &quot;SPC_12&quot; &quot;SPC_13&quot; &quot;SPC_14&quot; &quot;SPC_15&quot; &quot;SPC_16&quot;
+#&gt; [17] &quot;SPC_17&quot; &quot;SPC_18&quot; &quot;SPC_19&quot; &quot;SPC_20&quot; &quot;SPC_21&quot; &quot;SPC_22&quot; &quot;SPC_23&quot; &quot;SPC_24&quot;
+#&gt; [25] &quot;SPC_25&quot; &quot;SPC_26&quot; &quot;SPC_27&quot; &quot;SPC_28&quot; &quot;SPC_29&quot; &quot;SPC_30&quot; &quot;SPC_31&quot; &quot;SPC_32&quot;
+#&gt; [33] &quot;SPC_33&quot; &quot;SPC_34&quot; &quot;SPC_35&quot; &quot;SPC_36&quot; &quot;SPC_37&quot; &quot;SPC_38&quot; &quot;SPC_39&quot; &quot;SPC_40&quot;
+#&gt; [41] &quot;SPC_41&quot; &quot;SPC_42&quot; &quot;SPC_43&quot; &quot;SPC_44&quot; &quot;SPC_45&quot; &quot;SPC_46&quot; &quot;SPC_47&quot; &quot;SPC_48&quot;
+#&gt; [49] &quot;SPC_49&quot; &quot;SPC_50&quot;</code></pre>
+<div class="sourceCode" id="cb266"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb266-1"><a href="cell-annotation.html#cb266-1" tabindex="-1"></a><span class="fu">colnames</span>(pbmc_ref<span class="sc">@</span>reductions<span class="sc">$</span>refDR<span class="sc">@</span>feature.loadings)<span class="ot">&lt;-</span> stringr<span class="sc">::</span><span class="fu">str_replace</span>(<span class="fu">colnames</span>(pbmc_ref<span class="sc">@</span>reductions<span class="sc">$</span>refDR<span class="sc">@</span>feature.loadings),</span>
+<span id="cb266-2"><a href="cell-annotation.html#cb266-2" tabindex="-1"></a>                                                                            <span class="st">&quot;SPC&quot;</span>, <span class="st">&quot;refdr&quot;</span>)</span>
+<span id="cb266-3"><a href="cell-annotation.html#cb266-3" tabindex="-1"></a></span>
+<span id="cb266-4"><a href="cell-annotation.html#cb266-4" tabindex="-1"></a><span class="fu">colnames</span>(pbmc_ref<span class="sc">@</span>reductions<span class="sc">$</span>refDR<span class="sc">@</span>feature.loadings)</span></code></pre></div>
+<pre><code>#&gt;  [1] &quot;refdr_1&quot;  &quot;refdr_2&quot;  &quot;refdr_3&quot;  &quot;refdr_4&quot;  &quot;refdr_5&quot;  &quot;refdr_6&quot; 
+#&gt;  [7] &quot;refdr_7&quot;  &quot;refdr_8&quot;  &quot;refdr_9&quot;  &quot;refdr_10&quot; &quot;refdr_11&quot; &quot;refdr_12&quot;
+#&gt; [13] &quot;refdr_13&quot; &quot;refdr_14&quot; &quot;refdr_15&quot; &quot;refdr_16&quot; &quot;refdr_17&quot; &quot;refdr_18&quot;
+#&gt; [19] &quot;refdr_19&quot; &quot;refdr_20&quot; &quot;refdr_21&quot; &quot;refdr_22&quot; &quot;refdr_23&quot; &quot;refdr_24&quot;
+#&gt; [25] &quot;refdr_25&quot; &quot;refdr_26&quot; &quot;refdr_27&quot; &quot;refdr_28&quot; &quot;refdr_29&quot; &quot;refdr_30&quot;
+#&gt; [31] &quot;refdr_31&quot; &quot;refdr_32&quot; &quot;refdr_33&quot; &quot;refdr_34&quot; &quot;refdr_35&quot; &quot;refdr_36&quot;
+#&gt; [37] &quot;refdr_37&quot; &quot;refdr_38&quot; &quot;refdr_39&quot; &quot;refdr_40&quot; &quot;refdr_41&quot; &quot;refdr_42&quot;
+#&gt; [43] &quot;refdr_43&quot; &quot;refdr_44&quot; &quot;refdr_45&quot; &quot;refdr_46&quot; &quot;refdr_47&quot; &quot;refdr_48&quot;
+#&gt; [49] &quot;refdr_49&quot; &quot;refdr_50&quot;</code></pre>
+<p>rerun the same <code>FindTransferAnchors</code> command:</p>
+<div class="sourceCode" id="cb268"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb268-1"><a href="cell-annotation.html#cb268-1" tabindex="-1"></a>pbmc.anchors <span class="ot">&lt;-</span> <span class="fu">FindTransferAnchors</span>(<span class="at">reference =</span> pbmc_ref, </span>
+<span id="cb268-2"><a href="cell-annotation.html#cb268-2" tabindex="-1"></a>                                    <span class="at">query =</span> obj, </span>
+<span id="cb268-3"><a href="cell-annotation.html#cb268-3" tabindex="-1"></a>                                    <span class="at">dims =</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">30</span>,</span>
+<span id="cb268-4"><a href="cell-annotation.html#cb268-4" tabindex="-1"></a>                                    <span class="at">reference.reduction =</span> <span class="st">&quot;refDR&quot;</span>, </span>
+<span id="cb268-5"><a href="cell-annotation.html#cb268-5" tabindex="-1"></a>                                    <span class="at">features =</span> <span class="fu">rownames</span>(pbmc_ref))</span></code></pre></div>
+<p>Now, there is no error. and we can do the prediction.</p>
+<p>Once you’ve identified the common “anchors” (similarities between the datasets), <code>TransferData</code> uses those anchors to project or transfer information from one dataset to the other. This could mean transferring cell labels, gene expression values, or other information from a well-annotated reference dataset to a new dataset. Essentially, you’re using the information from one dataset to annotate the other.</p>
+<div class="sourceCode" id="cb269"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb269-1"><a href="cell-annotation.html#cb269-1" tabindex="-1"></a>predictions <span class="ot">&lt;-</span> <span class="fu">TransferData</span>(<span class="at">anchorset =</span> pbmc.anchors, </span>
+<span id="cb269-2"><a href="cell-annotation.html#cb269-2" tabindex="-1"></a>                            <span class="at">refdata =</span> pbmc_ref<span class="sc">$</span>celltype.l2, </span>
+<span id="cb269-3"><a href="cell-annotation.html#cb269-3" tabindex="-1"></a>                            <span class="at">dims =</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">30</span>)</span></code></pre></div>
+<p>It’s like once you’ve aligned the maps using anchors, you can now fill in missing details on one map using information from the other.</p>
+<p>After finding anchors, we use the <code>TransferData()</code> function to classify the query cells based on reference data (a vector of reference cell type labels). <code>TransferData()</code> returns a matrix with predicted IDs and prediction scores, which we can add to the query metadata by <code>AddMetaData</code>.</p>
+<p>Differences Between PCA and CCA in These Functions:</p>
+<ul>
+<li><p>PCA: When used, Seurat is primarily focusing on the variation within each dataset separately and then comparing how those variations align between the two datasets. It works well when the datasets are from similar technologies or not too dissimilar.</p></li>
+<li><p>CCA: When used, Seurat specifically looks at how features are correlated across the datasets, finding patterns that exist between them. This method is more powerful for aligning datasets from different technologies or when the datasets vary a lot.</p></li>
+</ul>
+<p><strong>Bonus</strong>, what is <code>CCA</code>? and what’s difference between CCA and PCA? read this post <a href="https://xinmingtu.cn/blog/2022/CCA_dual_PCA/" class="uri">https://xinmingtu.cn/blog/2022/CCA_dual_PCA/</a></p>
+<div class="sourceCode" id="cb270"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb270-1"><a href="cell-annotation.html#cb270-1" tabindex="-1"></a>obj <span class="ot">&lt;-</span> <span class="fu">AddMetaData</span>(obj, <span class="at">metadata =</span> predictions)</span></code></pre></div>
+<p>Let’s visualize the predicted cell type in our query dataset:</p>
+<div class="sourceCode" id="cb271"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb271-1"><a href="cell-annotation.html#cb271-1" tabindex="-1"></a><span class="fu">DimPlot</span>(obj, <span class="at">group.by =</span> <span class="st">&quot;predicted.id&quot;</span>)</span></code></pre></div>
+<p><img src="practical_scRNAseq_analysis_files/figure-html/unnamed-chunk-143-1.png" width="100%" style="display: block; margin: auto;" /></p>
+<div class="sourceCode" id="cb272"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb272-1"><a href="cell-annotation.html#cb272-1" tabindex="-1"></a><span class="fu">table</span>(obj<span class="sc">$</span>predicted.id)</span></code></pre></div>
+<pre><code>#&gt; 
+#&gt;           CD4 CTL         CD4 Naive CD4 Proliferating           CD4 TCM 
+#&gt;               367              3823                14             10439 
+#&gt;           CD4 TEM         CD8 Naive CD8 Proliferating           CD8 TCM 
+#&gt;               199              1208                47               753 
+#&gt;           CD8 TEM               dnT               gdT               ILC 
+#&gt;              2504                16               104                 1 
+#&gt;              MAIT                NK  NK Proliferating     NK_CD56bright 
+#&gt;                61               117                 2                25 
+#&gt;       Plasmablast              Treg 
+#&gt;               123                 2</code></pre>
+<p>There are a few NK cells which may be contamination from the column purification.</p>
+<p><strong>Note</strong>, you can also follow the multimodal annotation at <a href="https://satijalab.org/seurat/articles/multimodal_reference_mapping.html" class="uri">https://satijalab.org/seurat/articles/multimodal_reference_mapping.html</a></p>
+<hr />
+</div>
+<div id="comparing-annotation-methods" class="section level2 hasAnchor" number="4.7">
+<h2><span class="header-section-number">4.7</span> Comparing Annotation Methods<a href="cell-annotation.html#comparing-annotation-methods" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>We’ve now run three different annotation methods on the same data. How do we decide which to trust? The short answer: when methods agree, you can be more confident. When they disagree, dig deeper.</p>
+<div id="create-a-comparison-table" class="section level3 hasAnchor" number="4.7.1">
+<h3><span class="header-section-number">4.7.1</span> Create a comparison table<a href="cell-annotation.html#create-a-comparison-table" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<p>Let’s organize all annotations in one dataframe:</p>
+<div class="sourceCode" id="cb274"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb274-1"><a href="cell-annotation.html#cb274-1" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
+<span id="cb274-2"><a href="cell-annotation.html#cb274-2" tabindex="-1"></a><span class="fu">library</span>(tidyr)</span>
+<span id="cb274-3"><a href="cell-annotation.html#cb274-3" tabindex="-1"></a></span>
+<span id="cb274-4"><a href="cell-annotation.html#cb274-4" tabindex="-1"></a><span class="co"># Extract annotations from our three methods</span></span>
+<span id="cb274-5"><a href="cell-annotation.html#cb274-5" tabindex="-1"></a>annotation_comparison <span class="ot">&lt;-</span> <span class="fu">tibble</span>(</span>
+<span id="cb274-6"><a href="cell-annotation.html#cb274-6" tabindex="-1"></a>  <span class="at">cell_id =</span> <span class="fu">colnames</span>(obj),</span>
+<span id="cb274-7"><a href="cell-annotation.html#cb274-7" tabindex="-1"></a>  <span class="at">cluster =</span> obj<span class="sc">$</span>seurat_clusters,</span>
+<span id="cb274-8"><a href="cell-annotation.html#cb274-8" tabindex="-1"></a>  <span class="at">manual =</span> obj<span class="sc">$</span>manual_annotation,  <span class="co"># From our manual marker-based annotation</span></span>
+<span id="cb274-9"><a href="cell-annotation.html#cb274-9" tabindex="-1"></a>  <span class="at">singleR =</span> obj<span class="sc">$</span>label.fine,         <span class="co"># From SingleR</span></span>
+<span id="cb274-10"><a href="cell-annotation.html#cb274-10" tabindex="-1"></a>  <span class="at">clustifyr_cbmc =</span> obj_anno<span class="sc">$</span>type,   <span class="co"># From clustifyr with cbmc_ref</span></span>
+<span id="cb274-11"><a href="cell-annotation.html#cb274-11" tabindex="-1"></a>  <span class="at">clustifyr_hema =</span> obj_anno2<span class="sc">$</span>type,  <span class="co"># From clustifyr with hema reference</span></span>
+<span id="cb274-12"><a href="cell-annotation.html#cb274-12" tabindex="-1"></a>  <span class="at">seurat =</span> obj<span class="sc">$</span>predicted.id         <span class="co"># From Seurat label transfer</span></span>
+<span id="cb274-13"><a href="cell-annotation.html#cb274-13" tabindex="-1"></a>)</span>
+<span id="cb274-14"><a href="cell-annotation.html#cb274-14" tabindex="-1"></a></span>
+<span id="cb274-15"><a href="cell-annotation.html#cb274-15" tabindex="-1"></a><span class="fu">head</span>(annotation_comparison)</span></code></pre></div>
+<pre><code>#&gt; # A tibble: 6 × 7
+#&gt;   cell_id            cluster manual singleR clustifyr_cbmc clustifyr_hema seurat
+#&gt;   &lt;chr&gt;              &lt;fct&gt;   &lt;chr&gt;  &lt;chr&gt;   &lt;chr&gt;          &lt;chr&gt;          &lt;chr&gt; 
+#&gt; 1 SRX5329394_GTACTT… 4       Exhau… CD4+_c… CD4 T          CD8+ Effector… CD4 T…
+#&gt; 2 SRX5329394_CTGATA… 4       Exhau… CD4+_c… CD4 T          CD8+ Effector… CD4 T…
+#&gt; 3 SRX5329394_TGTGGT… 4       Exhau… CD4+_e… CD4 T          CD8+ Effector… Plasm…
+#&gt; 4 SRX5329394_CGGAGT… 4       Exhau… CD4+_e… CD4 T          CD8+ Effector… CD4 T…
+#&gt; 5 SRX5329394_GCGACC… 3       Activ… CD4+_c… CD4 T          CD4+ Effector… CD4 T…
+#&gt; 6 SRX5329394_GACCTG… 4       Exhau… CD4+_e… CD4 T          CD8+ Effector… CD4 P…</code></pre>
+</div>
+<div id="calculate-agreement" class="section level3 hasAnchor" number="4.7.2">
+<h3><span class="header-section-number">4.7.2</span> Calculate agreement<a href="cell-annotation.html#calculate-agreement" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<p>For each cluster, what’s the consensus?
+now, we just check if they are concordant at high-level (CD4T vs CD8T).
+but in real work, you would check the more granulized annotaiton.</p>
+<p>You get the idea</p>
+<div class="sourceCode" id="cb276"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb276-1"><a href="cell-annotation.html#cb276-1" tabindex="-1"></a>consensus <span class="ot">&lt;-</span> annotation_comparison <span class="sc">%&gt;%</span></span>
+<span id="cb276-2"><a href="cell-annotation.html#cb276-2" tabindex="-1"></a>  <span class="fu">group_by</span>(cluster) <span class="sc">%&gt;%</span></span>
+<span id="cb276-3"><a href="cell-annotation.html#cb276-3" tabindex="-1"></a>  <span class="fu">summarize</span>(</span>
+<span id="cb276-4"><a href="cell-annotation.html#cb276-4" tabindex="-1"></a>    <span class="at">n_cells =</span> <span class="fu">n</span>(),</span>
+<span id="cb276-5"><a href="cell-annotation.html#cb276-5" tabindex="-1"></a>    <span class="at">manual =</span> <span class="fu">names</span>(<span class="fu">which.max</span>(<span class="fu">table</span>(manual)))[<span class="dv">1</span>],</span>
+<span id="cb276-6"><a href="cell-annotation.html#cb276-6" tabindex="-1"></a>    <span class="at">singleR =</span> <span class="fu">names</span>(<span class="fu">which.max</span>(<span class="fu">table</span>(singleR)))[<span class="dv">1</span>],</span>
+<span id="cb276-7"><a href="cell-annotation.html#cb276-7" tabindex="-1"></a>    <span class="at">clustifyr_cbmc =</span> <span class="fu">names</span>(<span class="fu">which.max</span>(<span class="fu">table</span>(clustifyr_cbmc)))[<span class="dv">1</span>],</span>
+<span id="cb276-8"><a href="cell-annotation.html#cb276-8" tabindex="-1"></a>    <span class="at">clustifyr_hema =</span> <span class="fu">names</span>(<span class="fu">which.max</span>(<span class="fu">table</span>(clustifyr_hema)))[<span class="dv">1</span>],</span>
+<span id="cb276-9"><a href="cell-annotation.html#cb276-9" tabindex="-1"></a>    <span class="at">seurat =</span> <span class="fu">names</span>(<span class="fu">which.max</span>(<span class="fu">table</span>(seurat)))[<span class="dv">1</span>],</span>
+<span id="cb276-10"><a href="cell-annotation.html#cb276-10" tabindex="-1"></a>    <span class="co"># Calculate agreement score (how many methods agree with manual?)</span></span>
+<span id="cb276-11"><a href="cell-annotation.html#cb276-11" tabindex="-1"></a>    <span class="at">agreement =</span> <span class="fu">mean</span>(<span class="fu">c</span>(</span>
+<span id="cb276-12"><a href="cell-annotation.html#cb276-12" tabindex="-1"></a>      <span class="fu">grepl</span>(<span class="st">&quot;CD4|CD8&quot;</span>, singleR) <span class="sc">==</span> <span class="fu">grepl</span>(<span class="st">&quot;CD4|CD8&quot;</span>, manual),</span>
+<span id="cb276-13"><a href="cell-annotation.html#cb276-13" tabindex="-1"></a>      <span class="fu">grepl</span>(<span class="st">&quot;CD4|CD8&quot;</span>, clustifyr_cbmc) <span class="sc">==</span> <span class="fu">grepl</span>(<span class="st">&quot;CD4|CD8&quot;</span>, manual),</span>
+<span id="cb276-14"><a href="cell-annotation.html#cb276-14" tabindex="-1"></a>      <span class="fu">grepl</span>(<span class="st">&quot;CD4|CD8&quot;</span>, seurat) <span class="sc">==</span> <span class="fu">grepl</span>(<span class="st">&quot;CD4|CD8&quot;</span>, manual)</span>
+<span id="cb276-15"><a href="cell-annotation.html#cb276-15" tabindex="-1"></a>    ))</span>
+<span id="cb276-16"><a href="cell-annotation.html#cb276-16" tabindex="-1"></a>  )</span>
+<span id="cb276-17"><a href="cell-annotation.html#cb276-17" tabindex="-1"></a></span>
+<span id="cb276-18"><a href="cell-annotation.html#cb276-18" tabindex="-1"></a><span class="fu">print</span>(consensus)</span></code></pre></div>
+<pre><code>#&gt; # A tibble: 8 × 8
+#&gt;   cluster n_cells manual  singleR clustifyr_cbmc clustifyr_hema seurat agreement
+#&gt;   &lt;fct&gt;     &lt;int&gt; &lt;chr&gt;   &lt;chr&gt;   &lt;chr&gt;          &lt;chr&gt;          &lt;chr&gt;      &lt;dbl&gt;
+#&gt; 1 0          4519 Naive … CD4+_N… CD4 T          CD4+ Effector… CD4 N…     1    
+#&gt; 2 1          3814 Effect… CD8+    NK             CD8+ Effector… CD8 T…     0.667
+#&gt; 3 2          3541 Memory… CD4+_c… CD4 T          CD4+ Effector… CD4 T…     1    
+#&gt; 4 3          3170 Activa… CD4+_c… CD4 T          CD4+ Effector… CD4 T…     1    
+#&gt; 5 4          2674 Exhaus… CD4+_e… CD4 T          CD8+ Effector… CD4 T…     1    
+#&gt; 6 5          1216 Naive … CD4+_N… CD8 T          CD8+ Effector… CD8 N…     1    
+#&gt; 7 6           490 Treg    CD4+_c… CD4 T          CD4+ Effector… CD4 T…     0    
+#&gt; 8 7           381 Activa… CD4+_c… CD4 T          CD4+ Effector… CD4 T…     1</code></pre>
+</div>
+<div id="visualize-side-by-side" class="section level3 hasAnchor" number="4.7.3">
+<h3><span class="header-section-number">4.7.3</span> Visualize side by side<a href="cell-annotation.html#visualize-side-by-side" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<p>Create side-by-side UMAPs to visually compare methods:</p>
+<div class="sourceCode" id="cb278"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb278-1"><a href="cell-annotation.html#cb278-1" tabindex="-1"></a>p1 <span class="ot">&lt;-</span> <span class="fu">DimPlot_scCustom</span>(obj, <span class="at">group.by =</span> <span class="st">&quot;manual_annotation&quot;</span>, <span class="at">label =</span> <span class="cn">TRUE</span>) <span class="sc">+</span></span>
+<span id="cb278-2"><a href="cell-annotation.html#cb278-2" tabindex="-1"></a>  <span class="fu">ggtitle</span>(<span class="st">&quot;Manual (Marker-based)&quot;</span>)</span>
+<span id="cb278-3"><a href="cell-annotation.html#cb278-3" tabindex="-1"></a></span>
+<span id="cb278-4"><a href="cell-annotation.html#cb278-4" tabindex="-1"></a>p2 <span class="ot">&lt;-</span> <span class="fu">DimPlot_scCustom</span>(obj, <span class="at">group.by =</span> <span class="st">&quot;label.fine&quot;</span>, <span class="at">label =</span> <span class="cn">TRUE</span>) <span class="sc">+</span></span>
+<span id="cb278-5"><a href="cell-annotation.html#cb278-5" tabindex="-1"></a>  <span class="fu">ggtitle</span>(<span class="st">&quot;SingleR&quot;</span>)</span>
+<span id="cb278-6"><a href="cell-annotation.html#cb278-6" tabindex="-1"></a></span>
+<span id="cb278-7"><a href="cell-annotation.html#cb278-7" tabindex="-1"></a>p3 <span class="ot">&lt;-</span> <span class="fu">DimPlot_scCustom</span>(obj_anno, <span class="at">group.by =</span> <span class="st">&quot;type&quot;</span>, <span class="at">label =</span> <span class="cn">TRUE</span>) <span class="sc">+</span></span>
+<span id="cb278-8"><a href="cell-annotation.html#cb278-8" tabindex="-1"></a>  <span class="fu">ggtitle</span>(<span class="st">&quot;clustifyr&quot;</span>)</span>
+<span id="cb278-9"><a href="cell-annotation.html#cb278-9" tabindex="-1"></a></span>
+<span id="cb278-10"><a href="cell-annotation.html#cb278-10" tabindex="-1"></a>p4 <span class="ot">&lt;-</span> <span class="fu">DimPlot_scCustom</span>(obj, <span class="at">group.by =</span> <span class="st">&quot;predicted.id&quot;</span>, <span class="at">label =</span> <span class="cn">TRUE</span>) <span class="sc">+</span></span>
+<span id="cb278-11"><a href="cell-annotation.html#cb278-11" tabindex="-1"></a>  <span class="fu">ggtitle</span>(<span class="st">&quot;Seurat Transfer&quot;</span>)</span>
+<span id="cb278-12"><a href="cell-annotation.html#cb278-12" tabindex="-1"></a></span>
+<span id="cb278-13"><a href="cell-annotation.html#cb278-13" tabindex="-1"></a>p1</span></code></pre></div>
+<p><img src="practical_scRNAseq_analysis_files/figure-html/unnamed-chunk-147-1.png" width="100%" style="display: block; margin: auto;" /></p>
+<div class="sourceCode" id="cb279"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb279-1"><a href="cell-annotation.html#cb279-1" tabindex="-1"></a>p2</span></code></pre></div>
+<p><img src="practical_scRNAseq_analysis_files/figure-html/unnamed-chunk-147-2.png" width="100%" style="display: block; margin: auto;" /></p>
+<div class="sourceCode" id="cb280"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb280-1"><a href="cell-annotation.html#cb280-1" tabindex="-1"></a>p3</span></code></pre></div>
+<p><img src="practical_scRNAseq_analysis_files/figure-html/unnamed-chunk-147-3.png" width="100%" style="display: block; margin: auto;" /></p>
+<div class="sourceCode" id="cb281"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb281-1"><a href="cell-annotation.html#cb281-1" tabindex="-1"></a>p4</span></code></pre></div>
+<p><img src="practical_scRNAseq_analysis_files/figure-html/unnamed-chunk-147-4.png" width="100%" style="display: block; margin: auto;" /></p>
+</div>
+<div id="investigate-discrepancies" class="section level3 hasAnchor" number="4.7.4">
+<h3><span class="header-section-number">4.7.4</span> Investigate discrepancies<a href="cell-annotation.html#investigate-discrepancies" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<p>When methods disagree, dig deeper:</p>
+<div class="sourceCode" id="cb282"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb282-1"><a href="cell-annotation.html#cb282-1" tabindex="-1"></a><span class="co"># Find cells with conflicting annotations</span></span>
+<span id="cb282-2"><a href="cell-annotation.html#cb282-2" tabindex="-1"></a>conflicting_cells <span class="ot">&lt;-</span> annotation_comparison <span class="sc">%&gt;%</span></span>
+<span id="cb282-3"><a href="cell-annotation.html#cb282-3" tabindex="-1"></a>  <span class="fu">filter</span>(</span>
+<span id="cb282-4"><a href="cell-annotation.html#cb282-4" tabindex="-1"></a>    <span class="co"># Example: SingleR says CD4 but Seurat says CD8</span></span>
+<span id="cb282-5"><a href="cell-annotation.html#cb282-5" tabindex="-1"></a>    (<span class="fu">grepl</span>(<span class="st">&quot;CD4&quot;</span>, singleR) <span class="sc">&amp;</span> <span class="fu">grepl</span>(<span class="st">&quot;CD8&quot;</span>, seurat)) <span class="sc">|</span></span>
+<span id="cb282-6"><a href="cell-annotation.html#cb282-6" tabindex="-1"></a>    (<span class="fu">grepl</span>(<span class="st">&quot;CD8&quot;</span>, singleR) <span class="sc">&amp;</span> <span class="fu">grepl</span>(<span class="st">&quot;CD4&quot;</span>, seurat))</span>
+<span id="cb282-7"><a href="cell-annotation.html#cb282-7" tabindex="-1"></a>  )</span>
+<span id="cb282-8"><a href="cell-annotation.html#cb282-8" tabindex="-1"></a></span>
+<span id="cb282-9"><a href="cell-annotation.html#cb282-9" tabindex="-1"></a><span class="co"># What clusters are these?</span></span>
+<span id="cb282-10"><a href="cell-annotation.html#cb282-10" tabindex="-1"></a><span class="fu">table</span>(conflicting_cells<span class="sc">$</span>cluster)</span></code></pre></div>
+<pre><code>#&gt; 
+#&gt;   0   1   2   3   4   5   6   7 
+#&gt; 116 759 156 257 356 636  20  74</code></pre>
+<div class="sourceCode" id="cb284"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb284-1"><a href="cell-annotation.html#cb284-1" tabindex="-1"></a><span class="co"># Visualize marker genes for these cells</span></span>
+<span id="cb284-2"><a href="cell-annotation.html#cb284-2" tabindex="-1"></a>subset_obj <span class="ot">&lt;-</span> obj[, conflicting_cells<span class="sc">$</span>cell_id]</span>
+<span id="cb284-3"><a href="cell-annotation.html#cb284-3" tabindex="-1"></a><span class="fu">FeaturePlot_scCustom</span>(subset_obj, <span class="at">features =</span> <span class="fu">c</span>(<span class="st">&quot;CD4&quot;</span>, <span class="st">&quot;CD8A&quot;</span>, <span class="st">&quot;CD8B&quot;</span>))</span></code></pre></div>
+<p><img src="practical_scRNAseq_analysis_files/figure-html/unnamed-chunk-148-1.png" width="100%" style="display: block; margin: auto;" />
+Most of the cells express high CD8A and CD8B. Also I noticed that in single-cell
+RNAseq data, CD4 mRNA expression level is low in CD4 T cells. It could be just the
+biology. I know the CD4 protein is high in CD4 T cells according to CITE-seq data.</p>
+<p>Similiarily, NK cell marker CD56/NCAM mRNA is usually not that high in NK cells
+but it is high at the protein level.</p>
+<p>How to think about it: if your manual annotation agrees with the automated methods, great – high confidence. If automated methods disagree with each other, trust your manual inspection because you understand the biology
+and technical artifacts. If all automated methods agree but your manual call is unclear, go back and review the markers again. And if a rare population only shows up in one method, validate it with marker genes before you trust it.</p>
+</div>
+<div id="make-a-final-annotation-decision" class="section level3 hasAnchor" number="4.7.5">
+<h3><span class="header-section-number">4.7.5</span> Make a final annotation decision<a href="cell-annotation.html#make-a-final-annotation-decision" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<div class="sourceCode" id="cb285"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb285-1"><a href="cell-annotation.html#cb285-1" tabindex="-1"></a><span class="co"># Create final annotation by combining methods</span></span>
+<span id="cb285-2"><a href="cell-annotation.html#cb285-2" tabindex="-1"></a>obj<span class="sc">$</span>final_annotation <span class="ot">&lt;-</span> <span class="fu">case_when</span>(</span>
+<span id="cb285-3"><a href="cell-annotation.html#cb285-3" tabindex="-1"></a>  <span class="co"># When manual and Seurat agree, use that</span></span>
+<span id="cb285-4"><a href="cell-annotation.html#cb285-4" tabindex="-1"></a>  obj<span class="sc">$</span>manual_annotation <span class="sc">==</span> obj<span class="sc">$</span>predicted.id <span class="sc">~</span> obj<span class="sc">$</span>manual_annotation,</span>
+<span id="cb285-5"><a href="cell-annotation.html#cb285-5" tabindex="-1"></a></span>
+<span id="cb285-6"><a href="cell-annotation.html#cb285-6" tabindex="-1"></a>  <span class="co"># When manual is confident (based on clear markers), trust it</span></span>
+<span id="cb285-7"><a href="cell-annotation.html#cb285-7" tabindex="-1"></a>  obj<span class="sc">$</span>seurat_clusters <span class="sc">%in%</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">2</span>) <span class="sc">~</span> obj<span class="sc">$</span>manual_annotation,</span>
+<span id="cb285-8"><a href="cell-annotation.html#cb285-8" tabindex="-1"></a></span>
+<span id="cb285-9"><a href="cell-annotation.html#cb285-9" tabindex="-1"></a>  <span class="co"># For ambiguous clusters, defer to Seurat (best reference)</span></span>
+<span id="cb285-10"><a href="cell-annotation.html#cb285-10" tabindex="-1"></a>  <span class="cn">TRUE</span> <span class="sc">~</span> obj<span class="sc">$</span>predicted.id</span>
+<span id="cb285-11"><a href="cell-annotation.html#cb285-11" tabindex="-1"></a>)</span>
+<span id="cb285-12"><a href="cell-annotation.html#cb285-12" tabindex="-1"></a></span>
+<span id="cb285-13"><a href="cell-annotation.html#cb285-13" tabindex="-1"></a><span class="co"># Visualize final annotation</span></span>
+<span id="cb285-14"><a href="cell-annotation.html#cb285-14" tabindex="-1"></a><span class="fu">DimPlot_scCustom</span>(obj, <span class="at">group.by =</span> <span class="st">&quot;final_annotation&quot;</span>, <span class="at">label =</span> <span class="cn">TRUE</span>) <span class="sc">+</span></span>
+<span id="cb285-15"><a href="cell-annotation.html#cb285-15" tabindex="-1"></a>  <span class="fu">ggtitle</span>(<span class="st">&quot;Final Annotation (Consensus)&quot;</span>)</span></code></pre></div>
+<p><img src="practical_scRNAseq_analysis_files/figure-html/unnamed-chunk-149-1.png" width="100%" style="display: block; margin: auto;" /></p>
+<div class="sourceCode" id="cb286"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb286-1"><a href="cell-annotation.html#cb286-1" tabindex="-1"></a><span class="co"># Save annotated object</span></span>
+<span id="cb286-2"><a href="cell-annotation.html#cb286-2" tabindex="-1"></a><span class="co">#saveRDS(obj, here(&quot;data/pbmc_annotated.rds&quot;))</span></span></code></pre></div>
+</div>
+<div id="method-comparison" class="section level3 hasAnchor" number="4.7.6">
+<h3><span class="header-section-number">4.7.6</span> Method comparison<a href="cell-annotation.html#method-comparison" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<table>
+<colgroup>
+<col width="21%" />
+<col width="18%" />
+<col width="16%" />
+<col width="16%" />
+<col width="27%" />
+</colgroup>
+<thead>
+<tr>
+<th>Method</th>
+<th>Speed</th>
+<th>Pros</th>
+<th>Cons</th>
+<th>Best For</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Manual</td>
+<td>Slow</td>
+<td>Transparent, most trustworthy</td>
+<td>Subjective, requires expertise</td>
+<td>Validation, novel cell types</td>
+</tr>
+<tr>
+<td>SingleR</td>
+<td>Fast</td>
+<td>Easy, many references</td>
+<td>Reference-dependent</td>
+<td>Quick exploration</td>
+</tr>
+<tr>
+<td>clustifyr</td>
+<td>Very fast</td>
+<td>Ultra-fast, flexible</td>
+<td>Limited references</td>
+<td>Large datasets, need speed</td>
+</tr>
+<tr>
+<td>Seurat</td>
+<td>Medium</td>
+<td>Hierarchical labels, integrates well</td>
+<td>Slow, needs good reference</td>
+<td>Final annotation, multi-level</td>
+</tr>
+</tbody>
+</table>
+<p>Which approach to use depends on your situation. For well-studied tissues like PBMCs or brain, Seurat label transfer with Azimuth references works well – just validate with manual markers. For poorly-studied tissues, you really need to start with manual annotation. Don’t trust automated methods blindly when good references don’t exist.</p>
+<p>If you have 100k+ cells and need to explore quickly, clustifyr is your friend. For publication-quality annotations, run all three methods, report where they agree and disagree, and validate with independent evidence (flow cytometry, immunofluorescence) if you can.</p>
+<p>Always report which annotation method you used and which reference. Annotation is subjective – transparency is critical (sc-best-practices.org makes this point well).</p>
+<hr />
+</div>
+</div>
+<div id="deeper-understanding-of-the-anchor-finding-and-label-transfer-step" class="section level2 hasAnchor" number="4.8">
+<h2><span class="header-section-number">4.8</span> Deeper Understanding of the Anchor Finding and Label Transfer Step<a href="cell-annotation.html#deeper-understanding-of-the-anchor-finding-and-label-transfer-step" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>Read this tutorial by me <a href="https://crazyhottommy.github.io/single-cell-RNAseq-PCA-CCA-cell-annotation/" class="uri">https://crazyhottommy.github.io/single-cell-RNAseq-PCA-CCA-cell-annotation/</a>
+It self can be a whole chapter here. But I will leave it to you if you want to understand the math
+behind PCA projection and CCA data integration.</p>
+</div>
+<div id="other-annotation-approaches" class="section level2 hasAnchor" number="4.9">
+<h2><span class="header-section-number">4.9</span> Other Annotation Approaches<a href="cell-annotation.html#other-annotation-approaches" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<div id="marker-based-tools" class="section level3 hasAnchor" number="4.9.1">
+<h3><span class="header-section-number">4.9.1</span> Marker-based tools<a href="cell-annotation.html#marker-based-tools" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<p>If you have high-quality marker gene lists for your tissue, these are worth trying:</p>
+<ul>
+<li><a href="https://github.com/carmonalab/scGate">scGate</a> – marker-based purification where you define positive/negative markers</li>
+<li><a href="https://github.com/carmonalab/ProjecTILs">ProjectTILs</a> – specialized for tumor-infiltrating lymphocytes</li>
+<li><a href="https://www.biorxiv.org/content/10.1101/2024.09.14.609619v1">easybio</a> – newer marker-based tool (2024)</li>
+<li><a href="https://github.com/IanevskiAleksandr/sc-type">scType</a> – marker gene scoring approach</li>
+</ul>
+<p>The nice thing about these is that the annotation is transparent – you know exactly which markers drove the decision.</p>
+</div>
+<div id="deep-learning-approaches" class="section level3 hasAnchor" number="4.9.2">
+<h3><span class="header-section-number">4.9.2</span> Deep learning approaches<a href="cell-annotation.html#deep-learning-approaches" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<p>Tools like scVI/scANVI (semi-supervised), CellTypist (pre-trained models, very fast), and SingleCellNet (random forest) are more powerful but less interpretable. They’re best for very large datasets where you need scalability.</p>
+<hr />
+</div>
+</div>
+<div id="things-to-watch-out-for-1" class="section level2 hasAnchor" number="4.10">
+<h2><span class="header-section-number">4.10</span> Things to watch out for<a href="cell-annotation.html#things-to-watch-out-for-1" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>A few mistakes I see people make repeatedly:</p>
+<p>Don’t trust one method blindly. Run multiple approaches and compare. And don’t use an inappropriate reference – a PBMC reference for brain data will give you nonsense results.</p>
+<p>Be careful about over-interpreting fine-grained labels. “CD4 Effector Memory RA+” might be more specific than your noisy scRNA-seq data can support. Check <code>prediction.score.max</code> from Seurat – low scores mean the algorithm itself isn’t confident.</p>
+<p>Always report which annotation method and reference you used. This sounds obvious but a surprising number of papers don’t do it.</p>
+<p>Remember that cell types are not always discrete. Biology is continuous. Some cells are genuinely intermediate or transitional, and that’s okay. And if you see a cluster that no method annotates well, don’t just force a label on it – it might be a novel cell state worth investigating.</p>
+<p>In the next chapter, we’ll use these cell type annotations for gene set enrichment analysis.</p>
+<div id="further-reading-3" class="section level3 hasAnchor" number="4.10.1">
+<h3><span class="header-section-number">4.10.1</span> Further reading<a href="cell-annotation.html#further-reading-3" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<p>Official documentation:</p>
+<ul>
+<li>SingleR book: <a href="https://bioconductor.org/books/devel/SingleRBook/" class="uri">https://bioconductor.org/books/devel/SingleRBook/</a></li>
+<li>clustifyr: <a href="https://rnabioco.github.io/clustifyr/" class="uri">https://rnabioco.github.io/clustifyr/</a></li>
+<li>Seurat label transfer: <a href="https://satijalab.org/seurat/articles/integration_mapping.html" class="uri">https://satijalab.org/seurat/articles/integration_mapping.html</a></li>
+<li>Azimuth: <a href="https://azimuth.hubmapconsortium.org/" class="uri">https://azimuth.hubmapconsortium.org/</a></li>
+</ul>
+<p>Best practices guides:</p>
+<ul>
+<li>sc-best-practices.org, Annotation chapter: <a href="https://www.sc-best-practices.org/cellular_structure/annotation.html" class="uri">https://www.sc-best-practices.org/cellular_structure/annotation.html</a></li>
+<li>OSCA book, Cell Type Annotation: <a href="https://bioconductor.org/books/release/OSCA.basic/cell-type-annotation.html" class="uri">https://bioconductor.org/books/release/OSCA.basic/cell-type-annotation.html</a></li>
+</ul>
+<p>Key papers:</p>
+<ul>
+<li>Abdelaal et al. (2019) – benchmarks 22 annotation methods, a good overview of what’s out there</li>
+<li>Aran et al. (2019) – the SingleR paper</li>
+<li>Fu et al. (2020) – the clustifyr paper</li>
+<li>Stuart et al. (2019) – “Comprehensive Integration of Single-Cell Data” (Seurat anchors)</li>
+</ul>
+<p>Reference databases:</p>
+<ul>
+<li>celldex: <a href="https://bioconductor.org/packages/celldex/" class="uri">https://bioconductor.org/packages/celldex/</a></li>
+<li>PanglaoDB: <a href="https://panglaodb.se/" class="uri">https://panglaodb.se/</a></li>
+<li>CellMarker: <a href="http://biocc.hrbmu.edu.cn/CellMarker/" class="uri">http://biocc.hrbmu.edu.cn/CellMarker/</a></li>
+<li>Human Protein Atlas: <a href="https://www.proteinatlas.org/" class="uri">https://www.proteinatlas.org/</a></li>
+</ul>
+<p>The bottom line: there is no perfect annotation. Use multiple methods, validate with markers, report what you did, and remember that the goal is biological insight, not perfect labels. When in doubt, talk to your collaborators who know the biology.</p>
+</div>
+</div>
+<div id="session-information-3" class="section level2 unnumbered hasAnchor">
+<h2>Session Information<a href="cell-annotation.html#session-information-3" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<div class="sourceCode" id="cb287"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb287-1"><a href="cell-annotation.html#cb287-1" tabindex="-1"></a><span class="fu">sessionInfo</span>()</span></code></pre></div>
+<pre><code>#&gt; R version 4.4.1 (2024-06-14)
+#&gt; Platform: aarch64-apple-darwin20
+#&gt; Running under: macOS Sonoma 14.1
+#&gt; 
+#&gt; Matrix products: default
+#&gt; BLAS:   /Library/Frameworks/R.framework/Versions/4.4-arm64/Resources/lib/libRblas.0.dylib 
+#&gt; LAPACK: /Library/Frameworks/R.framework/Versions/4.4-arm64/Resources/lib/libRlapack.dylib;  LAPACK version 3.12.0
+#&gt; 
+#&gt; locale:
+#&gt; [1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8
+#&gt; 
+#&gt; time zone: America/New_York
+#&gt; tzcode source: internal
+#&gt; 
+#&gt; attached base packages:
+#&gt; [1] grid      stats4    stats     graphics  grDevices utils     datasets 
+#&gt; [8] methods   base     
+#&gt; 
+#&gt; other attached packages:
+#&gt;  [1] tidyr_1.3.1                 clustifyrdatahub_1.14.0    
+#&gt;  [3] ExperimentHub_2.12.0        AnnotationHub_3.12.0       
+#&gt;  [5] BiocFileCache_2.12.0        dbplyr_2.5.0               
+#&gt;  [7] clustifyr_1.17.2            tictoc_1.2.1               
+#&gt;  [9] celldex_1.14.0              SingleR_2.6.0              
+#&gt; [11] DESeq2_1.44.0               celda_1.20.0               
+#&gt; [13] Matrix_1.7-0                scDblFinder_1.18.0         
+#&gt; [15] genefilter_1.86.0           ComplexHeatmap_2.20.0      
+#&gt; [17] scCustomize_2.1.2           harmony_1.2.0              
+#&gt; [19] Rcpp_1.0.13                 DropletUtils_1.24.0        
+#&gt; [21] stringr_1.5.1               ggplot2_3.5.1              
+#&gt; [23] dplyr_1.1.4                 here_1.0.1                 
+#&gt; [25] Seurat_5.1.0                SeuratObject_5.0.2         
+#&gt; [27] sp_2.1-4                    SingleCellExperiment_1.26.0
+#&gt; [29] SummarizedExperiment_1.34.0 Biobase_2.64.0             
+#&gt; [31] GenomicRanges_1.56.1        GenomeInfoDb_1.40.1        
+#&gt; [33] IRanges_2.38.1              S4Vectors_0.42.1           
+#&gt; [35] BiocGenerics_0.50.0         MatrixGenerics_1.16.0      
+#&gt; [37] matrixStats_1.3.0          
+#&gt; 
+#&gt; loaded via a namespace (and not attached):
+#&gt;   [1] R.methodsS3_1.8.2         goftest_1.2-3            
+#&gt;   [3] Biostrings_2.72.1         HDF5Array_1.32.1         
+#&gt;   [5] vctrs_0.6.5               spatstat.random_3.3-1    
+#&gt;   [7] digest_0.6.36             png_0.1-8                
+#&gt;   [9] shape_1.4.6.1             gypsum_1.0.1             
+#&gt;  [11] ggrepel_0.9.5             deldir_2.0-4             
+#&gt;  [13] parallelly_1.38.0         combinat_0.0-8           
+#&gt;  [15] MASS_7.3-60.2             reshape2_1.4.4           
+#&gt;  [17] httpuv_1.6.15             foreach_1.5.2            
+#&gt;  [19] withr_3.0.0               ggrastr_1.0.2            
+#&gt;  [21] xfun_0.52                 survival_3.6-4           
+#&gt;  [23] memoise_2.0.1             ggbeeswarm_0.7.2         
+#&gt;  [25] janitor_2.2.0             zoo_1.8-12               
+#&gt;  [27] GlobalOptions_0.1.2       entropy_1.3.1            
+#&gt;  [29] pbapply_1.7-2             R.oo_1.26.0              
+#&gt;  [31] rematch2_2.1.2            KEGGREST_1.44.1          
+#&gt;  [33] promises_1.3.0            httr_1.4.7               
+#&gt;  [35] restfulr_0.0.15           globals_0.16.3           
+#&gt;  [37] fitdistrplus_1.2-1        rhdf5filters_1.16.0      
+#&gt;  [39] rhdf5_2.48.0              rstudioapi_0.16.0        
+#&gt;  [41] UCSC.utils_1.0.0          miniUI_0.1.1.1           
+#&gt;  [43] generics_0.1.3            curl_5.2.1               
+#&gt;  [45] zlibbioc_1.50.0           ScaledMatrix_1.12.0      
+#&gt;  [47] polyclip_1.10-7           GenomeInfoDbData_1.2.12  
+#&gt;  [49] SparseArray_1.4.8         RcppEigen_0.3.4.0.1      
+#&gt;  [51] xtable_1.8-4              doParallel_1.0.17        
+#&gt;  [53] evaluate_0.24.0           S4Arrays_1.4.1           
+#&gt;  [55] bookdown_0.40             irlba_2.3.5.1            
+#&gt;  [57] colorspace_2.1-1          filelock_1.0.3           
+#&gt;  [59] ROCR_1.0-11               reticulate_1.38.0        
+#&gt;  [61] spatstat.data_3.1-2       magrittr_2.0.3           
+#&gt;  [63] lmtest_0.9-40             snakecase_0.11.1         
+#&gt;  [65] later_1.3.2               viridis_0.6.5            
+#&gt;  [67] lattice_0.22-6            spatstat.geom_3.3-2      
+#&gt;  [69] future.apply_1.11.2       scattermore_1.2          
+#&gt;  [71] XML_3.99-0.17             scuttle_1.14.0           
+#&gt;  [73] cowplot_1.1.3             RcppAnnoy_0.0.22         
+#&gt;  [75] pillar_1.9.0              nlme_3.1-164             
+#&gt;  [77] iterators_1.0.14          compiler_4.4.1           
+#&gt;  [79] beachmat_2.20.0           RSpectra_0.16-2          
+#&gt;  [81] stringi_1.8.4             tensor_1.5               
+#&gt;  [83] lubridate_1.9.3           GenomicAlignments_1.40.0 
+#&gt;  [85] MCMCprecision_0.4.0       plyr_1.8.9               
+#&gt;  [87] crayon_1.5.3              abind_1.4-5              
+#&gt;  [89] BiocIO_1.14.0             scater_1.32.1            
+#&gt;  [91] locfit_1.5-9.10           bit_4.0.5                
+#&gt;  [93] fastmatch_1.1-4           codetools_0.2-20         
+#&gt;  [95] BiocSingular_1.20.0       bslib_0.8.0              
+#&gt;  [97] alabaster.ranges_1.4.2    paletteer_1.6.0          
+#&gt;  [99] GetoptLong_1.0.5          plotly_4.10.4            
+#&gt; [101] mime_0.12                 splines_4.4.1            
+#&gt; [103] circlize_0.4.16           fastDummies_1.7.4        
+#&gt; [105] sparseMatrixStats_1.16.0  prismatic_1.1.2          
+#&gt; [107] knitr_1.48                blob_1.2.4               
+#&gt; [109] utf8_1.2.4                clue_0.3-65              
+#&gt; [111] BiocVersion_3.19.1        WriteXLS_6.7.0           
+#&gt; [113] listenv_0.9.1             DelayedMatrixStats_1.26.0
+#&gt; [115] tibble_3.2.1              statmod_1.5.0            
+#&gt; [117] pkgconfig_2.0.3           tools_4.4.1              
+#&gt; [119] cachem_1.1.0              RSQLite_2.3.7            
+#&gt; [121] viridisLite_0.4.2         DBI_1.2.3                
+#&gt; [123] fastmap_1.2.0             rmarkdown_2.27           
+#&gt; [125] scales_1.3.0              ica_1.0-3                
+#&gt; [127] Rsamtools_2.20.0          sass_0.4.9               
+#&gt; [129] patchwork_1.2.0           ggprism_1.0.5            
+#&gt; [131] BiocManager_1.30.24       dotCall64_1.1-1          
+#&gt; [133] RANN_2.6.1                alabaster.schemas_1.4.0  
+#&gt; [135] farver_2.1.2              yaml_2.3.10              
+#&gt; [137] rtracklayer_1.64.0        cli_3.6.3                
+#&gt; [139] purrr_1.0.2               leiden_0.4.3.1           
+#&gt; [141] lifecycle_1.0.4           uwot_0.2.2               
+#&gt; [143] bluster_1.14.0            BiocParallel_1.38.0      
+#&gt; [145] annotate_1.82.0           timechange_0.3.0         
+#&gt; [147] gtable_0.3.5              rjson_0.2.22             
+#&gt; [149] ggridges_0.5.6            progressr_0.14.0         
+#&gt; [151] parallel_4.4.1            limma_3.60.4             
+#&gt; [153] jsonlite_1.8.8            edgeR_4.2.1              
+#&gt; [155] RcppHNSW_0.6.0            bitops_1.0-8             
+#&gt; [157] bit64_4.0.5               xgboost_1.7.8.1          
+#&gt; [159] Rtsne_0.17                alabaster.matrix_1.4.2   
+#&gt; [161] spatstat.utils_3.1-0      BiocNeighbors_1.22.0     
+#&gt; [163] highr_0.11                alabaster.se_1.4.1       
+#&gt; [165] jquerylib_0.1.4           metapod_1.12.0           
+#&gt; [167] dqrng_0.4.1               enrichR_3.2              
+#&gt; [169] spatstat.univar_3.0-0     R.utils_2.12.3           
+#&gt; [171] lazyeval_0.2.2            alabaster.base_1.4.2     
+#&gt; [173] shiny_1.9.0               htmltools_0.5.8.1        
+#&gt; [175] sctransform_0.4.1         rappdirs_0.3.3           
+#&gt; [177] glue_1.8.0                spam_2.10-0              
+#&gt; [179] httr2_1.0.2               XVector_0.44.0           
+#&gt; [181] RCurl_1.98-1.16           rprojroot_2.0.4          
+#&gt; [183] scran_1.32.0              gridExtra_2.3            
+#&gt; [185] igraph_2.0.3              R6_2.5.1                 
+#&gt; [187] labeling_0.4.3            forcats_1.0.0            
+#&gt; [189] cluster_2.1.6             Rhdf5lib_1.26.0          
+#&gt; [191] DelayedArray_0.30.1       tidyselect_1.2.1         
+#&gt; [193] vipor_0.4.7               AnnotationDbi_1.66.0     
+#&gt; [195] future_1.34.0             rsvd_1.0.5               
+#&gt; [197] munsell_0.5.1             KernSmooth_2.23-24       
+#&gt; [199] data.table_1.15.4         fgsea_1.30.0             
+#&gt; [201] htmlwidgets_1.6.4         RColorBrewer_1.1-3       
+#&gt; [203] rlang_1.1.4               spatstat.sparse_3.1-0    
+#&gt; [205] spatstat.explore_3.3-2    fansi_1.0.6              
+#&gt; [207] beeswarm_0.4.0</code></pre>
+
+</div>
+</div>
+            </section>
+
+          </div>
+        </div>
+      </div>
+<a href="seurat-workflow.html" class="navigation navigation-prev " aria-label="Previous page"><i class="fa fa-angle-left"></i></a>
+<a href="gene-set-analysis.html" class="navigation navigation-next " aria-label="Next page"><i class="fa fa-angle-right"></i></a>
+    </div>
+  </div>
+<script src="libs/gitbook-2.6.7/js/app.min.js"></script>
+<script src="libs/gitbook-2.6.7/js/clipboard.min.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-search.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-sharing.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-fontsettings.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-bookdown.js"></script>
+<script src="libs/gitbook-2.6.7/js/jquery.highlight.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-clipboard.js"></script>
+<script>
+gitbook.require(["gitbook"], function(gitbook) {
+gitbook.start({
+  "sharing": {
+    "github": true,
+    "facebook": false,
+    "twitter": true,
+    "linkedin": true,
+    "weibo": false,
+    "instapaper": false,
+    "vk": false,
+    "whatsapp": false,
+    "all": ["facebook", "twitter", "linkedin", "weibo", "instapaper"]
+  },
+  "fontsettings": {
+    "theme": "white",
+    "family": "sans",
+    "size": 2
+  },
+  "edit": {
+    "link": "https://github.com/crazyhottommy/practical_scRNAseq_analysis_with_R/edit/main/04-cell-annotation.Rmd",
+    "text": "Edit"
+  },
+  "history": {
+    "link": null,
+    "text": null
+  },
+  "view": {
+    "link": null,
+    "text": null
+  },
+  "download": ["practical_scRNAseq_analysis.pdf", "practical_scRNAseq_analysis.epub"],
+  "search": {
+    "engine": "fuse",
+    "options": null
+  },
+  "toc": {
+    "collapse": "subsection"
+  }
+});
+});
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    var src = "true";
+    if (src === "" || src === "true") src = "https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.9/latest.js?config=TeX-MML-AM_CHTML";
+    if (location.protocol !== "file:")
+      if (/^https?:/.test(src))
+        src = src.replace(/^https?:/, '');
+    script.src = src;
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+</body>
+
+</html>

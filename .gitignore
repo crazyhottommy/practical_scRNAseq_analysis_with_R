@@ -1,6 +1,14 @@
 .Rproj.user
 .Rhistory
 .RData
+.DS_Store
 _book
 _bookdown_files
+docs/*.rds
 rsconnect
+data/
+results/
+practical_scRNAseq_analysis_cache/
+bookdown-demo_files/
+renv/library/
+*.rds

@@ -1,0 +1,1331 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+<head>
+
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>Chapter 5 Gene Set Enrichment Analysis | Practical scRNAseq Analysis with R</title>
+  <meta name="description" content="A comprehensive, reproducible guide for single-cell RNA-seq analysis using R, covering data quantification, quality control, clustering, cell annotation, and functional enrichment using real-world datasets." />
+  <meta name="generator" content="bookdown 0.40 and GitBook 2.6.7" />
+
+  <meta property="og:title" content="Chapter 5 Gene Set Enrichment Analysis | Practical scRNAseq Analysis with R" />
+  <meta property="og:type" content="book" />
+  
+  <meta property="og:description" content="A comprehensive, reproducible guide for single-cell RNA-seq analysis using R, covering data quantification, quality control, clustering, cell annotation, and functional enrichment using real-world datasets." />
+  <meta name="github-repo" content="crazyhottommy/practical_scRNAseq_analysis_with_R" />
+
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Chapter 5 Gene Set Enrichment Analysis | Practical scRNAseq Analysis with R" />
+  
+  <meta name="twitter:description" content="A comprehensive, reproducible guide for single-cell RNA-seq analysis using R, covering data quantification, quality control, clustering, cell annotation, and functional enrichment using real-world datasets." />
+  
+
+<meta name="author" content="Ming Tommy Tang" />
+
+
+<meta name="date" content="2026-03-14" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+  
+  
+<link rel="prev" href="cell-annotation-1.html"/>
+<link rel="next" href="references.html"/>
+<script src="libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fuse.js@6.4.6/dist/fuse.min.js"></script>
+<link href="libs/gitbook-2.6.7/css/style.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-table.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-bookdown.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-highlight.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-search.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-fontsettings.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-clipboard.css" rel="stylesheet" />
+
+
+
+
+
+
+
+
+<link href="libs/anchor-sections-1.1.0/anchor-sections.css" rel="stylesheet" />
+<link href="libs/anchor-sections-1.1.0/anchor-sections-hash.css" rel="stylesheet" />
+<script src="libs/anchor-sections-1.1.0/anchor-sections.js"></script>
+
+
+<style type="text/css">
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #aaaaaa;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code span.at { color: #7d9029; } /* Attribute */
+code span.bn { color: #40a070; } /* BaseN */
+code span.bu { color: #008000; } /* BuiltIn */
+code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #4070a0; } /* Char */
+code span.cn { color: #880000; } /* Constant */
+code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code span.dt { color: #902000; } /* DataType */
+code span.dv { color: #40a070; } /* DecVal */
+code span.er { color: #ff0000; font-weight: bold; } /* Error */
+code span.ex { } /* Extension */
+code span.fl { color: #40a070; } /* Float */
+code span.fu { color: #06287e; } /* Function */
+code span.im { color: #008000; font-weight: bold; } /* Import */
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code span.op { color: #666666; } /* Operator */
+code span.ot { color: #007020; } /* Other */
+code span.pp { color: #bc7a00; } /* Preprocessor */
+code span.sc { color: #4070a0; } /* SpecialChar */
+code span.ss { color: #bb6688; } /* SpecialString */
+code span.st { color: #4070a0; } /* String */
+code span.va { color: #19177c; } /* Variable */
+code span.vs { color: #4070a0; } /* VerbatimString */
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+</style>
+
+<style type="text/css">
+  
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+</style>
+
+<link rel="stylesheet" href="style.css" type="text/css" />
+</head>
+
+<body>
+
+
+
+  <div class="book without-animation with-summary font-size-2 font-family-1" data-basepath=".">
+
+    <div class="book-summary">
+      <nav role="navigation">
+
+<ul class="summary">
+<li><a href="./">Practical scRNAseq Analysis with R</a></li>
+
+<li class="divider"></li>
+<li class="chapter" data-level="" data-path="index.html"><a href="index.html"><i class="fa fa-check"></i>Prerequisites</a>
+<ul>
+<li class="chapter" data-level="" data-path="index.html"><a href="index.html#what-youll-learn"><i class="fa fa-check"></i>What You’ll Learn</a></li>
+<li class="chapter" data-level="" data-path="index.html"><a href="index.html#what-you-need-before-starting"><i class="fa fa-check"></i>What You Need Before Starting</a></li>
+<li class="chapter" data-level="" data-path="index.html"><a href="index.html#computing-resources"><i class="fa fa-check"></i>Computing Resources</a></li>
+<li class="chapter" data-level="" data-path="index.html"><a href="index.html#system-dependencies"><i class="fa fa-check"></i>System Dependencies</a></li>
+<li class="chapter" data-level="" data-path="index.html"><a href="index.html#how-to-use-this-book"><i class="fa fa-check"></i>How to Use This Book</a></li>
+<li class="chapter" data-level="" data-path="index.html"><a href="index.html#the-dataset"><i class="fa fa-check"></i>The Dataset</a></li>
+<li class="chapter" data-level="" data-path="index.html"><a href="index.html#reproducibility"><i class="fa fa-check"></i>Reproducibility</a></li>
+<li class="chapter" data-level="" data-path="index.html"><a href="index.html#acknowledgments"><i class="fa fa-check"></i>Acknowledgments</a></li>
+<li class="chapter" data-level="" data-path="index.html"><a href="index.html#license"><i class="fa fa-check"></i>License</a></li>
+</ul></li>
+<li class="chapter" data-level="1" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html"><i class="fa fa-check"></i><b>1</b> Download Data and Quantification</a>
+<ul>
+<li class="chapter" data-level="1.1" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html#what-is-single-cell-rna-seq"><i class="fa fa-check"></i><b>1.1</b> What is single-cell RNA-seq?</a>
+<ul>
+<li class="chapter" data-level="1.1.1" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html#but-do-you-really-need-single-cell-rna-seq"><i class="fa fa-check"></i><b>1.1.1</b> But do you really need single-cell RNA-seq?</a></li>
+<li class="chapter" data-level="1.1.2" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html#the-10x-genomics-chromium-platform"><i class="fa fa-check"></i><b>1.1.2</b> The 10x Genomics Chromium platform</a></li>
+<li class="chapter" data-level="1.1.3" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html#why-umis-matter"><i class="fa fa-check"></i><b>1.1.3</b> Why UMIs matter</a></li>
+<li class="chapter" data-level="1.1.4" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html#cell-barcodes"><i class="fa fa-check"></i><b>1.1.4</b> Cell barcodes</a></li>
+<li class="chapter" data-level="1.1.5" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html#sparse-matrices"><i class="fa fa-check"></i><b>1.1.5</b> Sparse matrices</a></li>
+<li class="chapter" data-level="1.1.6" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html#from-fastq-to-count-matrix"><i class="fa fa-check"></i><b>1.1.6</b> From FASTQ to count matrix</a></li>
+<li class="chapter" data-level="1.1.7" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html#why-alevin-fry"><i class="fa fa-check"></i><b>1.1.7</b> Why alevin-fry?</a></li>
+<li class="chapter" data-level="1.1.8" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html#the-splici-index"><i class="fa fa-check"></i><b>1.1.8</b> The splici index</a></li>
+</ul></li>
+<li class="chapter" data-level="1.2" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html#description-of-the-data"><i class="fa fa-check"></i><b>1.2</b> Description of the Data</a></li>
+<li class="chapter" data-level="1.3" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html#download-the-fastq-files-using-fastq-dl"><i class="fa fa-check"></i><b>1.3</b> Download the fastq files using fastq-dl</a>
+<ul>
+<li class="chapter" data-level="1.3.1" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html#a-note-on-the-fastq-files"><i class="fa fa-check"></i><b>1.3.1</b> A note on the fastq files</a></li>
+<li class="chapter" data-level="1.3.2" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html#alignment-and-quantification-using-simpleaf"><i class="fa fa-check"></i><b>1.3.2</b> alignment and quantification using simpleaf</a></li>
+<li class="chapter" data-level="1.3.3" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html#quantification"><i class="fa fa-check"></i><b>1.3.3</b> Quantification</a></li>
+<li class="chapter" data-level="1.3.4" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html#check-the-output"><i class="fa fa-check"></i><b>1.3.4</b> Check the output</a></li>
+</ul></li>
+<li class="chapter" data-level="1.4" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html#troubleshooting"><i class="fa fa-check"></i><b>1.4</b> Troubleshooting</a></li>
+<li class="chapter" data-level="1.5" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html#alternative-quantification-workflows"><i class="fa fa-check"></i><b>1.5</b> Alternative quantification workflows</a></li>
+<li class="chapter" data-level="1.6" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html#summary"><i class="fa fa-check"></i><b>1.6</b> Summary</a>
+<ul>
+<li class="chapter" data-level="1.6.1" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html#further-reading"><i class="fa fa-check"></i><b>1.6.1</b> Further reading</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html#session-information"><i class="fa fa-check"></i>Session Information</a></li>
+<li class="chapter" data-level="1.7" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html#appendix-future-topics-not-covered-in-this-chapter"><i class="fa fa-check"></i><b>1.7</b> Appendix: Future Topics (Not Covered in This Chapter)</a>
+<ul>
+<li class="chapter" data-level="1.7.1" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html#alternative-workflow"><i class="fa fa-check"></i><b>1.7.1</b> alternative workflow</a></li>
+<li class="chapter" data-level="1.7.2" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html#quality-control"><i class="fa fa-check"></i><b>1.7.2</b> Quality Control</a></li>
+<li class="chapter" data-level="1.7.3" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html#make-seurat-object"><i class="fa fa-check"></i><b>1.7.3</b> Make Seurat object</a></li>
+<li class="chapter" data-level="1.7.4" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html#dimention-reduction"><i class="fa fa-check"></i><b>1.7.4</b> dimention reduction</a></li>
+<li class="chapter" data-level="1.7.5" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html#integration"><i class="fa fa-check"></i><b>1.7.5</b> integration</a></li>
+<li class="chapter" data-level="1.7.6" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html#cluster-resolution"><i class="fa fa-check"></i><b>1.7.6</b> cluster resolution</a></li>
+<li class="chapter" data-level="1.7.7" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html#cell-annotation"><i class="fa fa-check"></i><b>1.7.7</b> cell annotation</a></li>
+<li class="chapter" data-level="1.7.8" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html#presto-for-marker-gene"><i class="fa fa-check"></i><b>1.7.8</b> presto for marker gene</a></li>
+<li class="chapter" data-level="1.7.9" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html#visualization"><i class="fa fa-check"></i><b>1.7.9</b> visualization</a></li>
+<li class="chapter" data-level="1.7.10" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html#gene-percentage-positive"><i class="fa fa-check"></i><b>1.7.10</b> gene percentage positive</a></li>
+<li class="chapter" data-level="1.7.11" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html#differential-abundance"><i class="fa fa-check"></i><b>1.7.11</b> differential abundance</a></li>
+<li class="chapter" data-level="1.7.12" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html#subsample-the-seurat-object"><i class="fa fa-check"></i><b>1.7.12</b> subsample the seurat object</a></li>
+<li class="chapter" data-level="1.7.13" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html#pseduo-bulk"><i class="fa fa-check"></i><b>1.7.13</b> pseduo-bulk</a></li>
+<li class="chapter" data-level="1.7.14" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html#gsea"><i class="fa fa-check"></i><b>1.7.14</b> GSEA</a></li>
+<li class="chapter" data-level="1.7.15" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html#wgcna-for-single-cell"><i class="fa fa-check"></i><b>1.7.15</b> WGCNA for single-cell</a></li>
+<li class="chapter" data-level="1.7.16" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html#trajectory-analysis"><i class="fa fa-check"></i><b>1.7.16</b> trajectory analysis</a></li>
+<li class="chapter" data-level="1.7.17" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html#convert-different-objects"><i class="fa fa-check"></i><b>1.7.17</b> convert different objects</a></li>
+</ul></li>
+</ul></li>
+<li class="chapter" data-level="2" data-path="quality-control-1.html"><a href="quality-control-1.html"><i class="fa fa-check"></i><b>2</b> Quality Control</a>
+<ul>
+<li class="chapter" data-level="2.1" data-path="quality-control-1.html"><a href="quality-control-1.html#before-you-filter-think-about-what-youre-throwing-away"><i class="fa fa-check"></i><b>2.1</b> Before you filter: think about what you’re throwing away</a>
+<ul>
+<li class="chapter" data-level="2.1.1" data-path="quality-control-1.html"><a href="quality-control-1.html#what-counts-as-normal-depends-on-your-biology"><i class="fa fa-check"></i><b>2.1.1</b> What counts as “normal” depends on your biology</a></li>
+<li class="chapter" data-level="2.1.2" data-path="quality-control-1.html"><a href="quality-control-1.html#fixed-thresholds-vs-adaptive-thresholds"><i class="fa fa-check"></i><b>2.1.2</b> Fixed thresholds vs adaptive thresholds</a></li>
+<li class="chapter" data-level="2.1.3" data-path="quality-control-1.html"><a href="quality-control-1.html#the-knee-plot"><i class="fa fa-check"></i><b>2.1.3</b> The knee plot</a></li>
+<li class="chapter" data-level="2.1.4" data-path="quality-control-1.html"><a href="quality-control-1.html#the-empty-droplet-problem"><i class="fa fa-check"></i><b>2.1.4</b> The empty droplet problem</a></li>
+<li class="chapter" data-level="2.1.5" data-path="quality-control-1.html"><a href="quality-control-1.html#qc-is-iterative"><i class="fa fa-check"></i><b>2.1.5</b> QC is iterative</a></li>
+</ul></li>
+<li class="chapter" data-level="2.2" data-path="quality-control-1.html"><a href="quality-control-1.html#a-note-on-preparing-the-computing-environment"><i class="fa fa-check"></i><b>2.2</b> A note on preparing the computing environment</a></li>
+<li class="chapter" data-level="2.3" data-path="quality-control-1.html"><a href="quality-control-1.html#a-note-on-project-folder-structure"><i class="fa fa-check"></i><b>2.3</b> A note on project folder structure</a>
+<ul>
+<li class="chapter" data-level="2.3.1" data-path="quality-control-1.html"><a href="quality-control-1.html#stop-using-setwd-and-rmlist-ls"><i class="fa fa-check"></i><b>2.3.1</b> Stop using <code>setwd()</code> and <code>rm(list = ls())</code></a></li>
+<li class="chapter" data-level="2.3.2" data-path="quality-control-1.html"><a href="quality-control-1.html#use-rstudio-projects-and-here"><i class="fa fa-check"></i><b>2.3.2</b> Use RStudio Projects and <code>here()</code></a></li>
+<li class="chapter" data-level="2.3.3" data-path="quality-control-1.html"><a href="quality-control-1.html#download-the-data"><i class="fa fa-check"></i><b>2.3.3</b> Download the data</a></li>
+</ul></li>
+<li class="chapter" data-level="2.4" data-path="quality-control-1.html"><a href="quality-control-1.html#quality-control-2"><i class="fa fa-check"></i><b>2.4</b> Quality Control</a>
+<ul>
+<li class="chapter" data-level="2.4.1" data-path="quality-control-1.html"><a href="quality-control-1.html#remove-empty-droplets"><i class="fa fa-check"></i><b>2.4.1</b> Remove empty droplets</a></li>
+<li class="chapter" data-level="2.4.2" data-path="quality-control-1.html"><a href="quality-control-1.html#the-knee-plot-1"><i class="fa fa-check"></i><b>2.4.2</b> The knee plot</a></li>
+<li class="chapter" data-level="2.4.3" data-path="quality-control-1.html"><a href="quality-control-1.html#convert-the-ensembl-id-to-gene-symbol"><i class="fa fa-check"></i><b>2.4.3</b> convert the ENSEMBL ID to gene symbol</a></li>
+<li class="chapter" data-level="2.4.4" data-path="quality-control-1.html"><a href="quality-control-1.html#adaptive-thresholding-with-mad-optional"><i class="fa fa-check"></i><b>2.4.4</b> Adaptive thresholding with MAD (optional)</a></li>
+<li class="chapter" data-level="2.4.5" data-path="quality-control-1.html"><a href="quality-control-1.html#do-it-for-all-four-samples-with-purrr"><i class="fa fa-check"></i><b>2.4.5</b> Do it for all four samples with purrr</a></li>
+<li class="chapter" data-level="2.4.6" data-path="quality-control-1.html"><a href="quality-control-1.html#what-we-covered"><i class="fa fa-check"></i><b>2.4.6</b> What we covered</a></li>
+<li class="chapter" data-level="2.4.7" data-path="quality-control-1.html"><a href="quality-control-1.html#things-to-watch-out-for"><i class="fa fa-check"></i><b>2.4.7</b> Things to watch out for</a></li>
+<li class="chapter" data-level="2.4.8" data-path="quality-control-1.html"><a href="quality-control-1.html#further-reading-1"><i class="fa fa-check"></i><b>2.4.8</b> Further reading</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="quality-control-1.html"><a href="quality-control-1.html#session-information-1"><i class="fa fa-check"></i>Session Information</a></li>
+</ul></li>
+<li class="chapter" data-level="3" data-path="seurat-workflow.html"><a href="seurat-workflow.html"><i class="fa fa-check"></i><b>3</b> Seurat workflow</a>
+<ul>
+<li class="chapter" data-level="3.1" data-path="seurat-workflow.html"><a href="seurat-workflow.html#what-we-are-doing-in-this-chapter"><i class="fa fa-check"></i><b>3.1</b> What we are doing in this chapter</a>
+<ul>
+<li class="chapter" data-level="3.1.1" data-path="seurat-workflow.html"><a href="seurat-workflow.html#how-i-structured-this-chapter"><i class="fa fa-check"></i><b>3.1.1</b> How I structured this chapter</a></li>
+</ul></li>
+<li class="chapter" data-level="3.2" data-path="seurat-workflow.html"><a href="seurat-workflow.html#read-in-the-filtered-matrices-and-make-a-seurat-object"><i class="fa fa-check"></i><b>3.2</b> Read in the filtered matrices and make a Seurat object</a></li>
+<li class="chapter" data-level="3.3" data-path="seurat-workflow.html"><a href="seurat-workflow.html#alternative-input-formats-to-make-a-seurat-object"><i class="fa fa-check"></i><b>3.3</b> alternative input formats to make a seurat object</a>
+<ul>
+<li class="chapter" data-level="3.3.1" data-path="seurat-workflow.html"><a href="seurat-workflow.html#cellranger-input"><i class="fa fa-check"></i><b>3.3.1</b> cellranger input</a></li>
+</ul></li>
+<li class="chapter" data-level="3.4" data-path="seurat-workflow.html"><a href="seurat-workflow.html#add-metadata-to-the-seurat-object"><i class="fa fa-check"></i><b>3.4</b> add metadata to the seurat object</a></li>
+<li class="chapter" data-level="3.5" data-path="seurat-workflow.html"><a href="seurat-workflow.html#more-quality-control"><i class="fa fa-check"></i><b>3.5</b> more quality control</a></li>
+<li class="chapter" data-level="3.6" data-path="seurat-workflow.html"><a href="seurat-workflow.html#routine-processing"><i class="fa fa-check"></i><b>3.6</b> Routine Processing</a>
+<ul>
+<li class="chapter" data-level="3.6.1" data-path="seurat-workflow.html"><a href="seurat-workflow.html#why-do-we-need-dimensionality-reduction"><i class="fa fa-check"></i><b>3.6.1</b> Why do we need dimensionality reduction?</a></li>
+<li class="chapter" data-level="3.6.2" data-path="seurat-workflow.html"><a href="seurat-workflow.html#why-we-need-integration-harmony"><i class="fa fa-check"></i><b>3.6.2</b> Why we need integration (Harmony)</a></li>
+<li class="chapter" data-level="3.6.3" data-path="seurat-workflow.html"><a href="seurat-workflow.html#the-pipeline-in-one-code-block"><i class="fa fa-check"></i><b>3.6.3</b> The pipeline in one code block</a></li>
+<li class="chapter" data-level="3.6.4" data-path="seurat-workflow.html"><a href="seurat-workflow.html#how-to-choose-parameters"><i class="fa fa-check"></i><b>3.6.4</b> How to choose parameters</a></li>
+<li class="chapter" data-level="3.6.5" data-path="seurat-workflow.html"><a href="seurat-workflow.html#our-parameter-choices-for-this-dataset"><i class="fa fa-check"></i><b>3.6.5</b> Our parameter choices for this dataset</a></li>
+</ul></li>
+<li class="chapter" data-level="3.7" data-path="seurat-workflow.html"><a href="seurat-workflow.html#remove-other-low-quality-cells"><i class="fa fa-check"></i><b>3.7</b> remove other low quality cells</a></li>
+<li class="chapter" data-level="3.8" data-path="seurat-workflow.html"><a href="seurat-workflow.html#understanding-the-math-behind-each-step"><i class="fa fa-check"></i><b>3.8</b> Understanding the math behind each step</a>
+<ul>
+<li class="chapter" data-level="3.8.1" data-path="seurat-workflow.html"><a href="seurat-workflow.html#why-do-we-normalize"><i class="fa fa-check"></i><b>3.8.1</b> Why do we normalize?</a></li>
+<li class="chapter" data-level="3.8.2" data-path="seurat-workflow.html"><a href="seurat-workflow.html#lognormalize-what-exactly-does-it-do"><i class="fa fa-check"></i><b>3.8.2</b> LogNormalize: what exactly does it do?</a></li>
+<li class="chapter" data-level="3.8.3" data-path="seurat-workflow.html"><a href="seurat-workflow.html#when-to-use-different-normalization-methods"><i class="fa fa-check"></i><b>3.8.3</b> When to use different normalization methods</a></li>
+<li class="chapter" data-level="3.8.4" data-path="seurat-workflow.html"><a href="seurat-workflow.html#which-normalization-should-you-use"><i class="fa fa-check"></i><b>3.8.4</b> Which normalization should you use?</a></li>
+<li class="chapter" data-level="3.8.5" data-path="seurat-workflow.html"><a href="seurat-workflow.html#find-variable-genes"><i class="fa fa-check"></i><b>3.8.5</b> Find Variable Genes</a></li>
+<li class="chapter" data-level="3.8.6" data-path="seurat-workflow.html"><a href="seurat-workflow.html#visualization-1"><i class="fa fa-check"></i><b>3.8.6</b> visualization</a></li>
+<li class="chapter" data-level="3.8.7" data-path="seurat-workflow.html"><a href="seurat-workflow.html#finding-cluster-markers-with-differential-expression"><i class="fa fa-check"></i><b>3.8.7</b> Finding cluster markers with differential expression</a></li>
+</ul></li>
+<li class="chapter" data-level="3.9" data-path="seurat-workflow.html"><a href="seurat-workflow.html#doublet-detection"><i class="fa fa-check"></i><b>3.9</b> Doublet detection</a></li>
+<li class="chapter" data-level="3.10" data-path="seurat-workflow.html"><a href="seurat-workflow.html#ambient-rna-removal"><i class="fa fa-check"></i><b>3.10</b> Ambient RNA removal</a></li>
+<li class="chapter" data-level="3.11" data-path="seurat-workflow.html"><a href="seurat-workflow.html#remove-contaminating-clusters"><i class="fa fa-check"></i><b>3.11</b> Remove contaminating clusters</a></li>
+<li class="chapter" data-level="3.12" data-path="seurat-workflow.html"><a href="seurat-workflow.html#pseudo-bulk-differential-expression-with-deseq2"><i class="fa fa-check"></i><b>3.12</b> Pseudo-bulk differential expression with DESeq2</a>
+<ul>
+<li class="chapter" data-level="3.12.1" data-path="seurat-workflow.html"><a href="seurat-workflow.html#step-1-aggregate-counts-to-pseudo-bulk"><i class="fa fa-check"></i><b>3.12.1</b> Step 1: Aggregate counts to pseudo-bulk</a></li>
+<li class="chapter" data-level="3.12.2" data-path="seurat-workflow.html"><a href="seurat-workflow.html#step-2-prepare-metadata-for-deseq2"><i class="fa fa-check"></i><b>3.12.2</b> Step 2: Prepare metadata for DESeq2</a></li>
+<li class="chapter" data-level="3.12.3" data-path="seurat-workflow.html"><a href="seurat-workflow.html#step-3-run-deseq2-for-one-cluster"><i class="fa fa-check"></i><b>3.12.3</b> Step 3: Run DESeq2 for one cluster</a></li>
+<li class="chapter" data-level="3.12.4" data-path="seurat-workflow.html"><a href="seurat-workflow.html#step-4-run-deseq2-for-all-clusters-with-purrr"><i class="fa fa-check"></i><b>3.12.4</b> Step 4: Run DESeq2 for all clusters with purrr</a></li>
+<li class="chapter" data-level="3.12.5" data-path="seurat-workflow.html"><a href="seurat-workflow.html#step-5-visualize-the-results"><i class="fa fa-check"></i><b>3.12.5</b> Step 5: Visualize the results</a></li>
+<li class="chapter" data-level="3.12.6" data-path="seurat-workflow.html"><a href="seurat-workflow.html#when-to-use-pseudo-bulk-vs-findallmarkers"><i class="fa fa-check"></i><b>3.12.6</b> When to use pseudo-bulk vs FindAllMarkers</a></li>
+</ul></li>
+<li class="chapter" data-level="3.13" data-path="seurat-workflow.html"><a href="seurat-workflow.html#what-we-covered-1"><i class="fa fa-check"></i><b>3.13</b> What we covered</a>
+<ul>
+<li class="chapter" data-level="3.13.1" data-path="seurat-workflow.html"><a href="seurat-workflow.html#things-that-go-wrong"><i class="fa fa-check"></i><b>3.13.1</b> Things that go wrong</a></li>
+<li class="chapter" data-level="3.13.2" data-path="seurat-workflow.html"><a href="seurat-workflow.html#further-reading-2"><i class="fa fa-check"></i><b>3.13.2</b> Further reading</a></li>
+<li class="chapter" data-level="3.13.3" data-path="seurat-workflow.html"><a href="seurat-workflow.html#key-takeaways"><i class="fa fa-check"></i><b>3.13.3</b> Key takeaways</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="seurat-workflow.html"><a href="seurat-workflow.html#session-information-2"><i class="fa fa-check"></i>Session Information</a></li>
+</ul></li>
+<li class="chapter" data-level="4" data-path="cell-annotation-1.html"><a href="cell-annotation-1.html"><i class="fa fa-check"></i><b>4</b> Cell Annotation</a>
+<ul>
+<li class="chapter" data-level="4.1" data-path="cell-annotation-1.html"><a href="cell-annotation-1.html#there-is-no-ground-truth"><i class="fa fa-check"></i><b>4.1</b> There Is No Ground Truth</a>
+<ul>
+<li class="chapter" data-level="4.1.1" data-path="cell-annotation-1.html"><a href="cell-annotation-1.html#how-well-approach-annotation"><i class="fa fa-check"></i><b>4.1.1</b> How we’ll approach annotation</a></li>
+</ul></li>
+<li class="chapter" data-level="4.2" data-path="cell-annotation-1.html"><a href="cell-annotation-1.html#manual-annotation"><i class="fa fa-check"></i><b>4.2</b> Manual Annotation</a>
+<ul>
+<li class="chapter" data-level="4.2.1" data-path="cell-annotation-1.html"><a href="cell-annotation-1.html#define-a-marker-gene-dictionary"><i class="fa fa-check"></i><b>4.2.1</b> Define a marker gene dictionary</a></li>
+<li class="chapter" data-level="4.2.2" data-path="cell-annotation-1.html"><a href="cell-annotation-1.html#visualize-markers-systematically"><i class="fa fa-check"></i><b>4.2.2</b> Visualize markers systematically</a></li>
+<li class="chapter" data-level="4.2.3" data-path="cell-annotation-1.html"><a href="cell-annotation-1.html#use-feature-plots-for-spatial-context"><i class="fa fa-check"></i><b>4.2.3</b> Use feature plots for spatial context</a></li>
+<li class="chapter" data-level="4.2.4" data-path="cell-annotation-1.html"><a href="cell-annotation-1.html#create-a-manual-annotation-table"><i class="fa fa-check"></i><b>4.2.4</b> Create a manual annotation table</a></li>
+</ul></li>
+<li class="chapter" data-level="4.3" data-path="cell-annotation-1.html"><a href="cell-annotation-1.html#automated-annotation-methods"><i class="fa fa-check"></i><b>4.3</b> Automated Annotation Methods</a></li>
+<li class="chapter" data-level="4.4" data-path="cell-annotation-1.html"><a href="cell-annotation-1.html#method-1-singler-reference-based-classification"><i class="fa fa-check"></i><b>4.4</b> Method 1: SingleR (Reference-based Classification)</a>
+<ul>
+<li class="chapter" data-level="4.4.1" data-path="cell-annotation-1.html"><a href="cell-annotation-1.html#choosing-a-reference-dataset"><i class="fa fa-check"></i><b>4.4.1</b> Choosing a reference dataset</a></li>
+<li class="chapter" data-level="4.4.2" data-path="cell-annotation-1.html"><a href="cell-annotation-1.html#built-in-references-from-celldex"><i class="fa fa-check"></i><b>4.4.2</b> Built-in references from celldex</a></li>
+<li class="chapter" data-level="4.4.3" data-path="cell-annotation-1.html"><a href="cell-annotation-1.html#custom-references"><i class="fa fa-check"></i><b>4.4.3</b> Custom references</a></li>
+<li class="chapter" data-level="4.4.4" data-path="cell-annotation-1.html"><a href="cell-annotation-1.html#how-singler-works"><i class="fa fa-check"></i><b>4.4.4</b> How SingleR works</a></li>
+</ul></li>
+<li class="chapter" data-level="4.5" data-path="cell-annotation-1.html"><a href="cell-annotation-1.html#clustifyr"><i class="fa fa-check"></i><b>4.5</b> clustifyr</a></li>
+<li class="chapter" data-level="4.6" data-path="cell-annotation-1.html"><a href="cell-annotation-1.html#seurat-label-transfer"><i class="fa fa-check"></i><b>4.6</b> Seurat label transfer</a></li>
+<li class="chapter" data-level="4.7" data-path="cell-annotation-1.html"><a href="cell-annotation-1.html#comparing-annotation-methods"><i class="fa fa-check"></i><b>4.7</b> Comparing Annotation Methods</a>
+<ul>
+<li class="chapter" data-level="4.7.1" data-path="cell-annotation-1.html"><a href="cell-annotation-1.html#create-a-comparison-table"><i class="fa fa-check"></i><b>4.7.1</b> Create a comparison table</a></li>
+<li class="chapter" data-level="4.7.2" data-path="cell-annotation-1.html"><a href="cell-annotation-1.html#calculate-agreement"><i class="fa fa-check"></i><b>4.7.2</b> Calculate agreement</a></li>
+<li class="chapter" data-level="4.7.3" data-path="cell-annotation-1.html"><a href="cell-annotation-1.html#visualize-side-by-side"><i class="fa fa-check"></i><b>4.7.3</b> Visualize side by side</a></li>
+<li class="chapter" data-level="4.7.4" data-path="cell-annotation-1.html"><a href="cell-annotation-1.html#investigate-discrepancies"><i class="fa fa-check"></i><b>4.7.4</b> Investigate discrepancies</a></li>
+<li class="chapter" data-level="4.7.5" data-path="cell-annotation-1.html"><a href="cell-annotation-1.html#make-a-final-annotation-decision"><i class="fa fa-check"></i><b>4.7.5</b> Make a final annotation decision</a></li>
+<li class="chapter" data-level="4.7.6" data-path="cell-annotation-1.html"><a href="cell-annotation-1.html#method-comparison"><i class="fa fa-check"></i><b>4.7.6</b> Method comparison</a></li>
+</ul></li>
+<li class="chapter" data-level="4.8" data-path="cell-annotation-1.html"><a href="cell-annotation-1.html#deeper-understanding-of-the-anchor-finding-and-label-transfer-step"><i class="fa fa-check"></i><b>4.8</b> Deeper Understanding of the Anchor Finding and Label Transfer Step</a>
+<ul>
+<li class="chapter" data-level="4.8.1" data-path="cell-annotation-1.html"><a href="cell-annotation-1.html#step-by-step-low-level-r-code-for-pca-projection"><i class="fa fa-check"></i><b>4.8.1</b> Step-by-Step Low-Level R Code for PCA Projection</a></li>
+</ul></li>
+<li class="chapter" data-level="4.9" data-path="cell-annotation-1.html"><a href="cell-annotation-1.html#other-annotation-approaches"><i class="fa fa-check"></i><b>4.9</b> Other Annotation Approaches</a>
+<ul>
+<li class="chapter" data-level="4.9.1" data-path="cell-annotation-1.html"><a href="cell-annotation-1.html#marker-based-tools"><i class="fa fa-check"></i><b>4.9.1</b> Marker-based tools</a></li>
+<li class="chapter" data-level="4.9.2" data-path="cell-annotation-1.html"><a href="cell-annotation-1.html#deep-learning-approaches"><i class="fa fa-check"></i><b>4.9.2</b> Deep learning approaches</a></li>
+</ul></li>
+<li class="chapter" data-level="4.10" data-path="cell-annotation-1.html"><a href="cell-annotation-1.html#things-to-watch-out-for-1"><i class="fa fa-check"></i><b>4.10</b> Things to watch out for</a>
+<ul>
+<li class="chapter" data-level="4.10.1" data-path="cell-annotation-1.html"><a href="cell-annotation-1.html#further-reading-3"><i class="fa fa-check"></i><b>4.10.1</b> Further reading</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="cell-annotation-1.html"><a href="cell-annotation-1.html#session-information-3"><i class="fa fa-check"></i>Session Information</a></li>
+</ul></li>
+<li class="chapter" data-level="5" data-path="gene-set-enrichment-analysis.html"><a href="gene-set-enrichment-analysis.html"><i class="fa fa-check"></i><b>5</b> Gene Set Enrichment Analysis</a>
+<ul>
+<li class="chapter" data-level="5.1" data-path="gene-set-enrichment-analysis.html"><a href="gene-set-enrichment-analysis.html#understanding-gene-set-enrichment-analysis"><i class="fa fa-check"></i><b>5.1</b> Understanding Gene Set Enrichment Analysis</a>
+<ul>
+<li class="chapter" data-level="5.1.1" data-path="gene-set-enrichment-analysis.html"><a href="gene-set-enrichment-analysis.html#what-is-gsea"><i class="fa fa-check"></i><b>5.1.1</b> What is GSEA?</a></li>
+<li class="chapter" data-level="5.1.2" data-path="gene-set-enrichment-analysis.html"><a href="gene-set-enrichment-analysis.html#why-use-gene-sets-instead-of-individual-genes"><i class="fa fa-check"></i><b>5.1.2</b> Why Use Gene Sets Instead of Individual Genes?</a></li>
+<li class="chapter" data-level="5.1.3" data-path="gene-set-enrichment-analysis.html"><a href="gene-set-enrichment-analysis.html#two-types-of-analyses"><i class="fa fa-check"></i><b>5.1.3</b> Two Types of Analyses</a></li>
+</ul></li>
+<li class="chapter" data-level="5.2" data-path="gene-set-enrichment-analysis.html"><a href="gene-set-enrichment-analysis.html#how-gene-set-enrichment-works"><i class="fa fa-check"></i><b>5.2</b> How Gene Set Enrichment Works</a>
+<ul>
+<li class="chapter" data-level="5.2.1" data-path="gene-set-enrichment-analysis.html"><a href="gene-set-enrichment-analysis.html#the-gsea-algorithm"><i class="fa fa-check"></i><b>5.2.1</b> The GSEA Algorithm</a></li>
+</ul></li>
+<li class="chapter" data-level="5.3" data-path="gene-set-enrichment-analysis.html"><a href="gene-set-enrichment-analysis.html#choosing-gene-sets"><i class="fa fa-check"></i><b>5.3</b> Choosing Gene Sets</a>
+<ul>
+<li class="chapter" data-level="5.3.1" data-path="gene-set-enrichment-analysis.html"><a href="gene-set-enrichment-analysis.html#major-gene-set-resources"><i class="fa fa-check"></i><b>5.3.1</b> Major Gene Set Resources</a></li>
+</ul></li>
+<li class="chapter" data-level="5.4" data-path="gene-set-enrichment-analysis.html"><a href="gene-set-enrichment-analysis.html#loading-gene-sets"><i class="fa fa-check"></i><b>5.4</b> Loading Gene Sets</a>
+<ul>
+<li class="chapter" data-level="5.4.1" data-path="gene-set-enrichment-analysis.html"><a href="gene-set-enrichment-analysis.html#blood-transcription-modules"><i class="fa fa-check"></i><b>5.4.1</b> Blood Transcription Modules</a></li>
+<li class="chapter" data-level="5.4.2" data-path="gene-set-enrichment-analysis.html"><a href="gene-set-enrichment-analysis.html#msigdb-hallmark-gene-sets"><i class="fa fa-check"></i><b>5.4.2</b> MSigDB Hallmark Gene Sets</a></li>
+</ul></li>
+<li class="chapter" data-level="5.5" data-path="gene-set-enrichment-analysis.html"><a href="gene-set-enrichment-analysis.html#preparing-data-for-gsea"><i class="fa fa-check"></i><b>5.5</b> Preparing Data for GSEA</a>
+<ul>
+<li class="chapter" data-level="5.5.1" data-path="gene-set-enrichment-analysis.html"><a href="gene-set-enrichment-analysis.html#calculate-marker-genes-with-presto"><i class="fa fa-check"></i><b>5.5.1</b> Calculate Marker Genes with presto</a></li>
+<li class="chapter" data-level="5.5.2" data-path="gene-set-enrichment-analysis.html"><a href="gene-set-enrichment-analysis.html#organizing-data-with-nested-dataframes"><i class="fa fa-check"></i><b>5.5.2</b> Organizing Data with Nested Dataframes</a></li>
+<li class="chapter" data-level="5.5.3" data-path="gene-set-enrichment-analysis.html"><a href="gene-set-enrichment-analysis.html#creating-a-ranked-gene-list"><i class="fa fa-check"></i><b>5.5.3</b> Creating a Ranked Gene List</a></li>
+</ul></li>
+<li class="chapter" data-level="5.6" data-path="gene-set-enrichment-analysis.html"><a href="gene-set-enrichment-analysis.html#running-gsea-for-all-clusters-with-purrr"><i class="fa fa-check"></i><b>5.6</b> Running GSEA for All Clusters with purrr</a>
+<ul>
+<li class="chapter" data-level="5.6.1" data-path="gene-set-enrichment-analysis.html"><a href="gene-set-enrichment-analysis.html#create-ranked-gene-lists-for-all-clusters"><i class="fa fa-check"></i><b>5.6.1</b> Create ranked gene lists for all clusters</a></li>
+</ul></li>
+<li class="chapter" data-level="5.7" data-path="gene-set-enrichment-analysis.html"><a href="gene-set-enrichment-analysis.html#interpreting-gsea-results"><i class="fa fa-check"></i><b>5.7</b> Interpreting GSEA Results</a>
+<ul>
+<li class="chapter" data-level="5.7.1" data-path="gene-set-enrichment-analysis.html"><a href="gene-set-enrichment-analysis.html#biological-interpretation"><i class="fa fa-check"></i><b>5.7.1</b> Biological Interpretation</a></li>
+<li class="chapter" data-level="5.7.2" data-path="gene-set-enrichment-analysis.html"><a href="gene-set-enrichment-analysis.html#visualizing-results-across-clusters"><i class="fa fa-check"></i><b>5.7.2</b> Visualizing Results Across Clusters</a></li>
+</ul></li>
+<li class="chapter" data-level="5.8" data-path="gene-set-enrichment-analysis.html"><a href="gene-set-enrichment-analysis.html#alternative-approach-gene-signature-scoring"><i class="fa fa-check"></i><b>5.8</b> Alternative Approach: Gene Signature Scoring</a>
+<ul>
+<li class="chapter" data-level="5.8.1" data-path="gene-set-enrichment-analysis.html"><a href="gene-set-enrichment-analysis.html#methods-for-signature-scoring"><i class="fa fa-check"></i><b>5.8.1</b> Methods for Signature Scoring</a></li>
+<li class="chapter" data-level="5.8.2" data-path="gene-set-enrichment-analysis.html"><a href="gene-set-enrichment-analysis.html#how-ucell-works"><i class="fa fa-check"></i><b>5.8.2</b> How UCell Works</a></li>
+<li class="chapter" data-level="5.8.3" data-path="gene-set-enrichment-analysis.html"><a href="gene-set-enrichment-analysis.html#practical-example-with-ucell"><i class="fa fa-check"></i><b>5.8.3</b> Practical Example with UCell</a></li>
+<li class="chapter" data-level="5.8.4" data-path="gene-set-enrichment-analysis.html"><a href="gene-set-enrichment-analysis.html#when-to-use-gsea-vs.-signature-scoring"><i class="fa fa-check"></i><b>5.8.4</b> When to Use GSEA vs. Signature Scoring</a></li>
+</ul></li>
+<li class="chapter" data-level="5.9" data-path="gene-set-enrichment-analysis.html"><a href="gene-set-enrichment-analysis.html#things-to-remember"><i class="fa fa-check"></i><b>5.9</b> Things to Remember</a></li>
+<li class="chapter" data-level="5.10" data-path="gene-set-enrichment-analysis.html"><a href="gene-set-enrichment-analysis.html#further-reading-4"><i class="fa fa-check"></i><b>5.10</b> Further Reading</a></li>
+<li class="chapter" data-level="" data-path="gene-set-enrichment-analysis.html"><a href="gene-set-enrichment-analysis.html#session-information-4"><i class="fa fa-check"></i>Session Information</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="references.html"><a href="references.html"><i class="fa fa-check"></i>References</a>
+<ul>
+<li class="chapter" data-level="5.11" data-path="references.html"><a href="references.html#determine-optimal-number-of-clusters"><i class="fa fa-check"></i><b>5.11</b> Determine optimal number of clusters</a></li>
+</ul></li>
+<li class="divider"></li>
+<li><a href="https://github.com/crazyhottommy/practical_scRNAseq_analysis_with_R" target="blank">View on GitHub</a></li>
+
+</ul>
+
+      </nav>
+    </div>
+
+    <div class="book-body">
+      <div class="body-inner">
+        <div class="book-header" role="navigation">
+          <h1>
+            <i class="fa fa-circle-o-notch fa-spin"></i><a href="./">Practical scRNAseq Analysis with R</a>
+          </h1>
+        </div>
+
+        <div class="page-wrapper" tabindex="-1" role="main">
+          <div class="page-inner">
+
+            <section class="normal" id="section-">
+<div id="gene-set-enrichment-analysis" class="section level1 hasAnchor" number="5">
+<h1><span class="header-section-number">Chapter 5</span> Gene Set Enrichment Analysis<a href="gene-set-enrichment-analysis.html#gene-set-enrichment-analysis" class="anchor-section" aria-label="Anchor link to header"></a></h1>
+<div id="understanding-gene-set-enrichment-analysis" class="section level2 hasAnchor" number="5.1">
+<h2><span class="header-section-number">5.1</span> Understanding Gene Set Enrichment Analysis<a href="gene-set-enrichment-analysis.html#understanding-gene-set-enrichment-analysis" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>So you’ve identified your clusters and annotated your cell types. Now what? The obvious next step is to ask: what biological processes are actually different between these cell populations?</p>
+<p>You could look at differentially expressed genes one by one, and that’s fine up to a point. But single genes are noisy, and biology rarely works through one gene at a time. Pathways, cellular processes, molecular programs – these involve coordinated regulation of many genes. That’s where Gene Set Enrichment Analysis (GSEA) comes in.</p>
+<div id="what-is-gsea" class="section level3 hasAnchor" number="5.1.1">
+<h3><span class="header-section-number">5.1.1</span> What is GSEA?<a href="gene-set-enrichment-analysis.html#what-is-gsea" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<p>The core question GSEA asks is straightforward:</p>
+<blockquote>
+<p>Are genes in a particular biological pathway ranked higher (or lower) in our data than we’d expect by chance?</p>
+</blockquote>
+<p>Here’s a way to think about it. Imagine you have a deck of 20,000 cards (genes), and you’ve marked 50 of them as “interferon response genes.” You shuffle the deck and lay it out in order based on how differentially expressed each gene is between two conditions. If most of those 50 interferon response cards are concentrated near the top of your ranked list, that’s unlikely to be random – it suggests the interferon response pathway is activated.</p>
+<p>GSEA takes this intuition and puts statistics behind it.</p>
+</div>
+<div id="why-use-gene-sets-instead-of-individual-genes" class="section level3 hasAnchor" number="5.1.2">
+<h3><span class="header-section-number">5.1.2</span> Why Use Gene Sets Instead of Individual Genes?<a href="gene-set-enrichment-analysis.html#why-use-gene-sets-instead-of-individual-genes" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<p>There are several good reasons to think in terms of gene sets rather than individual genes:</p>
+<p>Pathways are more robust. If 15 out of 20 glycolysis genes show moderate upregulation, that’s stronger evidence than one gene showing high upregulation. Knowing that “interferon signaling” is enriched is also more interpretable than seeing IRF1, STAT1, and MX1 are upregulated and having to mentally connect them yourself.</p>
+<p>Aggregating across related genes can also detect subtle but consistent changes that individual gene tests would miss entirely. This is especially important in single-cell data, which is sparse – individual genes may have zero counts in many cells due to dropout. Pathways aggregate signal across multiple genes and reduce noise.</p>
+</div>
+<div id="two-types-of-analyses" class="section level3 hasAnchor" number="5.1.3">
+<h3><span class="header-section-number">5.1.3</span> Two Types of Analyses<a href="gene-set-enrichment-analysis.html#two-types-of-analyses" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<p>In this chapter, we’ll cover two complementary approaches.</p>
+<p>First, gene set enrichment testing, which is the main focus. Here we identify pathways that are differentially active between clusters – we use GSEA with ranked gene lists and ask things like “which pathways are enriched in cluster 0 vs others?”</p>
+<p>Second, gene signature scoring, which we’ll cover at the end. This quantifies pathway activity within individual cells – each cell gets a score for each pathway using methods like UCell or AUCell.</p>
+<p>The difference is simple: enrichment testing asks “what makes this cluster different?” while signature scoring asks “how active is this pathway in each individual cell?”</p>
+</div>
+</div>
+<div id="how-gene-set-enrichment-works" class="section level2 hasAnchor" number="5.2">
+<h2><span class="header-section-number">5.2</span> How Gene Set Enrichment Works<a href="gene-set-enrichment-analysis.html#how-gene-set-enrichment-works" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>Before we run GSEA on our data, let’s understand the algorithm. There are three main steps.</p>
+<div id="the-gsea-algorithm" class="section level3 hasAnchor" number="5.2.1">
+<h3><span class="header-section-number">5.2.1</span> The GSEA Algorithm<a href="gene-set-enrichment-analysis.html#the-gsea-algorithm" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<p>Step 1: Rank all genes. You create a ranked list of all genes – not just the significant ones. This is important! You rank by a statistic that combines effect size (logFC, how much expression changes) and significance (p-value, how confident you are in that change).</p>
+<p>A common ranking metric:</p>
+<pre><code>rank_statistic = sign(logFC) × -log10(p-value)</code></pre>
+<p>Positive values mean upregulated genes, negative values mean downregulated genes, and the magnitude reflects both fold-change and statistical confidence.</p>
+<p>Step 2: Calculate the Enrichment Score (ES). For each gene set (e.g., “Interferon Response”), you walk down the ranked list. When you encounter a gene that is in the set, increase the score (weighted by its rank). When you encounter a gene not in the set, decrease the score. The ES is the maximum deviation from zero during this walk.</p>
+<p>An ES near +1 means the gene set is enriched at the top (pathway activated). Near -1 means it’s enriched at the bottom (suppressed). Near 0 means genes are randomly distributed – no enrichment.</p>
+<p>Step 3: Assess statistical significance. Is this ES surprising, or could it happen by chance? GSEA uses permutation testing: randomly shuffle gene labels, recalculate ES, repeat 1,000 times to build a null distribution, then compare your observed ES to that null distribution to get a p-value.</p>
+<p>GSEA also reports a Normalized Enrichment Score (NES), which adjusts for gene set size so you can compare across sets, and FDR (False Discovery Rate) to account for multiple testing. Typical cutoffs are |NES| &gt; 1.5 and FDR &lt; 0.25.</p>
+</div>
+</div>
+<div id="choosing-gene-sets" class="section level2 hasAnchor" number="5.3">
+<h2><span class="header-section-number">5.3</span> Choosing Gene Sets<a href="gene-set-enrichment-analysis.html#choosing-gene-sets" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>The gene sets you choose determine the questions you can answer, so it’s worth knowing what’s out there.</p>
+<div id="major-gene-set-resources" class="section level3 hasAnchor" number="5.3.1">
+<h3><span class="header-section-number">5.3.1</span> Major Gene Set Resources<a href="gene-set-enrichment-analysis.html#major-gene-set-resources" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<p>MSigDB (Molecular Signatures Database) is the gold standard for human gene sets. It’s organized into collections: H (Hallmark) has 50 well-defined biological states with minimal redundancy; C2 has curated pathway databases like KEGG, Reactome, and BioCarta; C3 has regulatory targets (transcription factors, microRNAs); C5 has Gene Ontology sets; C7 has immunologic signatures; and C8 has cell type signatures.</p>
+<p>For our PBMC data, we’ll use Blood Transcription Modules (BTM) – these are particularly relevant for immune cells. They were derived from <a href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3946932/">a systems biology study of human vaccine responses</a> and represent coordinated gene expression patterns in blood, including things like inflammation, T cell activation, B cell activation, NK cell functions, and monocyte activation. Since these gene sets were specifically designed for blood cells, they’re ideal for interpreting PBMC scRNA-seq data.</p>
+<p>Other resources worth knowing about: KEGG/Reactome for metabolic and signaling pathways, GO (Gene Ontology) which is comprehensive but highly redundant, CellMarker/PanglaoDB for cell type-specific markers, and of course you can always define custom gene sets from the literature.</p>
+<p>My recommendation: start with focused, well-curated collections like Hallmark or BTM before going to larger, more redundant collections like GO. Smaller, high-quality gene sets are easier to interpret and you’re less likely to run into multiple testing issues (see <a href="https://www.sc-best-practices.org/conditions/gsea_pathway.html">sc-best-practices.org</a>).</p>
+</div>
+</div>
+<div id="loading-gene-sets" class="section level2 hasAnchor" number="5.4">
+<h2><span class="header-section-number">5.4</span> Loading Gene Sets<a href="gene-set-enrichment-analysis.html#loading-gene-sets" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<div id="blood-transcription-modules" class="section level3 hasAnchor" number="5.4.1">
+<h3><span class="header-section-number">5.4.1</span> Blood Transcription Modules<a href="gene-set-enrichment-analysis.html#blood-transcription-modules" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<p>Download the <code>gmt</code> file from the <a href="https://github.com/shuzhao-li/BTM/tree/master">BTM repository</a> and load it using <code>clusterProfiler</code>:</p>
+<div class="sourceCode" id="cb290"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb290-1"><a href="gene-set-enrichment-analysis.html#cb290-1" tabindex="-1"></a><span class="fu">library</span>(here)</span>
+<span id="cb290-2"><a href="gene-set-enrichment-analysis.html#cb290-2" tabindex="-1"></a><span class="co">#download.file(&quot;https://raw.githubusercontent.com/shuzhao-li/BTM/master/BTM/datasets/BTM_for_GSEA_20131008.gmt&quot;, </span></span>
+<span id="cb290-3"><a href="gene-set-enrichment-analysis.html#cb290-3" tabindex="-1"></a><span class="co">#              destfile = here(&quot;data/BTM_for_GSEA_20131008.gmt&quot;))</span></span>
+<span id="cb290-4"><a href="gene-set-enrichment-analysis.html#cb290-4" tabindex="-1"></a></span>
+<span id="cb290-5"><a href="gene-set-enrichment-analysis.html#cb290-5" tabindex="-1"></a></span>
+<span id="cb290-6"><a href="gene-set-enrichment-analysis.html#cb290-6" tabindex="-1"></a>immune_signatures<span class="ot">&lt;-</span> clusterProfiler<span class="sc">::</span><span class="fu">read.gmt</span>(<span class="fu">here</span>(<span class="st">&quot;data/BTM_for_GSEA_20131008.gmt&quot;</span>))</span>
+<span id="cb290-7"><a href="gene-set-enrichment-analysis.html#cb290-7" tabindex="-1"></a></span>
+<span id="cb290-8"><a href="gene-set-enrichment-analysis.html#cb290-8" tabindex="-1"></a><span class="fu">head</span>(immune_signatures)</span></code></pre></div>
+<pre><code>#&gt;                      term   gene
+#&gt; 1 targets of FOSL1/2 (M0)   CCL2
+#&gt; 2 targets of FOSL1/2 (M0) COL1A2
+#&gt; 3 targets of FOSL1/2 (M0)    DCN
+#&gt; 4 targets of FOSL1/2 (M0)    IL6
+#&gt; 5 targets of FOSL1/2 (M0)    IL8
+#&gt; 6 targets of FOSL1/2 (M0)    LIF</code></pre>
+</div>
+<div id="msigdb-hallmark-gene-sets" class="section level3 hasAnchor" number="5.4.2">
+<h3><span class="header-section-number">5.4.2</span> MSigDB Hallmark Gene Sets<a href="gene-set-enrichment-analysis.html#msigdb-hallmark-gene-sets" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<p>The Hallmark gene sets from MSigDB are particularly useful – 50 well-defined biological states with minimal redundancy. Let’s load them using the <code>msigdbr</code> package:</p>
+<div class="sourceCode" id="cb292"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb292-1"><a href="gene-set-enrichment-analysis.html#cb292-1" tabindex="-1"></a><span class="co"># install.packages(&quot;msigdbr&quot;)</span></span>
+<span id="cb292-2"><a href="gene-set-enrichment-analysis.html#cb292-2" tabindex="-1"></a><span class="fu">library</span>(msigdbr)</span>
+<span id="cb292-3"><a href="gene-set-enrichment-analysis.html#cb292-3" tabindex="-1"></a></span>
+<span id="cb292-4"><a href="gene-set-enrichment-analysis.html#cb292-4" tabindex="-1"></a><span class="co"># all gene sets for human</span></span>
+<span id="cb292-5"><a href="gene-set-enrichment-analysis.html#cb292-5" tabindex="-1"></a>m_df <span class="ot">&lt;-</span> <span class="fu">msigdbr</span>(<span class="at">species =</span> <span class="st">&quot;Homo sapiens&quot;</span>)</span>
+<span id="cb292-6"><a href="gene-set-enrichment-analysis.html#cb292-6" tabindex="-1"></a><span class="fu">head</span>(m_df)</span></code></pre></div>
+<pre><code>#&gt; # A tibble: 6 × 15
+#&gt;   gs_cat gs_subcat      gs_name        gene_symbol entrez_gene ensembl_gene   
+#&gt;   &lt;chr&gt;  &lt;chr&gt;          &lt;chr&gt;          &lt;chr&gt;             &lt;int&gt; &lt;chr&gt;          
+#&gt; 1 C3     MIR:MIR_Legacy AAACCAC_MIR140 ABCC4             10257 ENSG00000125257
+#&gt; 2 C3     MIR:MIR_Legacy AAACCAC_MIR140 ABRAXAS2          23172 ENSG00000165660
+#&gt; 3 C3     MIR:MIR_Legacy AAACCAC_MIR140 ACTN4                81 ENSG00000130402
+#&gt; 4 C3     MIR:MIR_Legacy AAACCAC_MIR140 ACTN4                81 ENSG00000282844
+#&gt; 5 C3     MIR:MIR_Legacy AAACCAC_MIR140 ACVR1                90 ENSG00000115170
+#&gt; 6 C3     MIR:MIR_Legacy AAACCAC_MIR140 ADAM9              8754 ENSG00000168615
+#&gt; # ℹ 9 more variables: human_gene_symbol &lt;chr&gt;, human_entrez_gene &lt;int&gt;,
+#&gt; #   human_ensembl_gene &lt;chr&gt;, gs_id &lt;chr&gt;, gs_pmid &lt;chr&gt;, gs_geoid &lt;chr&gt;,
+#&gt; #   gs_exact_source &lt;chr&gt;, gs_url &lt;chr&gt;, gs_description &lt;chr&gt;</code></pre>
+<div class="sourceCode" id="cb294"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb294-1"><a href="gene-set-enrichment-analysis.html#cb294-1" tabindex="-1"></a><span class="co"># only the Hallmark gene set</span></span>
+<span id="cb294-2"><a href="gene-set-enrichment-analysis.html#cb294-2" tabindex="-1"></a>m_t2g <span class="ot">&lt;-</span> <span class="fu">msigdbr</span>(<span class="at">species =</span> <span class="st">&quot;Homo sapiens&quot;</span>, <span class="at">category =</span> <span class="st">&quot;H&quot;</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb294-3"><a href="gene-set-enrichment-analysis.html#cb294-3" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(gs_name, gene_symbol)</span>
+<span id="cb294-4"><a href="gene-set-enrichment-analysis.html#cb294-4" tabindex="-1"></a></span>
+<span id="cb294-5"><a href="gene-set-enrichment-analysis.html#cb294-5" tabindex="-1"></a><span class="fu">head</span>(m_t2g)</span></code></pre></div>
+<pre><code>#&gt; # A tibble: 6 × 2
+#&gt;   gs_name               gene_symbol
+#&gt;   &lt;chr&gt;                 &lt;chr&gt;      
+#&gt; 1 HALLMARK_ADIPOGENESIS ABCA1      
+#&gt; 2 HALLMARK_ADIPOGENESIS ABCB8      
+#&gt; 3 HALLMARK_ADIPOGENESIS ACAA2      
+#&gt; 4 HALLMARK_ADIPOGENESIS ACADL      
+#&gt; 5 HALLMARK_ADIPOGENESIS ACADM      
+#&gt; 6 HALLMARK_ADIPOGENESIS ACADS</code></pre>
+</div>
+</div>
+<div id="preparing-data-for-gsea" class="section level2 hasAnchor" number="5.5">
+<h2><span class="header-section-number">5.5</span> Preparing Data for GSEA<a href="gene-set-enrichment-analysis.html#preparing-data-for-gsea" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>Now that we have gene sets loaded, we need to prepare our single-cell data. GSEA requires marker genes for each cluster (differential expression results) and a ranked gene list for each cluster.</p>
+<p>Let’s load our Seurat object and calculate marker genes.</p>
+<div id="calculate-marker-genes-with-presto" class="section level3 hasAnchor" number="5.5.1">
+<h3><span class="header-section-number">5.5.1</span> Calculate Marker Genes with presto<a href="gene-set-enrichment-analysis.html#calculate-marker-genes-with-presto" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<div class="sourceCode" id="cb296"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb296-1"><a href="gene-set-enrichment-analysis.html#cb296-1" tabindex="-1"></a>obj<span class="ot">&lt;-</span> <span class="fu">readRDS</span>(<span class="fu">here</span>(<span class="st">&quot;data/pbmc_seurat_obj.rds&quot;</span>))</span>
+<span id="cb296-2"><a href="gene-set-enrichment-analysis.html#cb296-2" tabindex="-1"></a><span class="fu">library</span>(Seurat)</span>
+<span id="cb296-3"><a href="gene-set-enrichment-analysis.html#cb296-3" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
+<span id="cb296-4"><a href="gene-set-enrichment-analysis.html#cb296-4" tabindex="-1"></a>markers_seurat<span class="ot">&lt;-</span> presto<span class="sc">::</span><span class="fu">wilcoxauc</span>(obj, <span class="at">group_by =</span> <span class="st">&quot;seurat_clusters&quot;</span>)</span>
+<span id="cb296-5"><a href="gene-set-enrichment-analysis.html#cb296-5" tabindex="-1"></a></span>
+<span id="cb296-6"><a href="gene-set-enrichment-analysis.html#cb296-6" tabindex="-1"></a><span class="fu">head</span>(markers_seurat)</span></code></pre></div>
+<pre><code>#&gt;       feature group    avgExpr         logFC statistic       auc         pval
+#&gt; 1 MIR1302.2HG     0 0.00000000  0.0000000000  34538717 0.5000000 1.000000e+00
+#&gt; 2       OR4F5     0 0.00000000  0.0000000000  34538717 0.5000000 1.000000e+00
+#&gt; 3  AL627309.4     0 0.00000000  0.0000000000  34538717 0.5000000 1.000000e+00
+#&gt; 4   LINC01409     0 0.01537173  0.0011655866  34483940 0.4992070 4.042823e-01
+#&gt; 5   LINC01128     0 0.03162368 -0.0064985834  33950532 0.4914851 9.476258e-08
+#&gt; 6      SAMD11     0 0.00000000 -0.0005175812  34518382 0.4997056 1.027964e-01
+#&gt;           padj   pct_in   pct_out
+#&gt; 1 1.000000e+00 0.000000 0.0000000
+#&gt; 2 1.000000e+00 0.000000 0.0000000
+#&gt; 3 1.000000e+00 0.000000 0.0000000
+#&gt; 4 8.898393e-01 1.150697 1.3149287
+#&gt; 5 5.240866e-07 2.323523 4.0887086
+#&gt; 6 3.002035e-01 0.000000 0.0588774</code></pre>
+<div class="sourceCode" id="cb298"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb298-1"><a href="gene-set-enrichment-analysis.html#cb298-1" tabindex="-1"></a><span class="co">#SeuratWrappers::RunPresto</span></span></code></pre></div>
+</div>
+<div id="organizing-data-with-nested-dataframes" class="section level3 hasAnchor" number="5.5.2">
+<h3><span class="header-section-number">5.5.2</span> Organizing Data with Nested Dataframes<a href="gene-set-enrichment-analysis.html#organizing-data-with-nested-dataframes" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<p>We have marker genes for all 10 clusters. We could copy-paste the GSEA code 10 times, but you see the pattern here – that’s a lot of repetition. As we discussed in Chapter 2, the “Do Not Repeat Yourself” principle saves us.</p>
+<p>Instead, we’ll use nested dataframes with list columns. This keeps everything organized and eliminates code repetition. Let’s nest the markers by cluster:</p>
+<div class="sourceCode" id="cb299"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb299-1"><a href="gene-set-enrichment-analysis.html#cb299-1" tabindex="-1"></a>markers_nested<span class="ot">&lt;-</span> markers_seurat <span class="sc">%&gt;%</span> </span>
+<span id="cb299-2"><a href="gene-set-enrichment-analysis.html#cb299-2" tabindex="-1"></a>        <span class="fu">group_by</span>(group) <span class="sc">%&gt;%</span> </span>
+<span id="cb299-3"><a href="gene-set-enrichment-analysis.html#cb299-3" tabindex="-1"></a>        tidyr<span class="sc">::</span><span class="fu">nest</span>()</span>
+<span id="cb299-4"><a href="gene-set-enrichment-analysis.html#cb299-4" tabindex="-1"></a></span>
+<span id="cb299-5"><a href="gene-set-enrichment-analysis.html#cb299-5" tabindex="-1"></a>markers_nested</span></code></pre></div>
+<pre><code>#&gt; # A tibble: 8 × 2
+#&gt; # Groups:   group [8]
+#&gt;   group data                 
+#&gt;   &lt;chr&gt; &lt;list&gt;               
+#&gt; 1 0     &lt;tibble [36,601 × 9]&gt;
+#&gt; 2 1     &lt;tibble [36,601 × 9]&gt;
+#&gt; 3 2     &lt;tibble [36,601 × 9]&gt;
+#&gt; 4 3     &lt;tibble [36,601 × 9]&gt;
+#&gt; 5 4     &lt;tibble [36,601 × 9]&gt;
+#&gt; 6 5     &lt;tibble [36,601 × 9]&gt;
+#&gt; 7 6     &lt;tibble [36,601 × 9]&gt;
+#&gt; 8 7     &lt;tibble [36,601 × 9]&gt;</code></pre>
+<div class="sourceCode" id="cb301"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb301-1"><a href="gene-set-enrichment-analysis.html#cb301-1" tabindex="-1"></a><span class="co"># markers for cluster 0</span></span>
+<span id="cb301-2"><a href="gene-set-enrichment-analysis.html#cb301-2" tabindex="-1"></a>markers_nested<span class="sc">$</span>data[[<span class="dv">1</span>]]</span></code></pre></div>
+<pre><code>#&gt; # A tibble: 36,601 × 9
+#&gt;    feature     avgExpr    logFC statistic   auc     pval     padj pct_in pct_out
+#&gt;    &lt;chr&gt;         &lt;dbl&gt;    &lt;dbl&gt;     &lt;dbl&gt; &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;  &lt;dbl&gt;   &lt;dbl&gt;
+#&gt;  1 MIR1302.2HG 0        0       34538717  0.5   1   e+ 0 1   e+ 0 0      0      
+#&gt;  2 OR4F5       0        0       34538717  0.5   1   e+ 0 1   e+ 0 0      0      
+#&gt;  3 AL627309.4  0        0       34538717  0.5   1   e+ 0 1   e+ 0 0      0      
+#&gt;  4 LINC01409   1.54e-2  1.17e-3 34483940  0.499 4.04e- 1 8.90e- 1 1.15   1.31   
+#&gt;  5 LINC01128   3.16e-2 -6.50e-3 33950532. 0.491 9.48e- 8 5.24e- 7 2.32   4.09   
+#&gt;  6 SAMD11      0       -5.18e-4 34518382. 0.500 1.03e- 1 3.00e- 1 0      0.0589 
+#&gt;  7 LINC01342   0       -5.25e-5 34536458. 0.500 5.87e- 1 1   e+ 0 0      0.00654
+#&gt;  8 TTLL10      2.75e-4 -1.93e-4 34532804  0.500 5.91e- 1 1   e+ 0 0.0221 0.0393 
+#&gt;  9 SCNN1D      2.19e-3  1.40e-3 34575016. 0.501 4.50e- 2 1.49e- 1 0.177  0.0720 
+#&gt; 10 MRPL20.AS1  7.55e-2 -2.41e-2 33310218  0.482 6.54e-14 4.95e-13 5.62   9.43   
+#&gt; # ℹ 36,591 more rows</code></pre>
+<p>We then have a list-column for the markers of each cluster/the group column.</p>
+<p>Note that <code>presto</code> returns all genes for each cluster – all 36,601 of them. This is exactly what GSEA needs!</p>
+<p>One thing I want to emphasize: unlike Over-Representation Analysis (ORA), which only uses “significant” genes, GSEA uses the entire ranked gene list. This is more powerful because it considers the magnitude and direction of all genes, not just those passing an arbitrary threshold. Don’t pre-filter your gene list!</p>
+</div>
+<div id="creating-a-ranked-gene-list" class="section level3 hasAnchor" number="5.5.3">
+<h3><span class="header-section-number">5.5.3</span> Creating a Ranked Gene List<a href="gene-set-enrichment-analysis.html#creating-a-ranked-gene-list" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<p>For GSEA, we need to rank all genes by a metric that captures both effect size (logFC) and statistical significance (p-value). We’ll use:</p>
+<pre><code>rank_statistic = sign(logFC) × -log10(p-value)</code></pre>
+<p>This way, upregulated genes with strong evidence get high positive scores, downregulated genes with strong evidence get high negative scores, and genes with weak evidence (high p-values) get scores near zero.</p>
+<p>Let’s write a function to create this ranked list:</p>
+<div class="sourceCode" id="cb304"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb304-1"><a href="gene-set-enrichment-analysis.html#cb304-1" tabindex="-1"></a><span class="co"># let&#39;s write a function for that</span></span>
+<span id="cb304-2"><a href="gene-set-enrichment-analysis.html#cb304-2" tabindex="-1"></a></span>
+<span id="cb304-3"><a href="gene-set-enrichment-analysis.html#cb304-3" tabindex="-1"></a><span class="co"># install it from bioconductor, if you do not have it. we will use it to map gene names</span></span>
+<span id="cb304-4"><a href="gene-set-enrichment-analysis.html#cb304-4" tabindex="-1"></a><span class="fu">library</span>(org.Hs.eg.db)</span>
+<span id="cb304-5"><a href="gene-set-enrichment-analysis.html#cb304-5" tabindex="-1"></a>rank_genes<span class="ot">&lt;-</span> <span class="cf">function</span>(deg, <span class="at">symbol=</span> <span class="cn">TRUE</span>){</span>
+<span id="cb304-6"><a href="gene-set-enrichment-analysis.html#cb304-6" tabindex="-1"></a>   genes<span class="ot">&lt;-</span> deg<span class="sc">$</span>feature</span>
+<span id="cb304-7"><a href="gene-set-enrichment-analysis.html#cb304-7" tabindex="-1"></a>   </span>
+<span id="cb304-8"><a href="gene-set-enrichment-analysis.html#cb304-8" tabindex="-1"></a>   <span class="co">#some gene sets require ENTREZID instead of gene symbol, let&#39;s map them</span></span>
+<span id="cb304-9"><a href="gene-set-enrichment-analysis.html#cb304-9" tabindex="-1"></a>   gene_map<span class="ot">&lt;-</span> clusterProfiler<span class="sc">::</span><span class="fu">bitr</span>(genes,<span class="at">fromType =</span> <span class="st">&quot;SYMBOL&quot;</span>, <span class="at">toType =</span> <span class="st">&quot;ENTREZID&quot;</span>, <span class="at">OrgDb =</span> org.Hs.eg.db)</span>
+<span id="cb304-10"><a href="gene-set-enrichment-analysis.html#cb304-10" tabindex="-1"></a>   </span>
+<span id="cb304-11"><a href="gene-set-enrichment-analysis.html#cb304-11" tabindex="-1"></a>   res_df<span class="ot">&lt;-</span> <span class="fu">inner_join</span>(deg, gene_map, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">&quot;feature&quot;</span> <span class="ot">=</span> <span class="st">&quot;SYMBOL&quot;</span>)) <span class="sc">%&gt;%</span></span>
+<span id="cb304-12"><a href="gene-set-enrichment-analysis.html#cb304-12" tabindex="-1"></a>           <span class="fu">filter</span>(<span class="sc">!</span>pval<span class="sc">==</span><span class="dv">0</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb304-13"><a href="gene-set-enrichment-analysis.html#cb304-13" tabindex="-1"></a>           <span class="fu">mutate</span>(<span class="at">signed_rank_stats =</span> <span class="fu">sign</span>(logFC) <span class="sc">*</span> <span class="sc">-</span><span class="fu">log10</span>(pval)) <span class="sc">%&gt;%</span></span>
+<span id="cb304-14"><a href="gene-set-enrichment-analysis.html#cb304-14" tabindex="-1"></a>           <span class="fu">arrange</span>(<span class="fu">desc</span>(signed_rank_stats))</span>
+<span id="cb304-15"><a href="gene-set-enrichment-analysis.html#cb304-15" tabindex="-1"></a>   </span>
+<span id="cb304-16"><a href="gene-set-enrichment-analysis.html#cb304-16" tabindex="-1"></a>   <span class="cf">if</span> (symbol){</span>
+<span id="cb304-17"><a href="gene-set-enrichment-analysis.html#cb304-17" tabindex="-1"></a>     gene_list<span class="ot">&lt;-</span> res_df<span class="sc">$</span>signed_rank_stats</span>
+<span id="cb304-18"><a href="gene-set-enrichment-analysis.html#cb304-18" tabindex="-1"></a>     <span class="fu">names</span>(gene_list)<span class="ot">&lt;-</span> res_df<span class="sc">$</span>feature</span>
+<span id="cb304-19"><a href="gene-set-enrichment-analysis.html#cb304-19" tabindex="-1"></a>   } <span class="cf">else</span> {</span>
+<span id="cb304-20"><a href="gene-set-enrichment-analysis.html#cb304-20" tabindex="-1"></a>     gene_list<span class="ot">&lt;-</span> res_df<span class="sc">$</span>signed_rank_stats</span>
+<span id="cb304-21"><a href="gene-set-enrichment-analysis.html#cb304-21" tabindex="-1"></a>     <span class="fu">names</span>(gene_list)<span class="ot">&lt;-</span> res_df<span class="sc">$</span>ENTREZID</span>
+<span id="cb304-22"><a href="gene-set-enrichment-analysis.html#cb304-22" tabindex="-1"></a>   }</span>
+<span id="cb304-23"><a href="gene-set-enrichment-analysis.html#cb304-23" tabindex="-1"></a>   </span>
+<span id="cb304-24"><a href="gene-set-enrichment-analysis.html#cb304-24" tabindex="-1"></a>   <span class="fu">return</span>(gene_list)</span>
+<span id="cb304-25"><a href="gene-set-enrichment-analysis.html#cb304-25" tabindex="-1"></a>   </span>
+<span id="cb304-26"><a href="gene-set-enrichment-analysis.html#cb304-26" tabindex="-1"></a>}</span></code></pre></div>
+<p>This function will return a ranked gene list</p>
+<div class="sourceCode" id="cb305"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb305-1"><a href="gene-set-enrichment-analysis.html#cb305-1" tabindex="-1"></a>markers_nested<span class="sc">$</span>data[[<span class="dv">1</span>]] <span class="sc">%&gt;%</span> <span class="fu">head</span>()</span></code></pre></div>
+<pre><code>#&gt; # A tibble: 6 × 9
+#&gt;   feature     avgExpr     logFC statistic   auc      pval    padj pct_in pct_out
+#&gt;   &lt;chr&gt;         &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt; &lt;dbl&gt;     &lt;dbl&gt;   &lt;dbl&gt;  &lt;dbl&gt;   &lt;dbl&gt;
+#&gt; 1 MIR1302.2HG  0       0        34538717  0.5     1   e+0 1   e+0   0     0     
+#&gt; 2 OR4F5        0       0        34538717  0.5     1   e+0 1   e+0   0     0     
+#&gt; 3 AL627309.4   0       0        34538717  0.5     1   e+0 1   e+0   0     0     
+#&gt; 4 LINC01409    0.0154  0.00117  34483940  0.499   4.04e-1 8.90e-1   1.15  1.31  
+#&gt; 5 LINC01128    0.0316 -0.00650  33950532. 0.491   9.48e-8 5.24e-7   2.32  4.09  
+#&gt; 6 SAMD11       0      -0.000518 34518382. 0.500   1.03e-1 3.00e-1   0     0.0589</code></pre>
+<div class="sourceCode" id="cb307"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb307-1"><a href="gene-set-enrichment-analysis.html#cb307-1" tabindex="-1"></a><span class="co"># returns a ranked gene list with gene symbols</span></span>
+<span id="cb307-2"><a href="gene-set-enrichment-analysis.html#cb307-2" tabindex="-1"></a><span class="fu">rank_genes</span>(markers_nested<span class="sc">$</span>data[[<span class="dv">1</span>]]) <span class="sc">%&gt;%</span> <span class="fu">head</span>()</span></code></pre></div>
+<pre><code>#&gt;     EEF2   PABPC1   SNHG29   RPL10A     RPS8     RPL5 
+#&gt; 303.3946 295.4486 275.6753 271.2262 256.6863 254.2618</code></pre>
+<div class="sourceCode" id="cb309"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb309-1"><a href="gene-set-enrichment-analysis.html#cb309-1" tabindex="-1"></a><span class="co"># returns a ranked gene list with ENTREZID</span></span>
+<span id="cb309-2"><a href="gene-set-enrichment-analysis.html#cb309-2" tabindex="-1"></a><span class="fu">rank_genes</span>(markers_nested<span class="sc">$</span>data[[<span class="dv">1</span>]], <span class="at">symbol =</span> <span class="cn">FALSE</span>) <span class="sc">%&gt;%</span> <span class="fu">head</span>()</span></code></pre></div>
+<pre><code>#&gt;     1938    26986   125144     4736     6202     6125 
+#&gt; 303.3946 295.4486 275.6753 271.2262 256.6863 254.2618</code></pre>
+<div class="sourceCode" id="cb311"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb311-1"><a href="gene-set-enrichment-analysis.html#cb311-1" tabindex="-1"></a><span class="fu">library</span>(clusterProfiler)</span>
+<span id="cb311-2"><a href="gene-set-enrichment-analysis.html#cb311-2" tabindex="-1"></a><span class="fu">library</span>(enrichplot)</span>
+<span id="cb311-3"><a href="gene-set-enrichment-analysis.html#cb311-3" tabindex="-1"></a></span>
+<span id="cb311-4"><a href="gene-set-enrichment-analysis.html#cb311-4" tabindex="-1"></a>em1 <span class="ot">&lt;-</span> <span class="fu">GSEA</span>(<span class="fu">rank_genes</span>(markers_nested<span class="sc">$</span>data[[<span class="dv">1</span>]]), <span class="at">TERM2GENE=</span> m_t2g)</span>
+<span id="cb311-5"><a href="gene-set-enrichment-analysis.html#cb311-5" tabindex="-1"></a></span>
+<span id="cb311-6"><a href="gene-set-enrichment-analysis.html#cb311-6" tabindex="-1"></a>em1<span class="sc">@</span>result <span class="sc">%&gt;%</span> <span class="fu">head</span>()</span></code></pre></div>
+<pre><code>#&gt;                                                                    ID
+#&gt; HALLMARK_MTORC1_SIGNALING                   HALLMARK_MTORC1_SIGNALING
+#&gt; HALLMARK_OXIDATIVE_PHOSPHORYLATION HALLMARK_OXIDATIVE_PHOSPHORYLATION
+#&gt; HALLMARK_UV_RESPONSE_UP                       HALLMARK_UV_RESPONSE_UP
+#&gt; HALLMARK_ADIPOGENESIS                           HALLMARK_ADIPOGENESIS
+#&gt; HALLMARK_MYC_TARGETS_V1                       HALLMARK_MYC_TARGETS_V1
+#&gt; HALLMARK_INTERFERON_GAMMA_RESPONSE HALLMARK_INTERFERON_GAMMA_RESPONSE
+#&gt;                                                           Description setSize
+#&gt; HALLMARK_MTORC1_SIGNALING                   HALLMARK_MTORC1_SIGNALING     197
+#&gt; HALLMARK_OXIDATIVE_PHOSPHORYLATION HALLMARK_OXIDATIVE_PHOSPHORYLATION     199
+#&gt; HALLMARK_UV_RESPONSE_UP                       HALLMARK_UV_RESPONSE_UP     153
+#&gt; HALLMARK_ADIPOGENESIS                           HALLMARK_ADIPOGENESIS     199
+#&gt; HALLMARK_MYC_TARGETS_V1                       HALLMARK_MYC_TARGETS_V1     185
+#&gt; HALLMARK_INTERFERON_GAMMA_RESPONSE HALLMARK_INTERFERON_GAMMA_RESPONSE     186
+#&gt;                                    enrichmentScore       NES       pvalue
+#&gt; HALLMARK_MTORC1_SIGNALING               -0.7629230 -1.221082 6.373604e-05
+#&gt; HALLMARK_OXIDATIVE_PHOSPHORYLATION      -0.7603945 -1.217038 1.133702e-04
+#&gt; HALLMARK_UV_RESPONSE_UP                 -0.7652326 -1.220778 3.991298e-04
+#&gt; HALLMARK_ADIPOGENESIS                   -0.7538520 -1.206566 3.075937e-04
+#&gt; HALLMARK_MYC_TARGETS_V1                 -0.7490388 -1.197631 7.647650e-04
+#&gt; HALLMARK_INTERFERON_GAMMA_RESPONSE      -0.7486012 -1.197368 9.296228e-04
+#&gt;                                       p.adjust      qvalue rank
+#&gt; HALLMARK_MTORC1_SIGNALING          0.002834254 0.001969061 2639
+#&gt; HALLMARK_OXIDATIVE_PHOSPHORYLATION 0.002834254 0.001969061 2677
+#&gt; HALLMARK_UV_RESPONSE_UP            0.004989122 0.003466127 2344
+#&gt; HALLMARK_ADIPOGENESIS              0.004989122 0.003466127 3868
+#&gt; HALLMARK_MYC_TARGETS_V1            0.006640163 0.004613166 1999
+#&gt; HALLMARK_INTERFERON_GAMMA_RESPONSE 0.006640163 0.004613166 3706
+#&gt;                                                      leading_edge
+#&gt; HALLMARK_MTORC1_SIGNALING          tags=54%, list=12%, signal=48%
+#&gt; HALLMARK_OXIDATIVE_PHOSPHORYLATION tags=58%, list=13%, signal=51%
+#&gt; HALLMARK_UV_RESPONSE_UP            tags=34%, list=11%, signal=30%
+#&gt; HALLMARK_ADIPOGENESIS              tags=48%, list=18%, signal=40%
+#&gt; HALLMARK_MYC_TARGETS_V1             tags=63%, list=9%, signal=58%
+#&gt; HALLMARK_INTERFERON_GAMMA_RESPONSE tags=49%, list=17%, signal=41%
+#&gt;                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            core_enrichment
+#&gt; HALLMARK_MTORC1_SIGNALING                                                                                                                                 IFRD1/PSMC6/IFI30/TMEM97/SCD/GCLC/GOT1/COPS5/SKAP2/UCHL5/STARD4/HMBS/DHCR7/SSR1/PITPNB/TCEA1/ERO1A/ADIPOR2/LDLR/TBK1/RAB1A/TUBA4A/TES/CYB5B/HSPA4/SEC11A/PPP1R15A/TXNRD1/ACLY/TUBG1/SQSTM1/HPRT1/MTHFD2/PSMC2/CANX/PSMD12/YKT6/ACTR2/G6PD/ATP6V1D/AK4/CDKN1A/PSMG1/ITGB2/ENO1/ACTR3/ATP2A2/PSMB5/PNP/HMGCS1/ABCF2/PPA1/SHMT2/EBP/RRP9/M6PR/DDIT4/BTG2/NIBAN1/LDHA/HSP90B1/UFM1/CYP51A1/INSIG1/PSAT1/SLA/NAMPT/HSPA9/IDI1/CACYBP/NFKBIB/PSME3/CCT6A/PNO1/BHLHE40/TFRC/MAP2K3/RPN1/SQLE/TPI1/PSMC4/HSPA5/PDAP1/PSMD13/PSMA3/SLC1A5/EIF2S2/EEF1E1/PSMD14/PSMA4/ETF1/DDX39A/ATP5MC1/TOMM40/CTSC/SLC7A5/STIP1/UBE2D3/CALR/SDF2L1/PRDX1/PPIA/ARPC5L/CORO1A/HSPE1/GAPDH
+#&gt; HALLMARK_OXIDATIVE_PHOSPHORYLATION ATP6V1E1/GOT2/ISCA1/ATP5PB/ACADM/CS/MRPS22/IDH3G/MTX2/IDH2/SDHD/NQO2/RHOT2/IDH3B/GPX4/MGST3/ALAS1/OGDH/ECH1/NDUFV1/MRPL34/MPC1/SLC25A4/GLUD1/SLC25A11/NDUFB4/NDUFA8/FXN/PDHA1/AFG3L2/HTRA2/UQCRH/MDH2/HCCS/MRPS11/ATP6V0C/NDUFA5/IDH3A/NDUFS8/NDUFC1/VDAC3/ATP6V1D/TIMM50/SDHB/SDHC/NDUFA7/CYB5R3/UQCR10/ACO2/NDUFS3/COX6B1/ECHS1/NDUFB3/PRDX3/NDUFA9/ACADVL/SLC25A5/NDUFA3/UQCRC1/LDHA/FDX1/GRPEL1/NDUFV2/PHB2/MRPL15/MRPL11/ATP5F1D/NDUFS7/ETFA/VDAC1/COX6C/UQCRFS1/ATP6V1F/HSPA9/CYB5A/NDUFB6/TOMM22/NDUFA2/TIMM17A/COX5B/MRPS15/ATP5F1B/ATP5F1C/TIMM10/HSD17B10/BAX/TIMM8B/ATP5PF/TIMM13/POLR2F/NDUFA4/CYC1/ATP5MC1/NDUFC2/ATP6V0E1/NDUFB8/NDUFA1/ATP5ME/NDUFA6/MRPS12/COX8A/ATP5MC3/COX7A2/NDUFB7/ATP6V0B/NDUFAB1/NDUFS6/ATP5F1E/COX5A/COX7B/COX17/UQCRQ/ATP5MF/UQCR11/COX6A1/CYCS
+#&gt; HALLMARK_UV_RESPONSE_UP                                                                                                                                                                                                                                                                                                                                                                                                                                                                               PRKCD/HYAL2/DNAJB1/CDC34/NUP58/ALAS1/PPT1/SIGMAR1/GLS/SLC25A4/NR4A1/TUBA4A/CYB5B/RASGRP1/FEN1/SQSTM1/STK25/YKT6/ICAM1/TMBIM6/POLE3/EIF5/CEBPG/PPIF/BTG2/MRPL23/JUNB/GRPEL1/ARRB2/BTG3/BID/GCH1/ATP6V1F/BAK1/POLR2H/AMD1/TFRC/RPN1/CCND3/PDAP1/FKBP4/AP2S1/PSMC3/CLTB/RAB27A/FURIN/STIP1/DNAJA1/BSG/DDX21/NFKBIA/TAP1
+#&gt; HALLMARK_ADIPOGENESIS                                                                                                                                                                                                       DLAT/RIOK3/PFKL/POR/DGAT1/BAZ2A/FAH/AIFM1/IFNGR1/ACAA2/APLP2/QDPR/UCK1/CHUK/DLD/PGM1/COQ9/GBE1/DECR1/PPP1R15B/NMT1/SUCLG1/JAGN1/GADD45A/SLC25A1/G3BP2/RTN3/ACADM/SAMM50/CS/IDH3G/SLC19A1/PLIN2/PEMT/RNF11/GPAT4/LPCAT3/SLC5A6/GPX4/DNAJB9/MGST3/PFKFB3/HIBCH/SCP2/DHCR7/ECH1/SOD1/STAT5A/AGPAT3/RMDN3/ADIPOR2/ARAF/ACLY/MDH2/YWHAG/DHRS7/UBC/GHITM/NDUFA5/UBQLN1/IDH3A/ESYT1/SDHB/SDHC/UQCR10/ARL4A/ACO2/NDUFS3/ECHS1/PREB/PRDX3/TALDO1/UQCRC1/SQOR/GRPEL1/ESRRA/MRPL15/CHCHD10/AK2/CD151/MTCH2/SLC1A5/DNAJC15/PIM3/TANK/CYC1/STOM/COX8A/NDUFB7/REEP5/NDUFAB1/COX7B/UQCRQ/UQCR11/COX6A1/ATP1B3
+#&gt; HALLMARK_MYC_TARGETS_V1                                                                     DHX15/XRCC6/VBP1/XPO1/NCBP2/PCNA/SNRPA/EIF3B/ACP1/AIMP2/HDAC2/ABCE1/HNRNPC/CTPS1/SNRPD2/SRPK1/EIF4H/TRA2B/HPRT1/FAM120A/PWP1/HNRNPR/CBX3/CANX/MRPL9/HDDC2/VDAC3/GLO1/RUVBL2/EIF1AX/EIF4E/POLE3/PSMA1/HNRNPA3/PSMD1/GNL3/PRPF31/PTGES3/TUFM/PRDX3/PA2G4/RRP9/SNRPD3/MRPL23/CCT2/SNRPA1/LDHA/NOP56/SYNCRIP/STARD7/CCT7/PHB2/C1QBP/PSMD3/ILF2/HDGF/POLD2/G3BP1/VDAC1/SET/AP3S1/RAD23B/SNRPB2/CCT3/PSMD7/EIF2S1/TCP1/TFDP1/HSP90AB1/GSPT1/SERBP1/SSBP1/YWHAE/RNPS1/PPM1G/PSMC4/RPLP0/CCT5/CDK4/KPNA2/EIF4G2/NOLC1/EIF2S2/EIF3J/LSM2/HNRNPA2B1/PSMD14/PSMA4/CYC1/ETF1/LSM7/SRSF2/PRDX4/TXNL4A/ERH/EIF4A1/PSMA2/YWHAQ/SRSF7/NOP16/UBE2L3/PSMB2/PSMD8/SNRPD1/NDUFAB1/ODC1/DDX21/PSMB3/COX5A/NHP2/PSMA6/RANBP1/SRM/RAN/NME1/PPIA/HSPE1
+#&gt; HALLMARK_INTERFERON_GAMMA_RESPONSE                                                                                                                                                                                                                             APOL6/PML/NCOA3/RNF31/CASP7/TRIM25/HELZ2/OAS3/CD274/PTPN1/CD38/VAMP5/SOD2/OGFR/CASP1/GBP4/PNPT1/TRIM26/ST8SIA4/ADAR/EIF4E3/LYSMD2/IRF7/HIF1A/USP18/IFI30/NUP93/ITGB7/MVP/EPSTI1/AUTS2/PTPN6/UPP1/ZNFX1/OAS2/BPGM/MX1/PFKP/SAMD9L/RBCK1/PTPN2/TNFAIP3/IRF8/MYD88/PARP14/XCL1/EIF2AK2/ISOC1/CASP4/MTHFD2/PLSCR1/ICAM1/CDKN1A/LCP2/ARL4A/OASL/MT2A/IL10RA/IL15RA/PNP/PSMB10/SLAMF7/LAP3/NFKB1/TAPBP/PSME1/GCH1/NAMPT/BST2/IFI35/ISG15/SOCS1/FAS/IFITM2/PSMB9/PSMB8/IRF4/PSMA3/VAMP8/SRI/SPPL2A/PSMA2/CD74/PSMB2/ISG20/NFKBIA/GZMA/RNF213/IL2RB/KLRK1/TAP1/LY6E</code></pre>
+<p>we can do it for cluster 1:</p>
+<div class="sourceCode" id="cb313"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb313-1"><a href="gene-set-enrichment-analysis.html#cb313-1" tabindex="-1"></a>em2<span class="ot">&lt;-</span> <span class="fu">GSEA</span>(<span class="fu">rank_genes</span>(markers_nested<span class="sc">$</span>data[[<span class="dv">2</span>]]), <span class="at">TERM2GENE=</span> m_t2g)</span>
+<span id="cb313-2"><a href="gene-set-enrichment-analysis.html#cb313-2" tabindex="-1"></a><span class="fu">dotplot</span>(em2)</span></code></pre></div>
+<p><img src="practical_scRNAseq_analysis_files/figure-html/unnamed-chunk-164-1.png" width="100%" style="display: block; margin: auto;" /></p>
+</div>
+</div>
+<div id="running-gsea-for-all-clusters-with-purrr" class="section level2 hasAnchor" number="5.6">
+<h2><span class="header-section-number">5.6</span> Running GSEA for All Clusters with purrr<a href="gene-set-enrichment-analysis.html#running-gsea-for-all-clusters-with-purrr" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>We’ve run GSEA for clusters 0 and 1 manually. But we have 10 clusters total. Are we going to copy-paste this 8 more times?</p>
+<div class="sourceCode" id="cb314"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb314-1"><a href="gene-set-enrichment-analysis.html#cb314-1" tabindex="-1"></a><span class="co"># Don&#39;t do this!</span></span>
+<span id="cb314-2"><a href="gene-set-enrichment-analysis.html#cb314-2" tabindex="-1"></a>em1 <span class="ot">&lt;-</span> <span class="fu">GSEA</span>(<span class="fu">rank_genes</span>(markers_nested<span class="sc">$</span>data[[<span class="dv">1</span>]]), <span class="at">TERM2GENE=</span> m_t2g)</span>
+<span id="cb314-3"><a href="gene-set-enrichment-analysis.html#cb314-3" tabindex="-1"></a>em2 <span class="ot">&lt;-</span> <span class="fu">GSEA</span>(<span class="fu">rank_genes</span>(markers_nested<span class="sc">$</span>data[[<span class="dv">2</span>]]), <span class="at">TERM2GENE=</span> m_t2g)</span>
+<span id="cb314-4"><a href="gene-set-enrichment-analysis.html#cb314-4" tabindex="-1"></a>em3 <span class="ot">&lt;-</span> <span class="fu">GSEA</span>(<span class="fu">rank_genes</span>(markers_nested<span class="sc">$</span>data[[<span class="dv">3</span>]]), <span class="at">TERM2GENE=</span> m_t2g)</span>
+<span id="cb314-5"><a href="gene-set-enrichment-analysis.html#cb314-5" tabindex="-1"></a><span class="co"># ... and so on for all 10 clusters</span></span></code></pre></div>
+<p>This is tedious, error-prone, and hard to maintain. Change the gene set? Update 10 lines. What if you had 50 clusters?</p>
+<p>Instead, we’ll use <code>purrr::map()</code> to iterate over all clusters – the same principle we used in Chapter 2 for batch processing samples. Create a nested dataframe (one row per cluster), use <code>map()</code> to apply functions to each row, store results in list columns, and everything stays organized in one tidy dataframe.</p>
+<div id="create-ranked-gene-lists-for-all-clusters" class="section level3 hasAnchor" number="5.6.1">
+<h3><span class="header-section-number">5.6.1</span> Create ranked gene lists for all clusters<a href="gene-set-enrichment-analysis.html#create-ranked-gene-lists-for-all-clusters" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<div class="sourceCode" id="cb315"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb315-1"><a href="gene-set-enrichment-analysis.html#cb315-1" tabindex="-1"></a><span class="fu">library</span>(purrr)</span>
+<span id="cb315-2"><a href="gene-set-enrichment-analysis.html#cb315-2" tabindex="-1"></a>markers_nested<span class="ot">&lt;-</span> markers_nested <span class="sc">%&gt;%</span></span>
+<span id="cb315-3"><a href="gene-set-enrichment-analysis.html#cb315-3" tabindex="-1"></a>        <span class="fu">mutate</span>(<span class="at">ranked_genes =</span> <span class="fu">map</span>(data, rank_genes)) <span class="sc">%&gt;%</span></span>
+<span id="cb315-4"><a href="gene-set-enrichment-analysis.html#cb315-4" tabindex="-1"></a>        <span class="fu">mutate</span>(<span class="at">hallmark_em =</span> <span class="fu">map</span>(ranked_genes, <span class="sc">~</span> <span class="fu">GSEA</span>(.x, <span class="at">TERM2GENE=</span> m_t2g)))</span>
+<span id="cb315-5"><a href="gene-set-enrichment-analysis.html#cb315-5" tabindex="-1"></a></span>
+<span id="cb315-6"><a href="gene-set-enrichment-analysis.html#cb315-6" tabindex="-1"></a></span>
+<span id="cb315-7"><a href="gene-set-enrichment-analysis.html#cb315-7" tabindex="-1"></a>markers_nested</span></code></pre></div>
+<pre><code>#&gt; # A tibble: 8 × 4
+#&gt; # Groups:   group [8]
+#&gt;   group data                  ranked_genes   hallmark_em    
+#&gt;   &lt;chr&gt; &lt;list&gt;                &lt;list&gt;         &lt;list&gt;         
+#&gt; 1 0     &lt;tibble [36,601 × 9]&gt; &lt;dbl [21,191]&gt; &lt;gseaRslt[,11]&gt;
+#&gt; 2 1     &lt;tibble [36,601 × 9]&gt; &lt;dbl [21,200]&gt; &lt;gseaRslt[,11]&gt;
+#&gt; 3 2     &lt;tibble [36,601 × 9]&gt; &lt;dbl [21,287]&gt; &lt;gseaRslt[,11]&gt;
+#&gt; 4 3     &lt;tibble [36,601 × 9]&gt; &lt;dbl [21,280]&gt; &lt;gseaRslt[,11]&gt;
+#&gt; 5 4     &lt;tibble [36,601 × 9]&gt; &lt;dbl [20,633]&gt; &lt;gseaRslt[,11]&gt;
+#&gt; 6 5     &lt;tibble [36,601 × 9]&gt; &lt;dbl [21,283]&gt; &lt;gseaRslt[,11]&gt;
+#&gt; 7 6     &lt;tibble [36,601 × 9]&gt; &lt;dbl [21,285]&gt; &lt;gseaRslt[,11]&gt;
+#&gt; 8 7     &lt;tibble [36,601 × 9]&gt; &lt;dbl [21,281]&gt; &lt;gseaRslt[,11]&gt;</code></pre>
+<p>This is pretty cool! All gene set enrichment results for all 10 clusters are organized in a single tidy dataframe. Each row contains the cluster ID, its marker genes, the ranked gene list, and the GSEA results object. No code repetition. And if you later decide to use a different gene set collection, you change one line.</p>
+<p>For cluster 3:</p>
+<div class="sourceCode" id="cb317"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb317-1"><a href="gene-set-enrichment-analysis.html#cb317-1" tabindex="-1"></a>markers_nested<span class="sc">$</span>hallmark_em[[<span class="dv">4</span>]]<span class="sc">@</span>result</span></code></pre></div>
+<pre><code>#&gt;                                                                    ID
+#&gt; HALLMARK_MYC_TARGETS_V1                       HALLMARK_MYC_TARGETS_V1
+#&gt; HALLMARK_OXIDATIVE_PHOSPHORYLATION HALLMARK_OXIDATIVE_PHOSPHORYLATION
+#&gt; HALLMARK_XENOBIOTIC_METABOLISM         HALLMARK_XENOBIOTIC_METABOLISM
+#&gt; HALLMARK_MTORC1_SIGNALING                   HALLMARK_MTORC1_SIGNALING
+#&gt; HALLMARK_E2F_TARGETS                             HALLMARK_E2F_TARGETS
+#&gt; HALLMARK_G2M_CHECKPOINT                       HALLMARK_G2M_CHECKPOINT
+#&gt; HALLMARK_MYC_TARGETS_V2                       HALLMARK_MYC_TARGETS_V2
+#&gt; HALLMARK_DNA_REPAIR                               HALLMARK_DNA_REPAIR
+#&gt;                                                           Description setSize
+#&gt; HALLMARK_MYC_TARGETS_V1                       HALLMARK_MYC_TARGETS_V1     194
+#&gt; HALLMARK_OXIDATIVE_PHOSPHORYLATION HALLMARK_OXIDATIVE_PHOSPHORYLATION     200
+#&gt; HALLMARK_XENOBIOTIC_METABOLISM         HALLMARK_XENOBIOTIC_METABOLISM     196
+#&gt; HALLMARK_MTORC1_SIGNALING                   HALLMARK_MTORC1_SIGNALING     196
+#&gt; HALLMARK_E2F_TARGETS                             HALLMARK_E2F_TARGETS     197
+#&gt; HALLMARK_G2M_CHECKPOINT                       HALLMARK_G2M_CHECKPOINT     194
+#&gt; HALLMARK_MYC_TARGETS_V2                       HALLMARK_MYC_TARGETS_V2      57
+#&gt; HALLMARK_DNA_REPAIR                               HALLMARK_DNA_REPAIR     148
+#&gt;                                    enrichmentScore      NES       pvalue
+#&gt; HALLMARK_MYC_TARGETS_V1                  0.9013333 1.432951 1.000000e-10
+#&gt; HALLMARK_OXIDATIVE_PHOSPHORYLATION       0.8547262 1.362304 1.338265e-06
+#&gt; HALLMARK_XENOBIOTIC_METABOLISM           0.8335395 1.326928 6.444422e-05
+#&gt; HALLMARK_MTORC1_SIGNALING                0.8201003 1.305534 4.031614e-04
+#&gt; HALLMARK_E2F_TARGETS                     0.8164926 1.300904 4.027546e-04
+#&gt; HALLMARK_G2M_CHECKPOINT                  0.8170401 1.298941 3.805082e-04
+#&gt; HALLMARK_MYC_TARGETS_V2                  0.8880857 1.340314 9.952432e-04
+#&gt; HALLMARK_DNA_REPAIR                      0.8091582 1.276298 2.786171e-03
+#&gt;                                        p.adjust       qvalue rank
+#&gt; HALLMARK_MYC_TARGETS_V1            5.000000e-09 4.210526e-09 1563
+#&gt; HALLMARK_OXIDATIVE_PHOSPHORYLATION 3.345663e-05 2.817400e-05 1928
+#&gt; HALLMARK_XENOBIOTIC_METABOLISM     1.074070e-03 9.044803e-04 1446
+#&gt; HALLMARK_MTORC1_SIGNALING          3.359678e-03 2.829203e-03 1794
+#&gt; HALLMARK_E2F_TARGETS               3.359678e-03 2.829203e-03 2171
+#&gt; HALLMARK_G2M_CHECKPOINT            3.359678e-03 2.829203e-03 1199
+#&gt; HALLMARK_MYC_TARGETS_V2            7.108880e-03 5.986425e-03 1860
+#&gt; HALLMARK_DNA_REPAIR                1.741357e-02 1.466406e-02 2238
+#&gt;                                                      leading_edge
+#&gt; HALLMARK_MYC_TARGETS_V1             tags=70%, list=7%, signal=65%
+#&gt; HALLMARK_OXIDATIVE_PHOSPHORYLATION  tags=54%, list=9%, signal=50%
+#&gt; HALLMARK_XENOBIOTIC_METABOLISM      tags=14%, list=7%, signal=13%
+#&gt; HALLMARK_MTORC1_SIGNALING           tags=38%, list=8%, signal=35%
+#&gt; HALLMARK_E2F_TARGETS               tags=29%, list=10%, signal=26%
+#&gt; HALLMARK_G2M_CHECKPOINT             tags=19%, list=6%, signal=18%
+#&gt; HALLMARK_MYC_TARGETS_V2             tags=67%, list=9%, signal=61%
+#&gt; HALLMARK_DNA_REPAIR                tags=35%, list=11%, signal=32%
+#&gt;                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                core_enrichment
+#&gt; HALLMARK_MYC_TARGETS_V1            SRSF3/RANBP1/HSP90AB1/SRM/HSPE1/RPLP0/NHP2/RAN/DDX21/PSMA7/PPIA/SNRPG/C1QBP/SRSF2/EIF4A1/SNRPD1/PSMA2/ODC1/NOP16/LDHA/EEF1B2/SRSF7/EIF2S2/VDAC1/PSMB3/RPS2/RPS5/SERBP1/ERH/LSM7/NDUFAB1/PSMA4/HPRT1/PRDX4/GNL3/MRPL23/NOLC1/SET/PSMA6/YWHAE/POLD2/CCT2/ILF2/SSBP1/CDK4/CYC1/EIF3J/COX5A/HSPD1/PSMD8/NOP56/G3BP1/CCT5/CCT3/ETF1/TXNL4A/RNPS1/EIF1AX/PSMA1/CCT7/PSMB2/YWHAQ/KPNA2/SNRPB2/IMPDH2/HNRNPR/TCP1/HNRNPA1/EIF2S1/PA2G4/PRDX3/ABCE1/HNRNPA2B1/PSMD7/RAD23B/HNRNPC/PGK1/NCBP2/UBA2/LSM2/UBE2L3/GSPT1/PTGES3/SLC25A3/TUFM/SSB/SYNCRIP/PHB2/PRPS2/PSMC4/STARD7/SNRPD3/TFDP1/FBL/PPM1G/HDAC2/HNRNPA3/RUVBL2/EIF4E/ACP1/RPS6/RRP9/POLE3/XPOT/VBP1/PSMD14/HNRNPU/SRPK1/EIF4G2/DDX18/CLNS1A/IFRD1/PABPC4/SNRPD2/HDDC2/AIMP2/PRPF31/XRCC6/CTPS1/PSMD3/MRPL9/EIF4H/VDAC3/GLO1/PWP1/KPNB1/APEX1/SRSF1/RSL1D1/CCT4/SNRPA1/RPL6/HDGF/DHX15/TRA2B
+#&gt; HALLMARK_OXIDATIVE_PHOSPHORYLATION                                                                                                 CYCS/UQCRQ/ATP5MC1/LDHA/NDUFB2/SLC25A5/TOMM22/SLC25A6/VDAC1/NDUFAB1/NDUFS6/TIMM13/ATP5MC3/COX7B/ATP5MF/GPX4/NDUFA4/NDUFB8/ATP5F1E/COX6A1/COX17/ATP5F1C/CYC1/MRPS12/TIMM8B/COX5A/HSPA9/TIMM10/COX7A2/NDUFB7/ATP6V0E1/NDUFA2/MRPS15/NDUFV2/NDUFC1/ATP5PF/UQCR11/HSD17B10/NDUFA6/MRPL11/ATP5F1B/PRDX3/COX6C/POLR2F/GRPEL1/NDUFB6/ECHS1/UQCRFS1/CYB5A/SLC25A3/NDUFC2/MRPL15/PHB2/NDUFA9/UQCRH/NDUFS7/COX5B/NDUFS8/NDUFA3/SDHB/NDUFA1/IDH3A/UQCRC1/ATP5ME/ACO2/TIMM50/TIMM17A/NDUFA7/SDHD/ATP6V0B/AFG3L2/NDUFS3/BAX/CYB5R3/PDHA1/VDAC2/FDX1/ACAT1/SDHC/FXN/TIMM9/NDUFB3/COX8A/MDH2/ETFA/SLC25A11/VDAC3/ATP5F1D/ECI1/COX7A2L/ATP6V0C/ATP6V1D/COX6B1/OAT/NDUFA5/NDUFA8/DLD/IDH3B/MRPL34/LRPPRC/NDUFB4/ACADM/MRPL35/ATP5MG/ISCU/ATP6V1F/MRPS11/MDH1
+#&gt; HALLMARK_XENOBIOTIC_METABOLISM                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               SPINT2/NINJ1/PYCR1/HPRT1/IRF8/LPIN2/PSMB10/SHMT2/CYB5A/PTGES3/FAS/ETS2/SERTAD1/CBR1/GART/ACP1/ACO2/ARPP19/IGFBP4/PGD/COMT/SLC1A5/DCXR/GCH1/SAR1B/LONP1/AHCY/GSTO1
+#&gt; HALLMARK_MTORC1_SIGNALING                                                                                                                                                                                                                                                                                                                                                                              HSPE1/TPI1/ENO1/PPIA/PRDX1/PSAT1/ATP5MC1/DDIT4/LDHA/EIF2S2/MTHFD2/PSMA4/HPRT1/TOMM40/UBE2D3/PDAP1/DDX39A/HSPD1/EEF1E1/ETF1/CACYBP/HSPA9/PSMB5/IFI30/PNO1/STIP1/SLC7A5/CCT6A/NAMPT/PSMA3/PSMD13/IDI1/AK4/PHGDH/SHMT2/CALR/PGK1/ARPC5L/TFRC/GAPDH/INSIG1/SLA/PSME3/ABCF2/PSMC4/LTA4H/CYP51A1/ACTR3/RRP9/PSMD14/SQLE/BHLHE40/EDEM1/MAP2K3/IFRD1/PITPNB/SDF2L1/SLC1A5/HSPA4/CORO1A/TCEA1/LDLR/QDPR/HMGCS1/TRIB3/HMBS/HSP90B1/LGMN/NFIL3/ATP6V1D/UFM1/PSMD12/PSMG1/BTG2/PFKL
+#&gt; HALLMARK_E2F_TARGETS                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               RANBP1/RAN/SRSF2/HMGA1/SNRPB/DCTPP1/MTHFD2/PRDX4/NOLC1/PAICS/DDX39A/POLD2/CDK4/NOP56/CKS2/KPNA2/SSRP1/POLE4/EIF2S1/PA2G4/JPT1/TFRC/GSPT1/SYNCRIP/AK2/ILF3/SLBP/TP53/TMPO/ANP32E/POP7/UBE2S/NASP/XRCC6/CTPS1/TBRG4/RPA3/SRSF1/IPO7/TRA2B/EXOSC8/MYC/PPP1R8/USP1/NAP1L1/PHF5A/RBBP7/DNMT1/TUBB/HNRNPD/PMS2/CCNE1/SMC1A/NUDT21/RAD1/PRPS1/CBX5
+#&gt; HALLMARK_G2M_CHECKPOINT                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  SFPQ/SRSF2/SNRPD1/AMD1/HMGA1/ODC1/NCL/HSPA8/TGFB1/NOLC1/DDX39A/CDK4/HIF1A/G3BP1/CKS2/KPNA2/SLC7A5/E2F4/DKC1/JPT1/RAD23B/TOP1/GSPT1/SRSF10/SYNCRIP/EWSR1/SLC7A1/ILF3/TFDP1/TMPO/HMGN2/BCL3/SQLE/HNRNPU/CBX1/UBE2S/NASP
+#&gt; HALLMARK_MYC_TARGETS_V2                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           SRM/HSPE1/DCTPP1/NOP16/GNL3/NOLC1/PPAN/MRTO4/WDR43/CDK4/HSPD1/NOP56/IMP4/DUSP2/PA2G4/BYSL/NDUFAF4/RRP9/PUS1/WDR74/PES1/GRWD1/FARSA/DDX18/EXOSC5/AIMP2/TCOF1/TBRG4/NIP7/PPRC1/RCL1/MYBBP1A/CBX3/MYC/IPO4/MPHOSPH10/NOP2/RRP12
+#&gt; HALLMARK_DNA_REPAIR                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                APRT/HPRT1/NME4/GPX4/POLR2K/POLR2H/COX17/POLR2I/GUK1/POLR2E/RBX1/TAF9/ADRM1/IMPDH2/SSRP1/GTF2A2/NELFE/SRSF6/POLE4/POLR2F/GTF2H5/NCBP2/POLR2J/TP53/ERCC1/ALYREF/SF3A3/BCAP31/TMED2/POLR2C/POLR1C/RALA/RPA3/EIF1B/RNMT/EDF1/ELOA/SNAPC5/ITPA/NT5C/BOLA2/SAC3D1/MRPL40/HCLS1/POLR2A/TSG101/NUDT21/DDB1/GTF2B/POLR2D/UMPS/TAF10</code></pre>
+<p>We can even save the figures in to the same dataframe</p>
+<div class="sourceCode" id="cb319"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb319-1"><a href="gene-set-enrichment-analysis.html#cb319-1" tabindex="-1"></a>markers_nested<span class="ot">&lt;-</span> markers_nested <span class="sc">%&gt;%</span></span>
+<span id="cb319-2"><a href="gene-set-enrichment-analysis.html#cb319-2" tabindex="-1"></a>        <span class="fu">mutate</span>(<span class="at">dotplots =</span> <span class="fu">map</span>(hallmark_em, dotplot))</span>
+<span id="cb319-3"><a href="gene-set-enrichment-analysis.html#cb319-3" tabindex="-1"></a></span>
+<span id="cb319-4"><a href="gene-set-enrichment-analysis.html#cb319-4" tabindex="-1"></a></span>
+<span id="cb319-5"><a href="gene-set-enrichment-analysis.html#cb319-5" tabindex="-1"></a>markers_nested</span></code></pre></div>
+<pre><code>#&gt; # A tibble: 8 × 5
+#&gt; # Groups:   group [8]
+#&gt;   group data                  ranked_genes   hallmark_em     dotplots  
+#&gt;   &lt;chr&gt; &lt;list&gt;                &lt;list&gt;         &lt;list&gt;          &lt;list&gt;    
+#&gt; 1 0     &lt;tibble [36,601 × 9]&gt; &lt;dbl [21,191]&gt; &lt;gseaRslt[,11]&gt; &lt;enrchplD&gt;
+#&gt; 2 1     &lt;tibble [36,601 × 9]&gt; &lt;dbl [21,200]&gt; &lt;gseaRslt[,11]&gt; &lt;enrchplD&gt;
+#&gt; 3 2     &lt;tibble [36,601 × 9]&gt; &lt;dbl [21,287]&gt; &lt;gseaRslt[,11]&gt; &lt;enrchplD&gt;
+#&gt; 4 3     &lt;tibble [36,601 × 9]&gt; &lt;dbl [21,280]&gt; &lt;gseaRslt[,11]&gt; &lt;enrchplD&gt;
+#&gt; 5 4     &lt;tibble [36,601 × 9]&gt; &lt;dbl [20,633]&gt; &lt;gseaRslt[,11]&gt; &lt;enrchplD&gt;
+#&gt; 6 5     &lt;tibble [36,601 × 9]&gt; &lt;dbl [21,283]&gt; &lt;gseaRslt[,11]&gt; &lt;enrchplD&gt;
+#&gt; 7 6     &lt;tibble [36,601 × 9]&gt; &lt;dbl [21,285]&gt; &lt;gseaRslt[,11]&gt; &lt;enrchplD&gt;
+#&gt; 8 7     &lt;tibble [36,601 × 9]&gt; &lt;dbl [21,281]&gt; &lt;gseaRslt[,11]&gt; &lt;enrchplD&gt;</code></pre>
+<p>The new list column contains a list of ggplot2 objects!</p>
+<p>Let’s view the dotplot for cluster 2:</p>
+<div class="sourceCode" id="cb321"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb321-1"><a href="gene-set-enrichment-analysis.html#cb321-1" tabindex="-1"></a>markers_nested<span class="sc">$</span>dotplots[[<span class="dv">3</span>]]</span></code></pre></div>
+<p><img src="practical_scRNAseq_analysis_files/figure-html/unnamed-chunk-168-1.png" width="100%" style="display: block; margin: auto;" /></p>
+</div>
+</div>
+<div id="interpreting-gsea-results" class="section level2 hasAnchor" number="5.7">
+<h2><span class="header-section-number">5.7</span> Interpreting GSEA Results<a href="gene-set-enrichment-analysis.html#interpreting-gsea-results" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>Now that we have results, let’s understand what they mean. Each GSEA result contains several key columns:</p>
+<div class="sourceCode" id="cb322"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb322-1"><a href="gene-set-enrichment-analysis.html#cb322-1" tabindex="-1"></a><span class="co"># Look at cluster 3 results (4th element because 0-indexing)</span></span>
+<span id="cb322-2"><a href="gene-set-enrichment-analysis.html#cb322-2" tabindex="-1"></a>cluster3_results <span class="ot">&lt;-</span> markers_nested<span class="sc">$</span>hallmark_em[[<span class="dv">4</span>]]<span class="sc">@</span>result</span>
+<span id="cb322-3"><a href="gene-set-enrichment-analysis.html#cb322-3" tabindex="-1"></a></span>
+<span id="cb322-4"><a href="gene-set-enrichment-analysis.html#cb322-4" tabindex="-1"></a><span class="co"># Show top enriched pathways</span></span>
+<span id="cb322-5"><a href="gene-set-enrichment-analysis.html#cb322-5" tabindex="-1"></a>cluster3_results <span class="sc">%&gt;%</span></span>
+<span id="cb322-6"><a href="gene-set-enrichment-analysis.html#cb322-6" tabindex="-1"></a>  <span class="fu">filter</span>(p.adjust <span class="sc">&lt;</span> <span class="fl">0.05</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb322-7"><a href="gene-set-enrichment-analysis.html#cb322-7" tabindex="-1"></a>  <span class="fu">arrange</span>(<span class="fu">desc</span>(NES)) <span class="sc">%&gt;%</span></span>
+<span id="cb322-8"><a href="gene-set-enrichment-analysis.html#cb322-8" tabindex="-1"></a>  <span class="fu">select</span>(Description, setSize, NES, pvalue, p.adjust) <span class="sc">%&gt;%</span></span>
+<span id="cb322-9"><a href="gene-set-enrichment-analysis.html#cb322-9" tabindex="-1"></a>  <span class="fu">head</span>(<span class="dv">10</span>)</span></code></pre></div>
+<pre><code>#&gt;                                                           Description setSize
+#&gt; HALLMARK_MYC_TARGETS_V1                       HALLMARK_MYC_TARGETS_V1     194
+#&gt; HALLMARK_OXIDATIVE_PHOSPHORYLATION HALLMARK_OXIDATIVE_PHOSPHORYLATION     200
+#&gt; HALLMARK_MYC_TARGETS_V2                       HALLMARK_MYC_TARGETS_V2      57
+#&gt; HALLMARK_XENOBIOTIC_METABOLISM         HALLMARK_XENOBIOTIC_METABOLISM     196
+#&gt; HALLMARK_MTORC1_SIGNALING                   HALLMARK_MTORC1_SIGNALING     196
+#&gt; HALLMARK_E2F_TARGETS                             HALLMARK_E2F_TARGETS     197
+#&gt; HALLMARK_G2M_CHECKPOINT                       HALLMARK_G2M_CHECKPOINT     194
+#&gt; HALLMARK_DNA_REPAIR                               HALLMARK_DNA_REPAIR     148
+#&gt;                                         NES       pvalue     p.adjust
+#&gt; HALLMARK_MYC_TARGETS_V1            1.432951 1.000000e-10 5.000000e-09
+#&gt; HALLMARK_OXIDATIVE_PHOSPHORYLATION 1.362304 1.338265e-06 3.345663e-05
+#&gt; HALLMARK_MYC_TARGETS_V2            1.340314 9.952432e-04 7.108880e-03
+#&gt; HALLMARK_XENOBIOTIC_METABOLISM     1.326928 6.444422e-05 1.074070e-03
+#&gt; HALLMARK_MTORC1_SIGNALING          1.305534 4.031614e-04 3.359678e-03
+#&gt; HALLMARK_E2F_TARGETS               1.300904 4.027546e-04 3.359678e-03
+#&gt; HALLMARK_G2M_CHECKPOINT            1.298941 3.805082e-04 3.359678e-03
+#&gt; HALLMARK_DNA_REPAIR                1.276298 2.786171e-03 1.741357e-02</code></pre>
+<p>Here’s what the key columns mean:</p>
+<p>NES (Normalized Enrichment Score): Positive NES means the gene set is enriched at the top of your ranked list (pathway activated in this cluster). Negative NES means it’s enriched at the bottom (suppressed). |NES| &gt; 1.5 is typically considered meaningful.</p>
+<p>p.adjust (FDR): Adjusted p-value accounting for multiple testing. The standard cutoff for GSEA is FDR &lt; 0.25, which is more permissive than what you’d use for individual DE genes. FDR &lt; 0.05 is more stringent if you want to be conservative.</p>
+<p>setSize: Number of genes in the pathway found in your dataset. I’d be skeptical of pathways with very few genes (&lt;15) – they have inflated variance. Very large pathways (&gt;500) may be too general to be informative.</p>
+<div id="biological-interpretation" class="section level3 hasAnchor" number="5.7.1">
+<h3><span class="header-section-number">5.7.1</span> Biological Interpretation<a href="gene-set-enrichment-analysis.html#biological-interpretation" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<p>When interpreting GSEA results, the first thing to ask is: does this make biological sense? If cluster 3 is CD8+ T cells, seeing “Interferon Response” is expected. Unexpected pathways might reveal novel biology – or batch effects. Always check.</p>
+<p>Pay attention to the effect size. High NES (|NES| &gt; 2) with low FDR (&lt; 0.05) is a confident result. Moderate NES (~1.5) with borderline FDR (~0.2) is suggestive but needs verification.</p>
+<p>Also look at whether related pathways are enriched together. Multiple immune pathways enriched together is a consistent signal. An isolated significant pathway by itself might be spurious.</p>
+<p>And don’t forget to check the leading edge genes – these are the genes that actually drive the enrichment. Do they make sense for your cell type?</p>
+</div>
+<div id="visualizing-results-across-clusters" class="section level3 hasAnchor" number="5.7.2">
+<h3><span class="header-section-number">5.7.2</span> Visualizing Results Across Clusters<a href="gene-set-enrichment-analysis.html#visualizing-results-across-clusters" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<p>Let’s create a heatmap showing top pathways across all clusters:</p>
+<div class="sourceCode" id="cb324"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb324-1"><a href="gene-set-enrichment-analysis.html#cb324-1" tabindex="-1"></a><span class="fu">library</span>(tidyr)</span>
+<span id="cb324-2"><a href="gene-set-enrichment-analysis.html#cb324-2" tabindex="-1"></a><span class="fu">library</span>(tibble)</span>
+<span id="cb324-3"><a href="gene-set-enrichment-analysis.html#cb324-3" tabindex="-1"></a></span>
+<span id="cb324-4"><a href="gene-set-enrichment-analysis.html#cb324-4" tabindex="-1"></a><span class="co"># Extract top pathways per cluster</span></span>
+<span id="cb324-5"><a href="gene-set-enrichment-analysis.html#cb324-5" tabindex="-1"></a>top_pathways_all <span class="ot">&lt;-</span> markers_nested <span class="sc">%&gt;%</span></span>
+<span id="cb324-6"><a href="gene-set-enrichment-analysis.html#cb324-6" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">results =</span> <span class="fu">map</span>(hallmark_em, <span class="sc">~</span>.x<span class="sc">@</span>result)) <span class="sc">%&gt;%</span></span>
+<span id="cb324-7"><a href="gene-set-enrichment-analysis.html#cb324-7" tabindex="-1"></a>  <span class="fu">unnest</span>(results) <span class="sc">%&gt;%</span></span>
+<span id="cb324-8"><a href="gene-set-enrichment-analysis.html#cb324-8" tabindex="-1"></a>  <span class="fu">filter</span>(p.adjust <span class="sc">&lt;</span> <span class="fl">0.25</span>) <span class="sc">%&gt;%</span>  <span class="co"># FDR cutoff</span></span>
+<span id="cb324-9"><a href="gene-set-enrichment-analysis.html#cb324-9" tabindex="-1"></a>  <span class="fu">group_by</span>(group) <span class="sc">%&gt;%</span></span>
+<span id="cb324-10"><a href="gene-set-enrichment-analysis.html#cb324-10" tabindex="-1"></a>  <span class="fu">slice_max</span>(<span class="fu">abs</span>(NES), <span class="at">n =</span> <span class="dv">5</span>) <span class="sc">%&gt;%</span>  <span class="co"># Top 5 by absolute NES</span></span>
+<span id="cb324-11"><a href="gene-set-enrichment-analysis.html#cb324-11" tabindex="-1"></a>  <span class="fu">ungroup</span>()</span>
+<span id="cb324-12"><a href="gene-set-enrichment-analysis.html#cb324-12" tabindex="-1"></a></span>
+<span id="cb324-13"><a href="gene-set-enrichment-analysis.html#cb324-13" tabindex="-1"></a><span class="co"># Create a matrix for heatmap</span></span>
+<span id="cb324-14"><a href="gene-set-enrichment-analysis.html#cb324-14" tabindex="-1"></a>pathway_matrix <span class="ot">&lt;-</span> top_pathways_all <span class="sc">%&gt;%</span></span>
+<span id="cb324-15"><a href="gene-set-enrichment-analysis.html#cb324-15" tabindex="-1"></a>  <span class="fu">select</span>(group, Description, NES) <span class="sc">%&gt;%</span></span>
+<span id="cb324-16"><a href="gene-set-enrichment-analysis.html#cb324-16" tabindex="-1"></a>  <span class="fu">pivot_wider</span>(<span class="at">names_from =</span> group, <span class="at">values_from =</span> NES, <span class="at">values_fill =</span> <span class="dv">0</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb324-17"><a href="gene-set-enrichment-analysis.html#cb324-17" tabindex="-1"></a>  <span class="fu">column_to_rownames</span>(<span class="st">&quot;Description&quot;</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb324-18"><a href="gene-set-enrichment-analysis.html#cb324-18" tabindex="-1"></a>  <span class="fu">as.matrix</span>()</span>
+<span id="cb324-19"><a href="gene-set-enrichment-analysis.html#cb324-19" tabindex="-1"></a></span>
+<span id="cb324-20"><a href="gene-set-enrichment-analysis.html#cb324-20" tabindex="-1"></a><span class="co"># Heatmap</span></span>
+<span id="cb324-21"><a href="gene-set-enrichment-analysis.html#cb324-21" tabindex="-1"></a><span class="fu">library</span>(ComplexHeatmap)</span>
+<span id="cb324-22"><a href="gene-set-enrichment-analysis.html#cb324-22" tabindex="-1"></a><span class="fu">library</span>(circlize)</span>
+<span id="cb324-23"><a href="gene-set-enrichment-analysis.html#cb324-23" tabindex="-1"></a></span>
+<span id="cb324-24"><a href="gene-set-enrichment-analysis.html#cb324-24" tabindex="-1"></a><span class="fu">Heatmap</span>(pathway_matrix,</span>
+<span id="cb324-25"><a href="gene-set-enrichment-analysis.html#cb324-25" tabindex="-1"></a>        <span class="at">name =</span> <span class="st">&quot;NES&quot;</span>,</span>
+<span id="cb324-26"><a href="gene-set-enrichment-analysis.html#cb324-26" tabindex="-1"></a>        <span class="at">col =</span> <span class="fu">colorRamp2</span>(<span class="fu">c</span>(<span class="sc">-</span><span class="dv">2</span>, <span class="dv">0</span>, <span class="dv">2</span>), <span class="fu">c</span>(<span class="st">&quot;blue&quot;</span>, <span class="st">&quot;white&quot;</span>, <span class="st">&quot;red&quot;</span>)),</span>
+<span id="cb324-27"><a href="gene-set-enrichment-analysis.html#cb324-27" tabindex="-1"></a>        <span class="at">cluster_rows =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb324-28"><a href="gene-set-enrichment-analysis.html#cb324-28" tabindex="-1"></a>        <span class="at">cluster_columns =</span> <span class="cn">FALSE</span>,</span>
+<span id="cb324-29"><a href="gene-set-enrichment-analysis.html#cb324-29" tabindex="-1"></a>        <span class="at">column_title =</span> <span class="st">&quot;GSEA Results Across Clusters&quot;</span>,</span>
+<span id="cb324-30"><a href="gene-set-enrichment-analysis.html#cb324-30" tabindex="-1"></a>        <span class="at">row_names_gp =</span> <span class="fu">gpar</span>(<span class="at">fontsize =</span> <span class="dv">9</span>),</span>
+<span id="cb324-31"><a href="gene-set-enrichment-analysis.html#cb324-31" tabindex="-1"></a>        <span class="at">column_names_gp =</span> <span class="fu">gpar</span>(<span class="at">fontsize =</span> <span class="dv">10</span>))</span></code></pre></div>
+<p><img src="practical_scRNAseq_analysis_files/figure-html/unnamed-chunk-170-1.png" width="100%" style="display: block; margin: auto;" /></p>
+<p>This visualization is really useful. You can spot cluster-specific signatures, pathways shared across multiple clusters, and pathways that go in opposite directions – activated in some clusters, suppressed in others.</p>
+<p>A few things to watch out for: many gene sets overlap heavily (e.g., multiple interferon-related sets), so don’t count them as independent evidence. If a pathway is enriched in clusters that all come from one batch, that’s probably technical noise, not biology. And always cross-check enriched pathways against known marker genes for your cell types.</p>
+</div>
+</div>
+<div id="alternative-approach-gene-signature-scoring" class="section level2 hasAnchor" number="5.8">
+<h2><span class="header-section-number">5.8</span> Alternative Approach: Gene Signature Scoring<a href="gene-set-enrichment-analysis.html#alternative-approach-gene-signature-scoring" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>So far, we’ve used GSEA to identify pathways differentially active between clusters. But what if you want to know pathway activity within individual cells?</p>
+<p>GSEA compares gene ranks between clusters – “is this pathway different in cluster A vs B?” Signature scoring does something different: it quantifies pathway activity per cell – “how active is this pathway in each individual cell?”</p>
+<p>This is useful for several reasons. You can visualize pathway activity on UMAP to see spatial patterns. You can identify heterogeneity within clusters – not all cells in a cluster are identical. You can track continuous states like cell cycle or activation status. And you can correlate pathway scores with metadata like treatment condition.</p>
+<div id="methods-for-signature-scoring" class="section level3 hasAnchor" number="5.8.1">
+<h3><span class="header-section-number">5.8.1</span> Methods for Signature Scoring<a href="gene-set-enrichment-analysis.html#methods-for-signature-scoring" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<p>One important note: don’t use bulk RNA-seq methods (ssGSEA, GSVA, singscore) for single-cell data. They weren’t designed for the sparsity and dropout you see in scRNA-seq.</p>
+<p>For single-cell, you have a few options: AUCell ranks genes per cell and calculates Area Under the Curve for the signature. Seurat’s <code>AddModuleScore</code> does simple averaging (basic but fast). But I’d recommend UCell, which uses the Mann-Whitney U test and is robust to dropout (see <a href="https://pubmed.ncbi.nlm.nih.gov/34285779/">Andreatta &amp; Carmona, 2021</a>).</p>
+</div>
+<div id="how-ucell-works" class="section level3 hasAnchor" number="5.8.2">
+<h3><span class="header-section-number">5.8.2</span> How UCell Works<a href="gene-set-enrichment-analysis.html#how-ucell-works" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<p>UCell assigns a score to each cell for each gene signature. It ranks genes within each cell by expression, then for a given signature, it compares the ranks of genes in the signature vs. genes not in the signature using a Mann-Whitney U test. The U-statistic is then normalized to [0, 1].</p>
+<p>The nice thing about this approach is that it uses ranks instead of absolute expression, so it’s robust to technical variation. It compares within each cell, so it naturally accounts for cell-specific library size. It’s non-parametric, so no assumptions about expression distributions. And it handles dropout well because zero values still get ranks.</p>
+<p>For interpretation: a score of 1 means signature genes are maximally enriched (all ranked at top), 0.5 means they’re randomly distributed, and 0 means they’re depleted.</p>
+</div>
+<div id="practical-example-with-ucell" class="section level3 hasAnchor" number="5.8.3">
+<h3><span class="header-section-number">5.8.3</span> Practical Example with UCell<a href="gene-set-enrichment-analysis.html#practical-example-with-ucell" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<p>Let’s score some biologically relevant signatures in our PBMC data:</p>
+<div class="sourceCode" id="cb325"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb325-1"><a href="gene-set-enrichment-analysis.html#cb325-1" tabindex="-1"></a><span class="co"># Install if needed</span></span>
+<span id="cb325-2"><a href="gene-set-enrichment-analysis.html#cb325-2" tabindex="-1"></a><span class="co"># BiocManager::install(&quot;UCell&quot;)</span></span>
+<span id="cb325-3"><a href="gene-set-enrichment-analysis.html#cb325-3" tabindex="-1"></a><span class="fu">library</span>(UCell)</span>
+<span id="cb325-4"><a href="gene-set-enrichment-analysis.html#cb325-4" tabindex="-1"></a></span>
+<span id="cb325-5"><a href="gene-set-enrichment-analysis.html#cb325-5" tabindex="-1"></a><span class="co"># Define signatures of interest</span></span>
+<span id="cb325-6"><a href="gene-set-enrichment-analysis.html#cb325-6" tabindex="-1"></a>signatures <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb325-7"><a href="gene-set-enrichment-analysis.html#cb325-7" tabindex="-1"></a>  <span class="at">Interferon_Response =</span> <span class="fu">c</span>(<span class="st">&quot;ISG15&quot;</span>, <span class="st">&quot;ISG20&quot;</span>, <span class="st">&quot;IFIT1&quot;</span>, <span class="st">&quot;IFIT3&quot;</span>, <span class="st">&quot;MX1&quot;</span>, <span class="st">&quot;OAS1&quot;</span>, <span class="st">&quot;STAT1&quot;</span>, <span class="st">&quot;IRF7&quot;</span>),</span>
+<span id="cb325-8"><a href="gene-set-enrichment-analysis.html#cb325-8" tabindex="-1"></a>  <span class="at">T_Cell_Activation =</span> <span class="fu">c</span>(<span class="st">&quot;CD69&quot;</span>, <span class="st">&quot;IL2RA&quot;</span>, <span class="st">&quot;ICOS&quot;</span>, <span class="st">&quot;TNFRSF9&quot;</span>, <span class="st">&quot;CD38&quot;</span>),</span>
+<span id="cb325-9"><a href="gene-set-enrichment-analysis.html#cb325-9" tabindex="-1"></a>  <span class="at">Cell_Cycle =</span> <span class="fu">c</span>(<span class="st">&quot;MKI67&quot;</span>, <span class="st">&quot;TOP2A&quot;</span>, <span class="st">&quot;PCNA&quot;</span>, <span class="st">&quot;CCNB1&quot;</span>, <span class="st">&quot;CDK1&quot;</span>),</span>
+<span id="cb325-10"><a href="gene-set-enrichment-analysis.html#cb325-10" tabindex="-1"></a>  <span class="at">Inflammatory_Response =</span> <span class="fu">c</span>(<span class="st">&quot;IL1B&quot;</span>, <span class="st">&quot;TNF&quot;</span>, <span class="st">&quot;IL6&quot;</span>, <span class="st">&quot;CXCL8&quot;</span>, <span class="st">&quot;CCL2&quot;</span>)</span>
+<span id="cb325-11"><a href="gene-set-enrichment-analysis.html#cb325-11" tabindex="-1"></a>)</span>
+<span id="cb325-12"><a href="gene-set-enrichment-analysis.html#cb325-12" tabindex="-1"></a></span>
+<span id="cb325-13"><a href="gene-set-enrichment-analysis.html#cb325-13" tabindex="-1"></a><span class="co"># Score signatures in all cells</span></span>
+<span id="cb325-14"><a href="gene-set-enrichment-analysis.html#cb325-14" tabindex="-1"></a>obj <span class="ot">&lt;-</span> <span class="fu">AddModuleScore_UCell</span>(obj, <span class="at">features =</span> signatures, <span class="at">name =</span> <span class="cn">NULL</span>)</span>
+<span id="cb325-15"><a href="gene-set-enrichment-analysis.html#cb325-15" tabindex="-1"></a></span>
+<span id="cb325-16"><a href="gene-set-enrichment-analysis.html#cb325-16" tabindex="-1"></a><span class="co"># Visualize on UMAP</span></span>
+<span id="cb325-17"><a href="gene-set-enrichment-analysis.html#cb325-17" tabindex="-1"></a><span class="fu">FeaturePlot</span>(obj,</span>
+<span id="cb325-18"><a href="gene-set-enrichment-analysis.html#cb325-18" tabindex="-1"></a>            <span class="at">features =</span> <span class="fu">names</span>(signatures),</span>
+<span id="cb325-19"><a href="gene-set-enrichment-analysis.html#cb325-19" tabindex="-1"></a>            <span class="at">ncol =</span> <span class="dv">2</span>,</span>
+<span id="cb325-20"><a href="gene-set-enrichment-analysis.html#cb325-20" tabindex="-1"></a>            <span class="at">cols =</span> <span class="fu">c</span>(<span class="st">&quot;lightgrey&quot;</span>, <span class="st">&quot;red&quot;</span>))</span>
+<span id="cb325-21"><a href="gene-set-enrichment-analysis.html#cb325-21" tabindex="-1"></a></span>
+<span id="cb325-22"><a href="gene-set-enrichment-analysis.html#cb325-22" tabindex="-1"></a><span class="co"># Violin plots by cluster</span></span>
+<span id="cb325-23"><a href="gene-set-enrichment-analysis.html#cb325-23" tabindex="-1"></a><span class="fu">VlnPlot</span>(obj,</span>
+<span id="cb325-24"><a href="gene-set-enrichment-analysis.html#cb325-24" tabindex="-1"></a>        <span class="at">features =</span> <span class="fu">names</span>(signatures),</span>
+<span id="cb325-25"><a href="gene-set-enrichment-analysis.html#cb325-25" tabindex="-1"></a>        <span class="at">ncol =</span> <span class="dv">2</span>,</span>
+<span id="cb325-26"><a href="gene-set-enrichment-analysis.html#cb325-26" tabindex="-1"></a>        <span class="at">pt.size =</span> <span class="dv">0</span>)</span></code></pre></div>
+<p>This reveals which individual cells (not just clusters) have active pathways. You’ll see that not all CD8+ T cells are equally activated, and things like cell cycle show continuous variation rather than binary on/off states.</p>
+</div>
+<div id="when-to-use-gsea-vs.-signature-scoring" class="section level3 hasAnchor" number="5.8.4">
+<h3><span class="header-section-number">5.8.4</span> When to Use GSEA vs. Signature Scoring<a href="gene-set-enrichment-analysis.html#when-to-use-gsea-vs.-signature-scoring" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<p>Use GSEA when you’re comparing clusters or conditions and want statistical significance testing – “are interferon pathways more active in cluster 3 vs others?”</p>
+<p>Use signature scoring when you want per-cell pathway activity, want to visualize patterns on UMAP, or want to identify heterogeneity within populations – “which individual cells have high interferon scores?”</p>
+<p>In practice, use both. GSEA identifies differentially active pathways, then signature scoring reveals cell-level heterogeneity within those pathways.</p>
+</div>
+</div>
+<div id="things-to-remember" class="section level2 hasAnchor" number="5.9">
+<h2><span class="header-section-number">5.9</span> Things to Remember<a href="gene-set-enrichment-analysis.html#things-to-remember" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>GSEA uses the entire ranked gene list, not just significant genes. This makes it more powerful than over-representation analysis, but it also means you should never pre-filter your gene list before running it.</p>
+<p>Gene sets give you biological context that individual genes lack. But choose them carefully – well-curated, tissue-relevant collections like BTM for blood or Hallmark for general biology will serve you better than large, redundant databases like the full GO.</p>
+<p>The nested dataframe approach with <code>purrr::map()</code> is how I’d organize any analysis that needs to run across multiple groups. No code repetition, easy to maintain, and it scales.</p>
+<p>When interpreting results, be skeptical. High NES + low FDR suggests real biology, but always validate with known markers. Watch out for redundant pathways (correlated enrichment does not mean independent evidence), tiny gene sets (&lt;15 genes), and batch effects masquerading as biology. Different normalization methods can also yield different GSEA results, so keep that in mind.</p>
+<p>And always visualize. Heatmaps across clusters and UMAPs within cells reveal patterns that statistics alone miss.</p>
+</div>
+<div id="further-reading-4" class="section level2 hasAnchor" number="5.10">
+<h2><span class="header-section-number">5.10</span> Further Reading<a href="gene-set-enrichment-analysis.html#further-reading-4" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<ul>
+<li><a href="https://www.pnas.org/doi/10.1073/pnas.0506580102">Subramanian et al., 2005</a> - The original GSEA paper</li>
+<li><a href="https://pubmed.ncbi.nlm.nih.gov/34285779/">Andreatta &amp; Carmona, 2021</a> - UCell for robust signature scoring</li>
+<li><a href="https://www.sc-best-practices.org/conditions/gsea_pathway.html">GSEA and Pathway Analysis chapter</a> on sc-best-practices.org</li>
+<li><a href="https://elifesciences.org/articles/71994">Borch et al., 2021</a> - The escape package for single-cell pathway analysis</li>
+</ul>
+</div>
+<div id="session-information-4" class="section level2 unnumbered hasAnchor">
+<h2>Session Information<a href="gene-set-enrichment-analysis.html#session-information-4" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<pre><code>#&gt; ─ Session info ───────────────────────────────────────────────────────────────
+#&gt;  setting  value
+#&gt;  version  R version 4.4.1 (2024-06-14)
+#&gt;  os       macOS Sonoma 14.1
+#&gt;  system   aarch64, darwin20
+#&gt;  ui       X11
+#&gt;  language (EN)
+#&gt;  collate  en_US.UTF-8
+#&gt;  ctype    en_US.UTF-8
+#&gt;  tz       America/New_York
+#&gt;  date     2026-03-14
+#&gt;  pandoc   3.8.2.1 @ /opt/homebrew/bin/ (via rmarkdown)
+#&gt; 
+#&gt; ─ Packages ───────────────────────────────────────────────────────────────────
+#&gt;  package              * version   date (UTC) lib source
+#&gt;  abind                  1.4-5     2016-07-21 [1] CRAN (R 4.4.0)
+#&gt;  alabaster.base         1.4.2     2024-06-23 [1] Bioconductor 3.19 (R 4.4.0)
+#&gt;  alabaster.matrix       1.4.2     2024-06-23 [1] Bioconductor 3.19 (R 4.4.0)
+#&gt;  alabaster.ranges       1.4.2     2024-06-23 [1] Bioconductor 3.19 (R 4.4.0)
+#&gt;  alabaster.schemas      1.4.0     2024-04-30 [1] Bioconductor 3.19 (R 4.4.0)
+#&gt;  alabaster.se           1.4.1     2024-05-30 [1] Bioconductor 3.19 (R 4.4.0)
+#&gt;  annotate               1.82.0    2024-04-30 [1] Bioconductor 3.19 (R 4.4.0)
+#&gt;  AnnotationDbi        * 1.66.0    2024-06-16 [1] Bioconductor 3.19 (R 4.4.0)
+#&gt;  AnnotationHub        * 3.12.0    2024-04-30 [1] Bioconductor 3.19 (R 4.4.0)
+#&gt;  ape                    5.8       2024-04-11 [1] CRAN (R 4.4.0)
+#&gt;  aplot                  0.2.3     2024-06-17 [1] CRAN (R 4.4.0)
+#&gt;  babelgene              22.9      2022-09-29 [1] CRAN (R 4.4.0)
+#&gt;  beachmat               2.20.0    2024-05-06 [1] Bioconductor 3.19 (R 4.4.0)
+#&gt;  beeswarm               0.4.0     2021-06-01 [1] CRAN (R 4.4.0)
+#&gt;  Biobase              * 2.64.0    2024-04-30 [1] Bioconductor 3.19 (R 4.4.0)
+#&gt;  BiocFileCache        * 2.12.0    2024-04-30 [1] Bioconductor 3.19 (R 4.4.0)
+#&gt;  BiocGenerics         * 0.50.0    2024-04-30 [1] Bioconductor 3.19 (R 4.4.0)
+#&gt;  BiocIO                 1.14.0    2024-04-30 [1] Bioconductor 3.19 (R 4.4.0)
+#&gt;  BiocManager            1.30.24   2024-08-20 [1] CRAN (R 4.4.1)
+#&gt;  BiocNeighbors          1.22.0    2024-04-30 [1] Bioconductor 3.19 (R 4.4.0)
+#&gt;  BiocParallel           1.38.0    2024-04-30 [1] Bioconductor 3.19 (R 4.4.0)
+#&gt;  BiocSingular           1.20.0    2024-04-30 [1] Bioconductor 3.19 (R 4.4.0)
+#&gt;  BiocVersion            3.19.1    2024-04-22 [1] Bioconductor 3.19 (R 4.4.0)
+#&gt;  Biostrings             2.72.1    2024-06-02 [1] Bioconductor 3.19 (R 4.4.0)
+#&gt;  bit                    4.0.5     2022-11-15 [1] CRAN (R 4.4.0)
+#&gt;  bit64                  4.0.5     2020-08-30 [1] CRAN (R 4.4.0)
+#&gt;  bitops                 1.0-8     2024-07-29 [1] CRAN (R 4.4.0)
+#&gt;  blob                   1.2.4     2023-03-17 [1] CRAN (R 4.4.0)
+#&gt;  bluster                1.14.0    2024-04-30 [1] Bioconductor 3.19 (R 4.4.0)
+#&gt;  bookdown               0.40      2024-07-02 [1] CRAN (R 4.4.1)
+#&gt;  bslib                  0.8.0     2024-07-29 [1] CRAN (R 4.4.0)
+#&gt;  cachem                 1.1.0     2024-05-16 [1] CRAN (R 4.4.0)
+#&gt;  Cairo                  1.6-2     2023-11-28 [1] CRAN (R 4.4.0)
+#&gt;  celda                * 1.20.0    2024-04-30 [1] Bioconductor 3.19 (R 4.4.0)
+#&gt;  celldex              * 1.14.0    2024-05-02 [1] Bioconductor 3.19 (R 4.4.1)
+#&gt;  circlize             * 0.4.16    2024-02-20 [1] CRAN (R 4.4.0)
+#&gt;  cli                    3.6.3     2024-06-21 [1] CRAN (R 4.4.0)
+#&gt;  clue                   0.3-65    2023-09-23 [1] CRAN (R 4.4.0)
+#&gt;  cluster                2.1.6     2023-12-01 [1] CRAN (R 4.4.1)
+#&gt;  clusterProfiler      * 4.12.6    2024-08-25 [1] Bioconductor 3.19 (R 4.4.1)
+#&gt;  clustifyr            * 1.17.2    2024-09-19 [1] Github (rnabioco/clustifyr@b67b34b)
+#&gt;  clustifyrdatahub     * 1.14.0    2024-05-02 [1] Bioconductor 3.19 (R 4.4.1)
+#&gt;  codetools              0.2-20    2024-03-31 [1] CRAN (R 4.4.1)
+#&gt;  colorspace             2.1-1     2024-07-26 [1] CRAN (R 4.4.0)
+#&gt;  combinat               0.0-8     2012-10-29 [1] CRAN (R 4.4.0)
+#&gt;  ComplexHeatmap       * 2.20.0    2024-04-30 [1] Bioconductor 3.19 (R 4.4.0)
+#&gt;  cowplot                1.1.3     2024-01-22 [1] CRAN (R 4.4.0)
+#&gt;  crayon                 1.5.3     2024-06-20 [1] CRAN (R 4.4.0)
+#&gt;  curl                   5.2.1     2024-03-01 [1] CRAN (R 4.4.0)
+#&gt;  data.table             1.15.4    2024-03-30 [1] CRAN (R 4.4.0)
+#&gt;  DBI                    1.2.3     2024-06-02 [1] CRAN (R 4.4.0)
+#&gt;  dbplyr               * 2.5.0     2024-03-19 [1] CRAN (R 4.4.0)
+#&gt;  dbscan                 1.2-0     2024-06-28 [1] CRAN (R 4.4.0)
+#&gt;  DelayedArray           0.30.1    2024-05-30 [1] Bioconductor 3.19 (R 4.4.0)
+#&gt;  DelayedMatrixStats     1.26.0    2024-04-30 [1] Bioconductor 3.19 (R 4.4.0)
+#&gt;  deldir                 2.0-4     2024-02-28 [1] CRAN (R 4.4.0)
+#&gt;  DESeq2               * 1.44.0    2024-04-30 [1] Bioconductor 3.19 (R 4.4.0)
+#&gt;  digest                 0.6.36    2024-06-23 [1] CRAN (R 4.4.0)
+#&gt;  doParallel             1.0.17    2022-02-07 [1] CRAN (R 4.4.0)
+#&gt;  DOSE                   3.30.4    2024-08-21 [1] Bioconductor 3.19 (R 4.4.1)
+#&gt;  dotCall64              1.1-1     2023-11-28 [1] CRAN (R 4.4.0)
+#&gt;  dplyr                * 1.1.4     2023-11-17 [1] CRAN (R 4.4.0)
+#&gt;  dqrng                  0.4.1     2024-05-28 [1] CRAN (R 4.4.0)
+#&gt;  DropletUtils         * 1.24.0    2024-04-30 [1] Bioconductor 3.19 (R 4.4.0)
+#&gt;  edgeR                  4.2.1     2024-07-14 [1] Bioconductor 3.19 (R 4.4.1)
+#&gt;  enrichplot           * 1.24.2    2024-07-21 [1] Bioconductor 3.19 (R 4.4.1)
+#&gt;  enrichR                3.2       2023-04-14 [1] CRAN (R 4.4.0)
+#&gt;  entropy                1.3.1     2021-10-02 [1] CRAN (R 4.4.0)
+#&gt;  evaluate               0.24.0    2024-06-10 [1] CRAN (R 4.4.0)
+#&gt;  ExperimentHub        * 2.12.0    2024-04-30 [1] Bioconductor 3.19 (R 4.4.0)
+#&gt;  fansi                  1.0.6     2023-12-08 [1] CRAN (R 4.4.0)
+#&gt;  farver                 2.1.2     2024-05-13 [1] CRAN (R 4.4.0)
+#&gt;  fastDummies            1.7.4     2024-08-16 [1] CRAN (R 4.4.0)
+#&gt;  fastmap                1.2.0     2024-05-15 [1] CRAN (R 4.4.0)
+#&gt;  fastmatch              1.1-4     2023-08-18 [1] CRAN (R 4.4.0)
+#&gt;  fgsea                  1.30.0    2024-04-30 [1] Bioconductor 3.19 (R 4.4.0)
+#&gt;  filelock               1.0.3     2023-12-11 [1] CRAN (R 4.4.0)
+#&gt;  fishpond               2.10.0    2024-04-30 [1] Bioconductor 3.19 (R 4.4.0)
+#&gt;  fitdistrplus           1.2-1     2024-07-12 [1] CRAN (R 4.4.0)
+#&gt;  forcats                1.0.0     2023-01-29 [1] CRAN (R 4.4.0)
+#&gt;  foreach                1.5.2     2022-02-02 [1] CRAN (R 4.4.0)
+#&gt;  fs                     1.6.4     2024-04-25 [1] CRAN (R 4.4.0)
+#&gt;  future                 1.34.0    2024-07-29 [1] CRAN (R 4.4.0)
+#&gt;  future.apply           1.11.2    2024-03-28 [1] CRAN (R 4.4.0)
+#&gt;  genefilter           * 1.86.0    2024-04-30 [1] Bioconductor 3.19 (R 4.4.0)
+#&gt;  generics               0.1.3     2022-07-05 [1] CRAN (R 4.4.0)
+#&gt;  GenomeInfoDb         * 1.40.1    2024-06-16 [1] Bioconductor 3.19 (R 4.4.0)
+#&gt;  GenomeInfoDbData       1.2.12    2024-08-23 [1] Bioconductor
+#&gt;  GenomicAlignments      1.40.0    2024-04-30 [1] Bioconductor 3.19 (R 4.4.0)
+#&gt;  GenomicRanges        * 1.56.1    2024-06-16 [1] Bioconductor 3.19 (R 4.4.0)
+#&gt;  GetoptLong             1.0.5     2020-12-15 [1] CRAN (R 4.4.0)
+#&gt;  ggbeeswarm             0.7.2     2023-04-29 [1] CRAN (R 4.4.0)
+#&gt;  ggforce                0.4.2     2024-02-19 [1] CRAN (R 4.4.0)
+#&gt;  ggfun                  0.1.6     2024-08-28 [1] CRAN (R 4.4.1)
+#&gt;  ggplot2              * 3.5.1     2024-04-23 [1] CRAN (R 4.4.0)
+#&gt;  ggplotify              0.1.2     2023-08-09 [1] CRAN (R 4.4.0)
+#&gt;  ggprism                1.0.5     2024-03-21 [1] CRAN (R 4.4.0)
+#&gt;  ggraph                 2.2.1     2024-03-07 [1] CRAN (R 4.4.0)
+#&gt;  ggrastr                1.0.2     2023-06-01 [1] CRAN (R 4.4.0)
+#&gt;  ggrepel                0.9.5     2024-01-10 [1] CRAN (R 4.4.0)
+#&gt;  ggridges               0.5.6     2024-01-23 [1] CRAN (R 4.4.0)
+#&gt;  ggtree                 3.12.0    2024-04-30 [1] Bioconductor 3.19 (R 4.4.0)
+#&gt;  GlobalOptions          0.1.2     2020-06-10 [1] CRAN (R 4.4.0)
+#&gt;  globals                0.16.3    2024-03-08 [1] CRAN (R 4.4.0)
+#&gt;  glue                   1.8.0     2024-09-30 [1] CRAN (R 4.4.1)
+#&gt;  GO.db                  3.19.1    2024-09-01 [1] Bioconductor
+#&gt;  goftest                1.2-3     2021-10-07 [1] CRAN (R 4.4.0)
+#&gt;  GOSemSim               2.30.2    2024-08-21 [1] Bioconductor 3.19 (R 4.4.1)
+#&gt;  graphlayouts           1.1.1     2024-03-09 [1] CRAN (R 4.4.0)
+#&gt;  gridExtra              2.3       2017-09-09 [1] CRAN (R 4.4.0)
+#&gt;  gridGraphics           0.5-1     2020-12-13 [1] CRAN (R 4.4.0)
+#&gt;  gson                   0.1.0     2023-03-07 [1] CRAN (R 4.4.0)
+#&gt;  gtable                 0.3.5     2024-04-22 [1] CRAN (R 4.4.0)
+#&gt;  gtools                 3.9.5     2023-11-20 [1] CRAN (R 4.4.0)
+#&gt;  gypsum                 1.0.1     2024-05-30 [1] Bioconductor 3.19 (R 4.4.0)
+#&gt;  harmony              * 1.2.0     2023-11-29 [1] CRAN (R 4.4.0)
+#&gt;  HDF5Array              1.32.1    2024-08-11 [1] Bioconductor 3.19 (R 4.4.1)
+#&gt;  here                 * 1.0.1     2020-12-13 [1] CRAN (R 4.4.0)
+#&gt;  highr                  0.11      2024-05-26 [1] CRAN (R 4.4.0)
+#&gt;  htmltools              0.5.8.1   2024-04-04 [1] CRAN (R 4.4.0)
+#&gt;  htmlwidgets            1.6.4     2023-12-06 [1] CRAN (R 4.4.0)
+#&gt;  httpuv                 1.6.15    2024-03-26 [1] CRAN (R 4.4.0)
+#&gt;  httr                   1.4.7     2023-08-15 [1] CRAN (R 4.4.0)
+#&gt;  httr2                  1.0.2     2024-07-16 [1] CRAN (R 4.4.0)
+#&gt;  ica                    1.0-3     2022-07-08 [1] CRAN (R 4.4.0)
+#&gt;  igraph                 2.0.3     2024-03-13 [1] CRAN (R 4.4.0)
+#&gt;  IRanges              * 2.38.1    2024-07-03 [1] Bioconductor 3.19 (R 4.4.1)
+#&gt;  irlba                  2.3.5.1   2022-10-03 [1] CRAN (R 4.4.0)
+#&gt;  iterators              1.0.14    2022-02-05 [1] CRAN (R 4.4.0)
+#&gt;  janitor                2.2.0     2023-02-02 [1] CRAN (R 4.4.0)
+#&gt;  jquerylib              0.1.4     2021-04-26 [1] CRAN (R 4.4.0)
+#&gt;  jsonlite               1.8.8     2023-12-04 [1] CRAN (R 4.4.0)
+#&gt;  KEGGREST               1.44.1    2024-06-19 [1] Bioconductor 3.19 (R 4.4.0)
+#&gt;  KernSmooth             2.23-24   2024-05-17 [1] CRAN (R 4.4.1)
+#&gt;  knitr                  1.48      2024-07-07 [1] CRAN (R 4.4.0)
+#&gt;  labeling               0.4.3     2023-08-29 [1] CRAN (R 4.4.0)
+#&gt;  later                  1.3.2     2023-12-06 [1] CRAN (R 4.4.0)
+#&gt;  lattice                0.22-6    2024-03-20 [1] CRAN (R 4.4.1)
+#&gt;  lazyeval               0.2.2     2019-03-15 [1] CRAN (R 4.4.0)
+#&gt;  leiden                 0.4.3.1   2023-11-17 [1] CRAN (R 4.4.0)
+#&gt;  lifecycle              1.0.4     2023-11-07 [1] CRAN (R 4.4.0)
+#&gt;  limma                  3.60.4    2024-07-17 [1] Bioconductor 3.19 (R 4.4.1)
+#&gt;  listenv                0.9.1     2024-01-29 [1] CRAN (R 4.4.0)
+#&gt;  lmtest                 0.9-40    2022-03-21 [1] CRAN (R 4.4.0)
+#&gt;  locfit                 1.5-9.10  2024-06-24 [1] CRAN (R 4.4.0)
+#&gt;  lubridate              1.9.3     2023-09-27 [1] CRAN (R 4.4.0)
+#&gt;  magick                 2.8.5     2024-09-20 [1] CRAN (R 4.4.1)
+#&gt;  magrittr               2.0.3     2022-03-30 [1] CRAN (R 4.4.0)
+#&gt;  MASS                   7.3-60.2  2024-04-26 [1] CRAN (R 4.4.1)
+#&gt;  Matrix               * 1.7-0     2024-04-26 [1] CRAN (R 4.4.1)
+#&gt;  MatrixGenerics       * 1.16.0    2024-04-30 [1] Bioconductor 3.19 (R 4.4.0)
+#&gt;  matrixStats          * 1.3.0     2024-04-11 [1] CRAN (R 4.4.0)
+#&gt;  MCMCprecision          0.4.0     2019-12-05 [1] CRAN (R 4.4.0)
+#&gt;  memoise                2.0.1     2021-11-26 [1] CRAN (R 4.4.0)
+#&gt;  metapod                1.12.0    2024-04-30 [1] Bioconductor 3.19 (R 4.4.0)
+#&gt;  mime                   0.12      2021-09-28 [1] CRAN (R 4.4.0)
+#&gt;  miniUI                 0.1.1.1   2018-05-18 [1] CRAN (R 4.4.0)
+#&gt;  msigdbr              * 7.5.1     2022-03-30 [1] CRAN (R 4.4.0)
+#&gt;  munsell                0.5.1     2024-04-01 [1] CRAN (R 4.4.0)
+#&gt;  nlme                   3.1-164   2023-11-27 [1] CRAN (R 4.4.1)
+#&gt;  org.Hs.eg.db         * 3.19.1    2024-09-01 [1] Bioconductor
+#&gt;  paletteer              1.6.0     2024-01-21 [1] CRAN (R 4.4.0)
+#&gt;  parallelly             1.38.0    2024-07-27 [1] CRAN (R 4.4.0)
+#&gt;  patchwork              1.2.0     2024-01-08 [1] CRAN (R 4.4.0)
+#&gt;  pbapply                1.7-2     2023-06-27 [1] CRAN (R 4.4.0)
+#&gt;  pillar                 1.9.0     2023-03-22 [1] CRAN (R 4.4.0)
+#&gt;  pkgconfig              2.0.3     2019-09-22 [1] CRAN (R 4.4.0)
+#&gt;  plotly                 4.10.4    2024-01-13 [1] CRAN (R 4.4.0)
+#&gt;  plyr                   1.8.9     2023-10-02 [1] CRAN (R 4.4.0)
+#&gt;  png                    0.1-8     2022-11-29 [1] CRAN (R 4.4.0)
+#&gt;  polyclip               1.10-7    2024-07-23 [1] CRAN (R 4.4.0)
+#&gt;  presto                 1.0.0     2024-08-28 [1] Github (immunogenomics/presto@7636b3d)
+#&gt;  prismatic              1.1.2     2024-04-10 [1] CRAN (R 4.4.0)
+#&gt;  progressr              0.14.0    2023-08-10 [1] CRAN (R 4.4.0)
+#&gt;  promises               1.3.0     2024-04-05 [1] CRAN (R 4.4.0)
+#&gt;  purrr                * 1.0.2     2023-08-10 [1] CRAN (R 4.4.0)
+#&gt;  qvalue                 2.36.0    2024-04-30 [1] Bioconductor 3.19 (R 4.4.0)
+#&gt;  R.methodsS3            1.8.2     2022-06-13 [1] CRAN (R 4.4.0)
+#&gt;  R.oo                   1.26.0    2024-01-24 [1] CRAN (R 4.4.0)
+#&gt;  R.utils                2.12.3    2023-11-18 [1] CRAN (R 4.4.0)
+#&gt;  R6                     2.5.1     2021-08-19 [1] CRAN (R 4.4.0)
+#&gt;  RANN                 * 2.6.1     2019-01-08 [1] CRAN (R 4.4.0)
+#&gt;  rappdirs               0.3.3     2021-01-31 [1] CRAN (R 4.4.0)
+#&gt;  RColorBrewer           1.1-3     2022-04-03 [1] CRAN (R 4.4.0)
+#&gt;  Rcpp                 * 1.0.13    2024-07-17 [1] CRAN (R 4.4.0)
+#&gt;  RcppAnnoy              0.0.22    2024-01-23 [1] CRAN (R 4.4.0)
+#&gt;  RcppEigen              0.3.4.0.1 2024-08-16 [1] CRAN (R 4.4.0)
+#&gt;  RcppHNSW               0.6.0     2024-02-04 [1] CRAN (R 4.4.0)
+#&gt;  RCurl                  1.98-1.16 2024-07-11 [1] CRAN (R 4.4.0)
+#&gt;  rematch2               2.1.2     2020-05-01 [1] CRAN (R 4.4.0)
+#&gt;  reshape2               1.4.4     2020-04-09 [1] CRAN (R 4.4.0)
+#&gt;  restfulr               0.0.15    2022-06-16 [1] CRAN (R 4.4.0)
+#&gt;  reticulate             1.38.0    2024-06-19 [1] CRAN (R 4.4.0)
+#&gt;  rhdf5                  2.48.0    2024-04-30 [1] Bioconductor 3.19 (R 4.4.0)
+#&gt;  rhdf5filters           1.16.0    2024-04-30 [1] Bioconductor 3.19 (R 4.4.0)
+#&gt;  Rhdf5lib               1.26.0    2024-04-30 [1] Bioconductor 3.19 (R 4.4.0)
+#&gt;  RhpcBLASctl            0.23-42   2023-02-11 [1] CRAN (R 4.4.0)
+#&gt;  rjson                  0.2.22    2024-08-20 [1] CRAN (R 4.4.1)
+#&gt;  rlang                  1.1.4     2024-06-04 [1] CRAN (R 4.4.0)
+#&gt;  rmarkdown              2.27      2024-05-17 [1] CRAN (R 4.4.0)
+#&gt;  ROCR                   1.0-11    2020-05-02 [1] CRAN (R 4.4.0)
+#&gt;  rprojroot              2.0.4     2023-11-05 [1] CRAN (R 4.4.0)
+#&gt;  Rsamtools              2.20.0    2024-04-30 [1] Bioconductor 3.19 (R 4.4.0)
+#&gt;  RSpectra               0.16-2    2024-07-18 [1] CRAN (R 4.4.0)
+#&gt;  RSQLite                2.3.7     2024-05-27 [1] CRAN (R 4.4.0)
+#&gt;  rstudioapi             0.16.0    2024-03-24 [1] CRAN (R 4.4.0)
+#&gt;  rsvd                   1.0.5     2021-04-16 [1] CRAN (R 4.4.0)
+#&gt;  rtracklayer            1.64.0    2024-05-06 [1] Bioconductor 3.19 (R 4.4.0)
+#&gt;  Rtsne                  0.17      2023-12-07 [1] CRAN (R 4.4.0)
+#&gt;  S4Arrays               1.4.1     2024-05-30 [1] Bioconductor 3.19 (R 4.4.0)
+#&gt;  S4Vectors            * 0.42.1    2024-07-03 [1] Bioconductor 3.19 (R 4.4.1)
+#&gt;  sass                   0.4.9     2024-03-15 [1] CRAN (R 4.4.0)
+#&gt;  ScaledMatrix           1.12.0    2024-04-30 [1] Bioconductor 3.19 (R 4.4.0)
+#&gt;  scales                 1.3.0     2023-11-28 [1] CRAN (R 4.4.0)
+#&gt;  scater                 1.32.1    2024-07-21 [1] Bioconductor 3.19 (R 4.4.1)
+#&gt;  scattermore            1.2       2023-06-12 [1] CRAN (R 4.4.0)
+#&gt;  scatterpie             0.2.4     2024-08-28 [1] CRAN (R 4.4.1)
+#&gt;  scCustomize          * 2.1.2     2024-02-28 [1] CRAN (R 4.4.0)
+#&gt;  scDblFinder          * 1.18.0    2024-04-30 [1] Bioconductor 3.19 (R 4.4.0)
+#&gt;  scran                  1.32.0    2024-04-30 [1] Bioconductor 3.19 (R 4.4.0)
+#&gt;  sctransform            0.4.1     2023-10-19 [1] CRAN (R 4.4.0)
+#&gt;  scuttle                1.14.0    2024-04-30 [1] Bioconductor 3.19 (R 4.4.0)
+#&gt;  sessioninfo            1.2.2     2021-12-06 [1] CRAN (R 4.4.0)
+#&gt;  Seurat               * 5.1.0     2024-05-10 [1] CRAN (R 4.4.0)
+#&gt;  SeuratObject         * 5.0.2     2024-05-08 [1] CRAN (R 4.4.0)
+#&gt;  shadowtext             0.1.4     2024-07-18 [1] CRAN (R 4.4.0)
+#&gt;  shape                  1.4.6.1   2024-02-23 [1] CRAN (R 4.4.0)
+#&gt;  shiny                  1.9.0     2024-07-29 [1] CRAN (R 4.4.0)
+#&gt;  SingleCellExperiment * 1.26.0    2024-04-30 [1] Bioconductor 3.19 (R 4.4.0)
+#&gt;  SingleR              * 2.6.0     2024-04-30 [1] Bioconductor 3.19 (R 4.4.0)
+#&gt;  snakecase              0.11.1    2023-08-27 [1] CRAN (R 4.4.0)
+#&gt;  sp                   * 2.1-4     2024-04-30 [1] CRAN (R 4.4.0)
+#&gt;  spam                   2.10-0    2023-10-23 [1] CRAN (R 4.4.0)
+#&gt;  SparseArray            1.4.8     2024-05-30 [1] Bioconductor 3.19 (R 4.4.0)
+#&gt;  sparseMatrixStats      1.16.0    2024-04-30 [1] Bioconductor 3.19 (R 4.4.0)
+#&gt;  spatstat.data          3.1-2     2024-06-21 [1] CRAN (R 4.4.0)
+#&gt;  spatstat.explore       3.3-2     2024-08-21 [1] CRAN (R 4.4.1)
+#&gt;  spatstat.geom          3.3-2     2024-07-15 [1] CRAN (R 4.4.0)
+#&gt;  spatstat.random        3.3-1     2024-07-15 [1] CRAN (R 4.4.0)
+#&gt;  spatstat.sparse        3.1-0     2024-06-21 [1] CRAN (R 4.4.0)
+#&gt;  spatstat.univar        3.0-0     2024-06-28 [1] CRAN (R 4.4.0)
+#&gt;  spatstat.utils         3.1-0     2024-08-17 [1] CRAN (R 4.4.0)
+#&gt;  statmod                1.5.0     2023-01-06 [1] CRAN (R 4.4.0)
+#&gt;  stringi                1.8.4     2024-05-06 [1] CRAN (R 4.4.0)
+#&gt;  stringr              * 1.5.1     2023-11-14 [1] CRAN (R 4.4.0)
+#&gt;  SummarizedExperiment * 1.34.0    2024-04-30 [1] Bioconductor 3.19 (R 4.4.0)
+#&gt;  survival               3.6-4     2024-04-24 [1] CRAN (R 4.4.1)
+#&gt;  svMisc                 1.2.3     2021-10-11 [1] CRAN (R 4.4.0)
+#&gt;  tensor                 1.5       2012-05-05 [1] CRAN (R 4.4.0)
+#&gt;  tibble               * 3.2.1     2023-03-20 [1] CRAN (R 4.4.0)
+#&gt;  tictoc               * 1.2.1     2024-03-18 [1] CRAN (R 4.4.0)
+#&gt;  tidygraph              1.3.1     2024-01-30 [1] CRAN (R 4.4.0)
+#&gt;  tidyr                * 1.3.1     2024-01-24 [1] CRAN (R 4.4.0)
+#&gt;  tidyselect             1.2.1     2024-03-11 [1] CRAN (R 4.4.0)
+#&gt;  tidytree               0.4.6     2023-12-12 [1] CRAN (R 4.4.0)
+#&gt;  timechange             0.3.0     2024-01-18 [1] CRAN (R 4.4.0)
+#&gt;  treeio                 1.28.0    2024-04-30 [1] Bioconductor 3.19 (R 4.4.0)
+#&gt;  tweenr                 2.0.3     2024-02-26 [1] CRAN (R 4.4.0)
+#&gt;  UCSC.utils             1.0.0     2024-05-06 [1] Bioconductor 3.19 (R 4.4.0)
+#&gt;  utf8                   1.2.4     2023-10-22 [1] CRAN (R 4.4.0)
+#&gt;  uwot                   0.2.2     2024-04-21 [1] CRAN (R 4.4.0)
+#&gt;  vctrs                  0.6.5     2023-12-01 [1] CRAN (R 4.4.0)
+#&gt;  vipor                  0.4.7     2023-12-18 [1] CRAN (R 4.4.0)
+#&gt;  viridis                0.6.5     2024-01-29 [1] CRAN (R 4.4.0)
+#&gt;  viridisLite            0.4.2     2023-05-02 [1] CRAN (R 4.4.0)
+#&gt;  withr                  3.0.0     2024-01-16 [1] CRAN (R 4.4.0)
+#&gt;  WriteXLS               6.7.0     2024-07-20 [1] CRAN (R 4.4.0)
+#&gt;  xfun                   0.52      2025-04-02 [1] CRAN (R 4.4.1)
+#&gt;  xgboost                1.7.8.1   2024-07-24 [1] CRAN (R 4.4.0)
+#&gt;  XML                    3.99-0.17 2024-06-25 [1] CRAN (R 4.4.0)
+#&gt;  xtable                 1.8-4     2019-04-21 [1] CRAN (R 4.4.0)
+#&gt;  XVector                0.44.0    2024-04-30 [1] Bioconductor 3.19 (R 4.4.0)
+#&gt;  yaml                   2.3.10    2024-07-26 [1] CRAN (R 4.4.0)
+#&gt;  yulab.utils            0.1.7     2024-08-26 [1] CRAN (R 4.4.1)
+#&gt;  zlibbioc               1.50.0    2024-04-30 [1] Bioconductor 3.19 (R 4.4.0)
+#&gt;  zoo                    1.8-12    2023-04-13 [1] CRAN (R 4.4.0)
+#&gt; 
+#&gt;  [1] /Library/Frameworks/R.framework/Versions/4.4-arm64/Resources/library
+#&gt; 
+#&gt; ──────────────────────────────────────────────────────────────────────────────</code></pre>
+
+</div>
+</div>
+            </section>
+
+          </div>
+        </div>
+      </div>
+<a href="cell-annotation-1.html" class="navigation navigation-prev " aria-label="Previous page"><i class="fa fa-angle-left"></i></a>
+<a href="references.html" class="navigation navigation-next " aria-label="Next page"><i class="fa fa-angle-right"></i></a>
+    </div>
+  </div>
+<script src="libs/gitbook-2.6.7/js/app.min.js"></script>
+<script src="libs/gitbook-2.6.7/js/clipboard.min.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-search.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-sharing.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-fontsettings.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-bookdown.js"></script>
+<script src="libs/gitbook-2.6.7/js/jquery.highlight.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-clipboard.js"></script>
+<script>
+gitbook.require(["gitbook"], function(gitbook) {
+gitbook.start({
+  "sharing": {
+    "github": true,
+    "facebook": false,
+    "twitter": true,
+    "linkedin": true,
+    "weibo": false,
+    "instapaper": false,
+    "vk": false,
+    "whatsapp": false,
+    "all": ["facebook", "twitter", "linkedin", "weibo", "instapaper"]
+  },
+  "fontsettings": {
+    "theme": "white",
+    "family": "sans",
+    "size": 2
+  },
+  "edit": {
+    "link": "https://github.com/crazyhottommy/practical_scRNAseq_analysis_with_R/edit/main/05-gene-set-enrichment.Rmd",
+    "text": "Edit"
+  },
+  "history": {
+    "link": null,
+    "text": null
+  },
+  "view": {
+    "link": null,
+    "text": null
+  },
+  "download": ["practical_scRNAseq_analysis.pdf", "practical_scRNAseq_analysis.epub"],
+  "search": {
+    "engine": "fuse",
+    "options": null
+  },
+  "toc": {
+    "collapse": "subsection"
+  }
+});
+});
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    var src = "true";
+    if (src === "" || src === "true") src = "https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.9/latest.js?config=TeX-MML-AM_CHTML";
+    if (location.protocol !== "file:")
+      if (/^https?:/.test(src))
+        src = src.replace(/^https?:/, '');
+    script.src = src;
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+</body>
+
+</html>

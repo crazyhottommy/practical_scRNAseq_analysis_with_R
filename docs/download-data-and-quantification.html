@@ -1,0 +1,1119 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+<head>
+
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>Chapter 1 Download Data and Quantification | Practical scRNAseq Analysis with R</title>
+  <meta name="description" content="A comprehensive, reproducible guide for single-cell RNA-seq analysis using R, covering data quantification, quality control, clustering, cell annotation, and functional enrichment using real-world datasets." />
+  <meta name="generator" content="bookdown 0.40 and GitBook 2.6.7" />
+
+  <meta property="og:title" content="Chapter 1 Download Data and Quantification | Practical scRNAseq Analysis with R" />
+  <meta property="og:type" content="book" />
+  
+  <meta property="og:description" content="A comprehensive, reproducible guide for single-cell RNA-seq analysis using R, covering data quantification, quality control, clustering, cell annotation, and functional enrichment using real-world datasets." />
+  <meta name="github-repo" content="crazyhottommy/practical_scRNAseq_analysis_with_R" />
+
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Chapter 1 Download Data and Quantification | Practical scRNAseq Analysis with R" />
+  
+  <meta name="twitter:description" content="A comprehensive, reproducible guide for single-cell RNA-seq analysis using R, covering data quantification, quality control, clustering, cell annotation, and functional enrichment using real-world datasets." />
+  
+
+<meta name="author" content="Ming Tommy Tang" />
+
+
+<meta name="date" content="2026-03-15" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+  
+  
+<link rel="prev" href="index.html"/>
+<link rel="next" href="quality-control.html"/>
+<script src="libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fuse.js@6.4.6/dist/fuse.min.js"></script>
+<link href="libs/gitbook-2.6.7/css/style.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-table.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-bookdown.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-highlight.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-search.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-fontsettings.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-clipboard.css" rel="stylesheet" />
+
+
+
+
+
+
+
+
+<link href="libs/anchor-sections-1.1.0/anchor-sections.css" rel="stylesheet" />
+<link href="libs/anchor-sections-1.1.0/anchor-sections-hash.css" rel="stylesheet" />
+<script src="libs/anchor-sections-1.1.0/anchor-sections.js"></script>
+
+
+<style type="text/css">
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #aaaaaa;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code span.at { color: #7d9029; } /* Attribute */
+code span.bn { color: #40a070; } /* BaseN */
+code span.bu { color: #008000; } /* BuiltIn */
+code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #4070a0; } /* Char */
+code span.cn { color: #880000; } /* Constant */
+code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code span.dt { color: #902000; } /* DataType */
+code span.dv { color: #40a070; } /* DecVal */
+code span.er { color: #ff0000; font-weight: bold; } /* Error */
+code span.ex { } /* Extension */
+code span.fl { color: #40a070; } /* Float */
+code span.fu { color: #06287e; } /* Function */
+code span.im { color: #008000; font-weight: bold; } /* Import */
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code span.op { color: #666666; } /* Operator */
+code span.ot { color: #007020; } /* Other */
+code span.pp { color: #bc7a00; } /* Preprocessor */
+code span.sc { color: #4070a0; } /* SpecialChar */
+code span.ss { color: #bb6688; } /* SpecialString */
+code span.st { color: #4070a0; } /* String */
+code span.va { color: #19177c; } /* Variable */
+code span.vs { color: #4070a0; } /* VerbatimString */
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+</style>
+
+<style type="text/css">
+  
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+</style>
+
+<link rel="stylesheet" href="style.css" type="text/css" />
+</head>
+
+<body>
+
+
+
+  <div class="book without-animation with-summary font-size-2 font-family-1" data-basepath=".">
+
+    <div class="book-summary">
+      <nav role="navigation">
+
+<ul class="summary">
+<li><a href="./">Practical scRNAseq Analysis with R</a></li>
+
+<li class="divider"></li>
+<li class="chapter" data-level="" data-path="index.html"><a href="index.html"><i class="fa fa-check"></i>Prerequisites</a>
+<ul>
+<li class="chapter" data-level="" data-path="index.html"><a href="index.html#what-youll-learn"><i class="fa fa-check"></i>What You’ll Learn</a></li>
+<li class="chapter" data-level="" data-path="index.html"><a href="index.html#what-you-need-before-starting"><i class="fa fa-check"></i>What You Need Before Starting</a></li>
+<li class="chapter" data-level="" data-path="index.html"><a href="index.html#computing-resources"><i class="fa fa-check"></i>Computing Resources</a></li>
+<li class="chapter" data-level="" data-path="index.html"><a href="index.html#system-dependencies"><i class="fa fa-check"></i>System Dependencies</a></li>
+<li class="chapter" data-level="" data-path="index.html"><a href="index.html#how-to-use-this-book"><i class="fa fa-check"></i>How to Use This Book</a></li>
+<li class="chapter" data-level="" data-path="index.html"><a href="index.html#the-dataset"><i class="fa fa-check"></i>The Dataset</a></li>
+<li class="chapter" data-level="" data-path="index.html"><a href="index.html#reproducibility"><i class="fa fa-check"></i>Reproducibility</a></li>
+<li class="chapter" data-level="" data-path="index.html"><a href="index.html#acknowledgments"><i class="fa fa-check"></i>Acknowledgments</a></li>
+<li class="chapter" data-level="" data-path="index.html"><a href="index.html#license"><i class="fa fa-check"></i>License</a></li>
+</ul></li>
+<li class="chapter" data-level="1" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html"><i class="fa fa-check"></i><b>1</b> Download Data and Quantification</a>
+<ul>
+<li class="chapter" data-level="1.1" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html#what-is-single-cell-rna-seq"><i class="fa fa-check"></i><b>1.1</b> What is single-cell RNA-seq?</a>
+<ul>
+<li class="chapter" data-level="1.1.1" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html#but-do-you-really-need-single-cell-rna-seq"><i class="fa fa-check"></i><b>1.1.1</b> But do you really need single-cell RNA-seq?</a></li>
+<li class="chapter" data-level="1.1.2" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html#the-10x-genomics-chromium-platform"><i class="fa fa-check"></i><b>1.1.2</b> The 10x Genomics Chromium platform</a></li>
+<li class="chapter" data-level="1.1.3" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html#why-umis-matter"><i class="fa fa-check"></i><b>1.1.3</b> Why UMIs matter</a></li>
+<li class="chapter" data-level="1.1.4" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html#cell-barcodes"><i class="fa fa-check"></i><b>1.1.4</b> Cell barcodes</a></li>
+<li class="chapter" data-level="1.1.5" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html#sparse-matrices"><i class="fa fa-check"></i><b>1.1.5</b> Sparse matrices</a></li>
+<li class="chapter" data-level="1.1.6" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html#from-fastq-to-count-matrix"><i class="fa fa-check"></i><b>1.1.6</b> From FASTQ to count matrix</a></li>
+<li class="chapter" data-level="1.1.7" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html#why-alevin-fry"><i class="fa fa-check"></i><b>1.1.7</b> Why alevin-fry?</a></li>
+<li class="chapter" data-level="1.1.8" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html#the-splici-index"><i class="fa fa-check"></i><b>1.1.8</b> The splici index</a></li>
+</ul></li>
+<li class="chapter" data-level="1.2" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html#description-of-the-data"><i class="fa fa-check"></i><b>1.2</b> Description of the Data</a></li>
+<li class="chapter" data-level="1.3" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html#download-the-fastq-files-using-fastq-dl"><i class="fa fa-check"></i><b>1.3</b> Download the fastq files using fastq-dl</a>
+<ul>
+<li class="chapter" data-level="1.3.1" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html#a-note-on-the-fastq-files"><i class="fa fa-check"></i><b>1.3.1</b> A note on the fastq files</a></li>
+<li class="chapter" data-level="1.3.2" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html#alignment-and-quantification-using-simpleaf"><i class="fa fa-check"></i><b>1.3.2</b> alignment and quantification using simpleaf</a></li>
+<li class="chapter" data-level="1.3.3" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html#quantification"><i class="fa fa-check"></i><b>1.3.3</b> Quantification</a></li>
+<li class="chapter" data-level="1.3.4" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html#check-the-output"><i class="fa fa-check"></i><b>1.3.4</b> Check the output</a></li>
+</ul></li>
+<li class="chapter" data-level="1.4" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html#troubleshooting"><i class="fa fa-check"></i><b>1.4</b> Troubleshooting</a></li>
+<li class="chapter" data-level="1.5" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html#alternative-quantification-workflows"><i class="fa fa-check"></i><b>1.5</b> Alternative quantification workflows</a></li>
+<li class="chapter" data-level="1.6" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html#summary"><i class="fa fa-check"></i><b>1.6</b> Summary</a>
+<ul>
+<li class="chapter" data-level="1.6.1" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html#further-reading"><i class="fa fa-check"></i><b>1.6.1</b> Further reading</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html#session-information"><i class="fa fa-check"></i>Session Information</a></li>
+</ul></li>
+<li class="chapter" data-level="2" data-path="quality-control.html"><a href="quality-control.html"><i class="fa fa-check"></i><b>2</b> Quality Control</a>
+<ul>
+<li class="chapter" data-level="2.1" data-path="quality-control.html"><a href="quality-control.html#before-you-filter-think-about-what-youre-throwing-away"><i class="fa fa-check"></i><b>2.1</b> Before you filter: think about what you’re throwing away</a>
+<ul>
+<li class="chapter" data-level="2.1.1" data-path="quality-control.html"><a href="quality-control.html#what-counts-as-normal-depends-on-your-biology"><i class="fa fa-check"></i><b>2.1.1</b> What counts as “normal” depends on your biology</a></li>
+<li class="chapter" data-level="2.1.2" data-path="quality-control.html"><a href="quality-control.html#fixed-thresholds-vs-adaptive-thresholds"><i class="fa fa-check"></i><b>2.1.2</b> Fixed thresholds vs adaptive thresholds</a></li>
+<li class="chapter" data-level="2.1.3" data-path="quality-control.html"><a href="quality-control.html#the-knee-plot"><i class="fa fa-check"></i><b>2.1.3</b> The knee plot</a></li>
+<li class="chapter" data-level="2.1.4" data-path="quality-control.html"><a href="quality-control.html#the-empty-droplet-problem"><i class="fa fa-check"></i><b>2.1.4</b> The empty droplet problem</a></li>
+<li class="chapter" data-level="2.1.5" data-path="quality-control.html"><a href="quality-control.html#qc-is-iterative"><i class="fa fa-check"></i><b>2.1.5</b> QC is iterative</a></li>
+</ul></li>
+<li class="chapter" data-level="2.2" data-path="quality-control.html"><a href="quality-control.html#a-note-on-preparing-the-computing-environment"><i class="fa fa-check"></i><b>2.2</b> A note on preparing the computing environment</a></li>
+<li class="chapter" data-level="2.3" data-path="quality-control.html"><a href="quality-control.html#a-note-on-project-folder-structure"><i class="fa fa-check"></i><b>2.3</b> A note on project folder structure</a>
+<ul>
+<li class="chapter" data-level="2.3.1" data-path="quality-control.html"><a href="quality-control.html#stop-using-setwd-and-rmlist-ls"><i class="fa fa-check"></i><b>2.3.1</b> Stop using <code>setwd()</code> and <code>rm(list = ls())</code></a></li>
+<li class="chapter" data-level="2.3.2" data-path="quality-control.html"><a href="quality-control.html#use-rstudio-projects-and-here"><i class="fa fa-check"></i><b>2.3.2</b> Use RStudio Projects and <code>here()</code></a></li>
+<li class="chapter" data-level="2.3.3" data-path="quality-control.html"><a href="quality-control.html#download-the-data"><i class="fa fa-check"></i><b>2.3.3</b> Download the data</a></li>
+</ul></li>
+<li class="chapter" data-level="2.4" data-path="quality-control.html"><a href="quality-control.html#quality-control-1"><i class="fa fa-check"></i><b>2.4</b> Quality Control</a>
+<ul>
+<li class="chapter" data-level="2.4.1" data-path="quality-control.html"><a href="quality-control.html#remove-empty-droplets"><i class="fa fa-check"></i><b>2.4.1</b> Remove empty droplets</a></li>
+<li class="chapter" data-level="2.4.2" data-path="quality-control.html"><a href="quality-control.html#the-knee-plot-1"><i class="fa fa-check"></i><b>2.4.2</b> The knee plot</a></li>
+<li class="chapter" data-level="2.4.3" data-path="quality-control.html"><a href="quality-control.html#convert-the-ensembl-id-to-gene-symbol"><i class="fa fa-check"></i><b>2.4.3</b> convert the ENSEMBL ID to gene symbol</a></li>
+<li class="chapter" data-level="2.4.4" data-path="quality-control.html"><a href="quality-control.html#adaptive-thresholding-with-mad-optional"><i class="fa fa-check"></i><b>2.4.4</b> Adaptive thresholding with MAD (optional)</a></li>
+<li class="chapter" data-level="2.4.5" data-path="quality-control.html"><a href="quality-control.html#do-it-for-all-four-samples-with-purrr"><i class="fa fa-check"></i><b>2.4.5</b> Do it for all four samples with purrr</a></li>
+<li class="chapter" data-level="2.4.6" data-path="quality-control.html"><a href="quality-control.html#what-we-covered"><i class="fa fa-check"></i><b>2.4.6</b> What we covered</a></li>
+<li class="chapter" data-level="2.4.7" data-path="quality-control.html"><a href="quality-control.html#things-to-watch-out-for"><i class="fa fa-check"></i><b>2.4.7</b> Things to watch out for</a></li>
+<li class="chapter" data-level="2.4.8" data-path="quality-control.html"><a href="quality-control.html#further-reading-1"><i class="fa fa-check"></i><b>2.4.8</b> Further reading</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="quality-control.html"><a href="quality-control.html#session-information-1"><i class="fa fa-check"></i>Session Information</a></li>
+</ul></li>
+<li class="chapter" data-level="3" data-path="seurat-workflow.html"><a href="seurat-workflow.html"><i class="fa fa-check"></i><b>3</b> Seurat workflow</a>
+<ul>
+<li class="chapter" data-level="3.1" data-path="seurat-workflow.html"><a href="seurat-workflow.html#what-we-are-doing-in-this-chapter"><i class="fa fa-check"></i><b>3.1</b> What we are doing in this chapter</a>
+<ul>
+<li class="chapter" data-level="3.1.1" data-path="seurat-workflow.html"><a href="seurat-workflow.html#how-i-structured-this-chapter"><i class="fa fa-check"></i><b>3.1.1</b> How I structured this chapter</a></li>
+</ul></li>
+<li class="chapter" data-level="3.2" data-path="seurat-workflow.html"><a href="seurat-workflow.html#read-in-the-filtered-matrices-and-make-a-seurat-object"><i class="fa fa-check"></i><b>3.2</b> Read in the filtered matrices and make a Seurat object</a></li>
+<li class="chapter" data-level="3.3" data-path="seurat-workflow.html"><a href="seurat-workflow.html#alternative-input-formats-to-make-a-seurat-object"><i class="fa fa-check"></i><b>3.3</b> alternative input formats to make a seurat object</a>
+<ul>
+<li class="chapter" data-level="3.3.1" data-path="seurat-workflow.html"><a href="seurat-workflow.html#cellranger-input"><i class="fa fa-check"></i><b>3.3.1</b> cellranger input</a></li>
+</ul></li>
+<li class="chapter" data-level="3.4" data-path="seurat-workflow.html"><a href="seurat-workflow.html#add-metadata-to-the-seurat-object"><i class="fa fa-check"></i><b>3.4</b> add metadata to the seurat object</a></li>
+<li class="chapter" data-level="3.5" data-path="seurat-workflow.html"><a href="seurat-workflow.html#more-quality-control"><i class="fa fa-check"></i><b>3.5</b> more quality control</a></li>
+<li class="chapter" data-level="3.6" data-path="seurat-workflow.html"><a href="seurat-workflow.html#routine-processing"><i class="fa fa-check"></i><b>3.6</b> Routine Processing</a>
+<ul>
+<li class="chapter" data-level="3.6.1" data-path="seurat-workflow.html"><a href="seurat-workflow.html#why-do-we-need-dimensionality-reduction"><i class="fa fa-check"></i><b>3.6.1</b> Why do we need dimensionality reduction?</a></li>
+<li class="chapter" data-level="3.6.2" data-path="seurat-workflow.html"><a href="seurat-workflow.html#why-we-need-integration-harmony"><i class="fa fa-check"></i><b>3.6.2</b> Why we need integration (Harmony)</a></li>
+<li class="chapter" data-level="3.6.3" data-path="seurat-workflow.html"><a href="seurat-workflow.html#the-pipeline-in-one-code-block"><i class="fa fa-check"></i><b>3.6.3</b> The pipeline in one code block</a></li>
+<li class="chapter" data-level="3.6.4" data-path="seurat-workflow.html"><a href="seurat-workflow.html#how-to-choose-parameters"><i class="fa fa-check"></i><b>3.6.4</b> How to choose parameters</a></li>
+<li class="chapter" data-level="3.6.5" data-path="seurat-workflow.html"><a href="seurat-workflow.html#our-parameter-choices-for-this-dataset"><i class="fa fa-check"></i><b>3.6.5</b> Our parameter choices for this dataset</a></li>
+</ul></li>
+<li class="chapter" data-level="3.7" data-path="seurat-workflow.html"><a href="seurat-workflow.html#remove-other-low-quality-cells"><i class="fa fa-check"></i><b>3.7</b> remove other low quality cells</a></li>
+<li class="chapter" data-level="3.8" data-path="seurat-workflow.html"><a href="seurat-workflow.html#understanding-the-math-behind-each-step"><i class="fa fa-check"></i><b>3.8</b> Understanding the math behind each step</a>
+<ul>
+<li class="chapter" data-level="3.8.1" data-path="seurat-workflow.html"><a href="seurat-workflow.html#why-do-we-normalize"><i class="fa fa-check"></i><b>3.8.1</b> Why do we normalize?</a></li>
+<li class="chapter" data-level="3.8.2" data-path="seurat-workflow.html"><a href="seurat-workflow.html#lognormalize-what-exactly-does-it-do"><i class="fa fa-check"></i><b>3.8.2</b> LogNormalize: what exactly does it do?</a></li>
+<li class="chapter" data-level="3.8.3" data-path="seurat-workflow.html"><a href="seurat-workflow.html#when-to-use-different-normalization-methods"><i class="fa fa-check"></i><b>3.8.3</b> When to use different normalization methods</a></li>
+<li class="chapter" data-level="3.8.4" data-path="seurat-workflow.html"><a href="seurat-workflow.html#which-normalization-should-you-use"><i class="fa fa-check"></i><b>3.8.4</b> Which normalization should you use?</a></li>
+<li class="chapter" data-level="3.8.5" data-path="seurat-workflow.html"><a href="seurat-workflow.html#find-variable-genes"><i class="fa fa-check"></i><b>3.8.5</b> Find Variable Genes</a></li>
+<li class="chapter" data-level="3.8.6" data-path="seurat-workflow.html"><a href="seurat-workflow.html#visualization"><i class="fa fa-check"></i><b>3.8.6</b> visualization</a></li>
+<li class="chapter" data-level="3.8.7" data-path="seurat-workflow.html"><a href="seurat-workflow.html#finding-cluster-markers-with-differential-expression"><i class="fa fa-check"></i><b>3.8.7</b> Finding cluster markers with differential expression</a></li>
+</ul></li>
+<li class="chapter" data-level="3.9" data-path="seurat-workflow.html"><a href="seurat-workflow.html#doublet-detection"><i class="fa fa-check"></i><b>3.9</b> Doublet detection</a></li>
+<li class="chapter" data-level="3.10" data-path="seurat-workflow.html"><a href="seurat-workflow.html#ambient-rna-removal"><i class="fa fa-check"></i><b>3.10</b> Ambient RNA removal</a></li>
+<li class="chapter" data-level="3.11" data-path="seurat-workflow.html"><a href="seurat-workflow.html#remove-contaminating-clusters"><i class="fa fa-check"></i><b>3.11</b> Remove contaminating clusters</a></li>
+<li class="chapter" data-level="3.12" data-path="seurat-workflow.html"><a href="seurat-workflow.html#pseudo-bulk-differential-expression-with-deseq2"><i class="fa fa-check"></i><b>3.12</b> Pseudo-bulk differential expression with DESeq2</a>
+<ul>
+<li class="chapter" data-level="3.12.1" data-path="seurat-workflow.html"><a href="seurat-workflow.html#step-1-aggregate-counts-to-pseudo-bulk"><i class="fa fa-check"></i><b>3.12.1</b> Step 1: Aggregate counts to pseudo-bulk</a></li>
+<li class="chapter" data-level="3.12.2" data-path="seurat-workflow.html"><a href="seurat-workflow.html#step-2-prepare-metadata-for-deseq2"><i class="fa fa-check"></i><b>3.12.2</b> Step 2: Prepare metadata for DESeq2</a></li>
+<li class="chapter" data-level="3.12.3" data-path="seurat-workflow.html"><a href="seurat-workflow.html#step-3-run-deseq2-for-one-cluster"><i class="fa fa-check"></i><b>3.12.3</b> Step 3: Run DESeq2 for one cluster</a></li>
+<li class="chapter" data-level="3.12.4" data-path="seurat-workflow.html"><a href="seurat-workflow.html#step-4-run-deseq2-for-all-clusters-with-purrr"><i class="fa fa-check"></i><b>3.12.4</b> Step 4: Run DESeq2 for all clusters with purrr</a></li>
+<li class="chapter" data-level="3.12.5" data-path="seurat-workflow.html"><a href="seurat-workflow.html#step-5-visualize-the-results"><i class="fa fa-check"></i><b>3.12.5</b> Step 5: Visualize the results</a></li>
+<li class="chapter" data-level="3.12.6" data-path="seurat-workflow.html"><a href="seurat-workflow.html#when-to-use-pseudo-bulk-vs-findallmarkers"><i class="fa fa-check"></i><b>3.12.6</b> When to use pseudo-bulk vs FindAllMarkers</a></li>
+</ul></li>
+<li class="chapter" data-level="3.13" data-path="seurat-workflow.html"><a href="seurat-workflow.html#what-we-covered-1"><i class="fa fa-check"></i><b>3.13</b> What we covered</a>
+<ul>
+<li class="chapter" data-level="3.13.1" data-path="seurat-workflow.html"><a href="seurat-workflow.html#things-that-go-wrong"><i class="fa fa-check"></i><b>3.13.1</b> Things that go wrong</a></li>
+<li class="chapter" data-level="3.13.2" data-path="seurat-workflow.html"><a href="seurat-workflow.html#further-reading-2"><i class="fa fa-check"></i><b>3.13.2</b> Further reading</a></li>
+<li class="chapter" data-level="3.13.3" data-path="seurat-workflow.html"><a href="seurat-workflow.html#key-takeaways"><i class="fa fa-check"></i><b>3.13.3</b> Key takeaways</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="seurat-workflow.html"><a href="seurat-workflow.html#session-information-2"><i class="fa fa-check"></i>Session Information</a></li>
+</ul></li>
+<li class="chapter" data-level="4" data-path="cell-annotation.html"><a href="cell-annotation.html"><i class="fa fa-check"></i><b>4</b> Cell Annotation</a>
+<ul>
+<li class="chapter" data-level="4.1" data-path="cell-annotation.html"><a href="cell-annotation.html#there-is-no-ground-truth"><i class="fa fa-check"></i><b>4.1</b> There Is No Ground Truth</a>
+<ul>
+<li class="chapter" data-level="4.1.1" data-path="cell-annotation.html"><a href="cell-annotation.html#how-well-approach-annotation"><i class="fa fa-check"></i><b>4.1.1</b> How we’ll approach annotation</a></li>
+</ul></li>
+<li class="chapter" data-level="4.2" data-path="cell-annotation.html"><a href="cell-annotation.html#manual-annotation"><i class="fa fa-check"></i><b>4.2</b> Manual Annotation</a>
+<ul>
+<li class="chapter" data-level="4.2.1" data-path="cell-annotation.html"><a href="cell-annotation.html#define-a-marker-gene-dictionary"><i class="fa fa-check"></i><b>4.2.1</b> Define a marker gene dictionary</a></li>
+<li class="chapter" data-level="4.2.2" data-path="cell-annotation.html"><a href="cell-annotation.html#visualize-markers-systematically"><i class="fa fa-check"></i><b>4.2.2</b> Visualize markers systematically</a></li>
+<li class="chapter" data-level="4.2.3" data-path="cell-annotation.html"><a href="cell-annotation.html#use-feature-plots-for-spatial-context"><i class="fa fa-check"></i><b>4.2.3</b> Use feature plots for spatial context</a></li>
+<li class="chapter" data-level="4.2.4" data-path="cell-annotation.html"><a href="cell-annotation.html#create-a-manual-annotation-table"><i class="fa fa-check"></i><b>4.2.4</b> Create a manual annotation table</a></li>
+</ul></li>
+<li class="chapter" data-level="4.3" data-path="cell-annotation.html"><a href="cell-annotation.html#automated-annotation-methods"><i class="fa fa-check"></i><b>4.3</b> Automated Annotation Methods</a></li>
+<li class="chapter" data-level="4.4" data-path="cell-annotation.html"><a href="cell-annotation.html#method-1-singler-reference-based-classification"><i class="fa fa-check"></i><b>4.4</b> Method 1: SingleR (Reference-based Classification)</a>
+<ul>
+<li class="chapter" data-level="4.4.1" data-path="cell-annotation.html"><a href="cell-annotation.html#choosing-a-reference-dataset"><i class="fa fa-check"></i><b>4.4.1</b> Choosing a reference dataset</a></li>
+<li class="chapter" data-level="4.4.2" data-path="cell-annotation.html"><a href="cell-annotation.html#built-in-references-from-celldex"><i class="fa fa-check"></i><b>4.4.2</b> Built-in references from celldex</a></li>
+<li class="chapter" data-level="4.4.3" data-path="cell-annotation.html"><a href="cell-annotation.html#custom-references"><i class="fa fa-check"></i><b>4.4.3</b> Custom references</a></li>
+<li class="chapter" data-level="4.4.4" data-path="cell-annotation.html"><a href="cell-annotation.html#how-singler-works"><i class="fa fa-check"></i><b>4.4.4</b> How SingleR works</a></li>
+</ul></li>
+<li class="chapter" data-level="4.5" data-path="cell-annotation.html"><a href="cell-annotation.html#clustifyr"><i class="fa fa-check"></i><b>4.5</b> clustifyr</a></li>
+<li class="chapter" data-level="4.6" data-path="cell-annotation.html"><a href="cell-annotation.html#seurat-label-transfer"><i class="fa fa-check"></i><b>4.6</b> Seurat label transfer</a></li>
+<li class="chapter" data-level="4.7" data-path="cell-annotation.html"><a href="cell-annotation.html#comparing-annotation-methods"><i class="fa fa-check"></i><b>4.7</b> Comparing Annotation Methods</a>
+<ul>
+<li class="chapter" data-level="4.7.1" data-path="cell-annotation.html"><a href="cell-annotation.html#create-a-comparison-table"><i class="fa fa-check"></i><b>4.7.1</b> Create a comparison table</a></li>
+<li class="chapter" data-level="4.7.2" data-path="cell-annotation.html"><a href="cell-annotation.html#calculate-agreement"><i class="fa fa-check"></i><b>4.7.2</b> Calculate agreement</a></li>
+<li class="chapter" data-level="4.7.3" data-path="cell-annotation.html"><a href="cell-annotation.html#visualize-side-by-side"><i class="fa fa-check"></i><b>4.7.3</b> Visualize side by side</a></li>
+<li class="chapter" data-level="4.7.4" data-path="cell-annotation.html"><a href="cell-annotation.html#investigate-discrepancies"><i class="fa fa-check"></i><b>4.7.4</b> Investigate discrepancies</a></li>
+<li class="chapter" data-level="4.7.5" data-path="cell-annotation.html"><a href="cell-annotation.html#make-a-final-annotation-decision"><i class="fa fa-check"></i><b>4.7.5</b> Make a final annotation decision</a></li>
+<li class="chapter" data-level="4.7.6" data-path="cell-annotation.html"><a href="cell-annotation.html#method-comparison"><i class="fa fa-check"></i><b>4.7.6</b> Method comparison</a></li>
+</ul></li>
+<li class="chapter" data-level="4.8" data-path="cell-annotation.html"><a href="cell-annotation.html#deeper-understanding-of-the-anchor-finding-and-label-transfer-step"><i class="fa fa-check"></i><b>4.8</b> Deeper Understanding of the Anchor Finding and Label Transfer Step</a></li>
+<li class="chapter" data-level="4.9" data-path="cell-annotation.html"><a href="cell-annotation.html#other-annotation-approaches"><i class="fa fa-check"></i><b>4.9</b> Other Annotation Approaches</a>
+<ul>
+<li class="chapter" data-level="4.9.1" data-path="cell-annotation.html"><a href="cell-annotation.html#marker-based-tools"><i class="fa fa-check"></i><b>4.9.1</b> Marker-based tools</a></li>
+<li class="chapter" data-level="4.9.2" data-path="cell-annotation.html"><a href="cell-annotation.html#deep-learning-approaches"><i class="fa fa-check"></i><b>4.9.2</b> Deep learning approaches</a></li>
+</ul></li>
+<li class="chapter" data-level="4.10" data-path="cell-annotation.html"><a href="cell-annotation.html#things-to-watch-out-for-1"><i class="fa fa-check"></i><b>4.10</b> Things to watch out for</a>
+<ul>
+<li class="chapter" data-level="4.10.1" data-path="cell-annotation.html"><a href="cell-annotation.html#further-reading-3"><i class="fa fa-check"></i><b>4.10.1</b> Further reading</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="cell-annotation.html"><a href="cell-annotation.html#session-information-3"><i class="fa fa-check"></i>Session Information</a></li>
+</ul></li>
+<li class="chapter" data-level="5" data-path="gene-set-analysis.html"><a href="gene-set-analysis.html"><i class="fa fa-check"></i><b>5</b> Gene set analysis</a>
+<ul>
+<li class="chapter" data-level="5.1" data-path="gene-set-analysis.html"><a href="gene-set-analysis.html#why-think-in-gene-sets"><i class="fa fa-check"></i><b>5.1</b> Why think in gene sets?</a></li>
+<li class="chapter" data-level="5.2" data-path="gene-set-analysis.html"><a href="gene-set-analysis.html#two-approaches-ora-vs-gsea"><i class="fa fa-check"></i><b>5.2</b> Two approaches: ORA vs GSEA</a>
+<ul>
+<li class="chapter" data-level="5.2.1" data-path="gene-set-analysis.html"><a href="gene-set-analysis.html#over-representation-analysis-ora"><i class="fa fa-check"></i><b>5.2.1</b> Over-Representation Analysis (ORA)</a></li>
+<li class="chapter" data-level="5.2.2" data-path="gene-set-analysis.html"><a href="gene-set-analysis.html#gene-set-enrichment-analysis-gsea"><i class="fa fa-check"></i><b>5.2.2</b> Gene Set Enrichment Analysis (GSEA)</a></li>
+<li class="chapter" data-level="5.2.3" data-path="gene-set-analysis.html"><a href="gene-set-analysis.html#the-gsea-algorithm-in-three-steps"><i class="fa fa-check"></i><b>5.2.3</b> The GSEA algorithm in three steps</a></li>
+<li class="chapter" data-level="5.2.4" data-path="gene-set-analysis.html"><a href="gene-set-analysis.html#gene-signature-scoring-per-cell"><i class="fa fa-check"></i><b>5.2.4</b> Gene signature scoring (per-cell)</a></li>
+</ul></li>
+<li class="chapter" data-level="5.3" data-path="gene-set-analysis.html"><a href="gene-set-analysis.html#choosing-gene-sets"><i class="fa fa-check"></i><b>5.3</b> Choosing Gene Sets</a>
+<ul>
+<li class="chapter" data-level="5.3.1" data-path="gene-set-analysis.html"><a href="gene-set-analysis.html#major-gene-set-resources"><i class="fa fa-check"></i><b>5.3.1</b> Major Gene Set Resources</a></li>
+</ul></li>
+<li class="chapter" data-level="5.4" data-path="gene-set-analysis.html"><a href="gene-set-analysis.html#loading-gene-sets"><i class="fa fa-check"></i><b>5.4</b> Loading Gene Sets</a>
+<ul>
+<li class="chapter" data-level="5.4.1" data-path="gene-set-analysis.html"><a href="gene-set-analysis.html#blood-transcription-modules"><i class="fa fa-check"></i><b>5.4.1</b> Blood Transcription Modules</a></li>
+<li class="chapter" data-level="5.4.2" data-path="gene-set-analysis.html"><a href="gene-set-analysis.html#msigdb-hallmark-gene-sets"><i class="fa fa-check"></i><b>5.4.2</b> MSigDB Hallmark Gene Sets</a></li>
+</ul></li>
+<li class="chapter" data-level="5.5" data-path="gene-set-analysis.html"><a href="gene-set-analysis.html#preparing-data-for-gsea"><i class="fa fa-check"></i><b>5.5</b> Preparing Data for GSEA</a>
+<ul>
+<li class="chapter" data-level="5.5.1" data-path="gene-set-analysis.html"><a href="gene-set-analysis.html#calculate-marker-genes-with-presto"><i class="fa fa-check"></i><b>5.5.1</b> Calculate Marker Genes with presto</a></li>
+<li class="chapter" data-level="5.5.2" data-path="gene-set-analysis.html"><a href="gene-set-analysis.html#organizing-data-with-nested-dataframes"><i class="fa fa-check"></i><b>5.5.2</b> Organizing Data with Nested Dataframes</a></li>
+<li class="chapter" data-level="5.5.3" data-path="gene-set-analysis.html"><a href="gene-set-analysis.html#creating-a-ranked-gene-list"><i class="fa fa-check"></i><b>5.5.3</b> Creating a Ranked Gene List</a></li>
+</ul></li>
+<li class="chapter" data-level="5.6" data-path="gene-set-analysis.html"><a href="gene-set-analysis.html#running-gsea-for-all-clusters-with-purrr"><i class="fa fa-check"></i><b>5.6</b> Running GSEA for All Clusters with purrr</a>
+<ul>
+<li class="chapter" data-level="5.6.1" data-path="gene-set-analysis.html"><a href="gene-set-analysis.html#create-ranked-gene-lists-for-all-clusters"><i class="fa fa-check"></i><b>5.6.1</b> Create ranked gene lists for all clusters</a></li>
+</ul></li>
+<li class="chapter" data-level="5.7" data-path="gene-set-analysis.html"><a href="gene-set-analysis.html#interpreting-gsea-results"><i class="fa fa-check"></i><b>5.7</b> Interpreting GSEA Results</a>
+<ul>
+<li class="chapter" data-level="5.7.1" data-path="gene-set-analysis.html"><a href="gene-set-analysis.html#biological-interpretation"><i class="fa fa-check"></i><b>5.7.1</b> Biological Interpretation</a></li>
+<li class="chapter" data-level="5.7.2" data-path="gene-set-analysis.html"><a href="gene-set-analysis.html#visualizing-results-across-clusters"><i class="fa fa-check"></i><b>5.7.2</b> Visualizing Results Across Clusters</a></li>
+</ul></li>
+<li class="chapter" data-level="5.8" data-path="gene-set-analysis.html"><a href="gene-set-analysis.html#alternative-approach-gene-signature-scoring"><i class="fa fa-check"></i><b>5.8</b> Alternative Approach: Gene Signature Scoring</a>
+<ul>
+<li class="chapter" data-level="5.8.1" data-path="gene-set-analysis.html"><a href="gene-set-analysis.html#methods-for-signature-scoring"><i class="fa fa-check"></i><b>5.8.1</b> Methods for Signature Scoring</a></li>
+<li class="chapter" data-level="5.8.2" data-path="gene-set-analysis.html"><a href="gene-set-analysis.html#how-ucell-works"><i class="fa fa-check"></i><b>5.8.2</b> How UCell Works</a></li>
+<li class="chapter" data-level="5.8.3" data-path="gene-set-analysis.html"><a href="gene-set-analysis.html#practical-example-with-ucell"><i class="fa fa-check"></i><b>5.8.3</b> Practical Example with UCell</a></li>
+<li class="chapter" data-level="5.8.4" data-path="gene-set-analysis.html"><a href="gene-set-analysis.html#when-to-use-gsea-vs.-signature-scoring"><i class="fa fa-check"></i><b>5.8.4</b> When to Use GSEA vs. Signature Scoring</a></li>
+</ul></li>
+<li class="chapter" data-level="5.9" data-path="gene-set-analysis.html"><a href="gene-set-analysis.html#things-to-remember"><i class="fa fa-check"></i><b>5.9</b> Things to Remember</a></li>
+<li class="chapter" data-level="5.10" data-path="gene-set-analysis.html"><a href="gene-set-analysis.html#further-reading-4"><i class="fa fa-check"></i><b>5.10</b> Further Reading</a></li>
+<li class="chapter" data-level="" data-path="gene-set-analysis.html"><a href="gene-set-analysis.html#session-information-4"><i class="fa fa-check"></i>Session Information</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="references.html"><a href="references.html"><i class="fa fa-check"></i>References</a>
+<ul>
+<li class="chapter" data-level="5.11" data-path="references.html"><a href="references.html#determine-optimal-number-of-clusters"><i class="fa fa-check"></i><b>5.11</b> Determine optimal number of clusters</a></li>
+</ul></li>
+<li class="divider"></li>
+<li><a href="https://github.com/crazyhottommy/practical_scRNAseq_analysis_with_R" target="blank">View on GitHub</a></li>
+
+</ul>
+
+      </nav>
+    </div>
+
+    <div class="book-body">
+      <div class="body-inner">
+        <div class="book-header" role="navigation">
+          <h1>
+            <i class="fa fa-circle-o-notch fa-spin"></i><a href="./">Practical scRNAseq Analysis with R</a>
+          </h1>
+        </div>
+
+        <div class="page-wrapper" tabindex="-1" role="main">
+          <div class="page-inner">
+
+            <section class="normal" id="section-">
+<div id="download-data-and-quantification" class="section level1 hasAnchor" number="1">
+<h1><span class="header-section-number">Chapter 1</span> Download Data and Quantification<a href="download-data-and-quantification.html#download-data-and-quantification" class="anchor-section" aria-label="Anchor link to header"></a></h1>
+<div id="what-is-single-cell-rna-seq" class="section level2 hasAnchor" number="1.1">
+<h2><span class="header-section-number">1.1</span> What is single-cell RNA-seq?<a href="download-data-and-quantification.html#what-is-single-cell-rna-seq" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>Traditional RNA-seq (bulk) sequences RNA from millions of cells blended together - you get the average expression across all cells in your sample.</p>
+<p>Single-cell RNA-seq (scRNA-seq) separates individual cells into droplets or wells, sequences each cell separately, then computationally figures out which reads came from which cell.</p>
+<p>It seems intimidating the first time dealing with scRNAseq data. However, if you have worked on bulk RNA-seq data, the underlying data structure is the same: A Data Matrix!</p>
+<p>My regret is not learning linear algebra well during college.</p>
+<p>I barely passed the exam for it (and calculus, it was a nightmare :) ).</p>
+<p>To be fair..</p>
+<p>It was not taught well and it sounded too boring. I did not know what the application of matrix multiplication was, not until many years later, I started to learn bioinformatics. I find many data are just data matrices:</p>
+<ul>
+<li>an RNAseq expression matrix is a gene-by-sample matrix, with entries to be read counts for each gene</li>
+<li>a single-cell expression matrix is a gene-by-cell matrix, with entries to be read counts for each gene</li>
+<li>a ChIP-seq count matrix is a peak-by-sample matrix, with entries to be the number of reads in each peak</li>
+<li>a drug response matrix is a drug-by-sample matrix, with entries to be IC50 for example</li>
+</ul>
+<p>and many more. In other words,</p>
+<p>Matrix is EVERYWHERE for bioinformatics (and many other data science topics)!</p>
+<p>Many of the bioinformatics problems can be rephrased as matrix manipulation.</p>
+<p>The big picture transformation:</p>
+<pre><code>Tissue → Dissociated cells → Encapsulated in droplets/wells → Barcoded → Sequenced →
+Demultiplexed → Count matrix (genes × cells)</code></pre>
+<p>Why do we care? Tissues are heterogeneous - different cell types, states, and responses. Bulk sequencing averages over all of that and you lose the information. scRNA-seq lets you see cell type composition, rare populations, cell state transitions, and cell-to-cell variability.</p>
+<div id="but-do-you-really-need-single-cell-rna-seq" class="section level3 hasAnchor" number="1.1.1">
+<h3><span class="header-section-number">1.1.1</span> But do you really need single-cell RNA-seq?<a href="download-data-and-quantification.html#but-do-you-really-need-single-cell-rna-seq" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<p>Before we go further, I want to be honest about something: scRNA-seq is not always the right choice. I see too many people reaching for single-cell because it’s trendy, when bulk RNA-seq would answer their question better, faster, and cheaper.</p>
+<p>Those colorful UMAP plots look great in papers. But ask yourself: does my biological question actually require single-cell resolution? If bulk RNA-seq can test your hypothesis, it’s often the better option.</p>
+<div id="when-bulk-rna-seq-is-sufficient-and-better" class="section level4 hasAnchor" number="1.1.1.1">
+<h4><span class="header-section-number">1.1.1.1</span> When bulk RNA-seq is sufficient (and better)<a href="download-data-and-quantification.html#when-bulk-rna-seq-is-sufficient-and-better" class="anchor-section" aria-label="Anchor link to header"></a></h4>
+<p>If you’re working with cells sorted by flow cytometry (e.g., CD4+ T cells purified to &gt;95% purity), bulk RNA-seq can answer your question perfectly well. You already know what cells you have – no need to re-discover cell types computationally.</p>
+<p>Same thing for homogeneous cell lines. If you’re treating Jurkat cells with a drug and asking “what genes change?”, bulk RNA-seq is simpler and gets you there. (That said, some cell lines are more heterogeneous than you think. If you suspect drug-resistant subclones, scRNA-seq could reveal that.)</p>
+<p>Here’s a budget trade-off that comes up a lot:</p>
+<ul>
+<li>Option A: 1 scRNA-seq sample per condition (4 conditions) = $4,000-8,000, no replicates</li>
+<li>Option B: 3 bulk RNA-seq replicates per condition (4 x 3 = 12 samples) = $3,000-5,000</li>
+</ul>
+<p>Option B gives you statistical power, reproducibility, and more robust differential expression results.</p>
+<p>The other thing to note is that, the input of RNA is in the range of 200ng-1ug.
+Depending on what cell lines are you using, that’s 2-5 millions of cells!</p>
+<p>Most of the single-cell experiments capture ~10,000 cells. A million cells is a lot per sample.
+It is very expensive if you want to sequence millions of cells.</p>
+<p>The harsh truth: a single scRNA-seq sample without replicates has limited statistical validity for comparing conditions. You’re trading cell-level resolution for sample-level inference.</p>
+<blockquote>
+<p>If comparing conditions (treatment vs control), aim for at least 2-3 biological replicates per condition - whether using bulk or single-cell.</p>
+</blockquote>
+</div>
+<div id="when-single-cell-is-worth-it" class="section level4 hasAnchor" number="1.1.1.2">
+<h4><span class="header-section-number">1.1.1.2</span> When single-cell is worth it<a href="download-data-and-quantification.html#when-single-cell-is-worth-it" class="anchor-section" aria-label="Anchor link to header"></a></h4>
+<p>Choose scRNA-seq when you need to discover unknown cell types, when heterogeneity IS your question (“do T cells exist on a continuum or discrete states?”), when you care about cell-type-specific responses (“which cell types respond to immunotherapy?”), when rare cells matter (cancer stem cells at &lt;1% of tumor), or when you need trajectory analysis.</p>
+<p>Don’t choose it when your cells are already purified and homogeneous, when you just want average expression changes between conditions, when your budget doesn’t allow proper replication, or – let’s be honest – when it’s just trendy but doesn’t serve your hypothesis.</p>
+<p>Bulk RNA-seq still has real advantages: simpler workflow, better per-gene coverage, easier replication, mature stats (DESeq2/edgeR are battle-tested), and you can run the analysis on a laptop. The downside is obvious: you lose all the heterogeneity information.</p>
+</div>
+<div id="cost-comparison-2024-estimates" class="section level4 hasAnchor" number="1.1.1.3">
+<h4><span class="header-section-number">1.1.1.3</span> Cost comparison (2024 estimates)<a href="download-data-and-quantification.html#cost-comparison-2024-estimates" class="anchor-section" aria-label="Anchor link to header"></a></h4>
+<table>
+<colgroup>
+<col width="12%" />
+<col width="20%" />
+<col width="18%" />
+<col width="23%" />
+<col width="26%" />
+</colgroup>
+<thead>
+<tr>
+<th>Method</th>
+<th>Library Prep</th>
+<th>Sequencing</th>
+<th>Analysis Time</th>
+<th>Skills Required</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Bulk RNA-seq</strong></td>
+<td>$100-200/sample</td>
+<td>$300-500/sample</td>
+<td>1-2 weeks</td>
+<td>Moderate R/Python</td>
+</tr>
+<tr>
+<td><strong>scRNA-seq (10x)</strong></td>
+<td>$800-1,500/sample</td>
+<td>$1,000-2,000/sample</td>
+<td>1-3 months</td>
+<td>Advanced bioinformatics</td>
+</tr>
+</tbody>
+</table>
+<p>For a 4-condition experiment with 3 replicates:</p>
+<ul>
+<li>Bulk: 12 samples x $500 = $6,000 + 2-3 weeks analysis</li>
+<li>Single-cell: 12 samples x $2,500 = $30,000 + 2-4 months analysis</li>
+</ul>
+<p>Is the 5x cost and 4x time investment justified by your biological question? Sometimes yes, often no.</p>
+</div>
+<div id="the-replication-problem" class="section level4 hasAnchor" number="1.1.1.4">
+<h4><span class="header-section-number">1.1.1.4</span> The replication problem<a href="download-data-and-quantification.html#the-replication-problem" class="anchor-section" aria-label="Anchor link to header"></a></h4>
+<p>I see this mistake all the time:</p>
+<blockquote>
+<p>“I have 10,000 cells per sample - that’s plenty of replication!”</p>
+</blockquote>
+<p>No! Cells within a sample are pseudoreplicates. They’re not independent. For testing condition effects (treatment vs control), you need independent biological samples (different animals/donors/cultures).</p>
+<p>The correct design: 3 donors x 2 conditions = 6 samples for scRNA-seq. Aggregate to pseudo-bulk per donor per condition. Use DESeq2/edgeR with donor as replicate (N=3). We will talk about this more in Chapter 5.</p>
+<p>One sample per condition? You can explore cell types and marker genes, but you cannot make strong statistical claims about treatment effects.</p>
+</div>
+<div id="quick-decision-guide" class="section level4 hasAnchor" number="1.1.1.5">
+<h4><span class="header-section-number">1.1.1.5</span> Quick decision guide<a href="download-data-and-quantification.html#quick-decision-guide" class="anchor-section" aria-label="Anchor link to header"></a></h4>
+<p>Ask yourself: what is my hypothesis? If it’s about cell type composition or heterogeneity, go single-cell. If it’s about average gene expression changes, bulk RNA-seq is fine. Can you afford replication with scRNA-seq? If not, bulk with good replication is the better investment.</p>
+<p>Warning signs you’re choosing scRNA-seq for the wrong reasons: “everyone in my field is doing it”, “the UMAP plots look cool”, “reviewers might be impressed.” Those are not good reasons.</p>
+<p>Good reasons: “I need to identify which cell types drive the disease phenotype”, “we don’t know the cellular composition of this tissue”, “rare cells are biologically important.”</p>
+<p>The best experiment isn’t the flashiest – it’s the one that answers your question reliably. This tutorial teaches you <em>how</em> to analyze scRNA-seq data, but knowing <em>when</em> to use it is equally important.</p>
+<p>OK, let’s get to it – since you’re here, you’ve presumably decided single-cell is the right tool for your question.</p>
+</div>
+</div>
+<div id="the-10x-genomics-chromium-platform" class="section level3 hasAnchor" number="1.1.2">
+<h3><span class="header-section-number">1.1.2</span> The 10x Genomics Chromium platform<a href="download-data-and-quantification.html#the-10x-genomics-chromium-platform" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<p>Our data is from 10x Genomics 3’ chemistry – the most widely used scRNA-seq platform. Here’s how it works at a high level:</p>
+<ol style="list-style-type: decimal">
+<li>Cells and barcoded beads get mixed in oil droplets (Gel Bead-in-Emulsions, or GEMs)</li>
+<li>Each bead has ~1M copies of oligos with a cell barcode (identifies which droplet), a UMI (tags individual mRNA molecules), and a poly(dT) primer (captures mRNA)</li>
+<li>Reverse transcription happens inside the droplet, then you break the emulsion, amplify cDNA, and sequence</li>
+</ol>
+<div class="float">
+<img src="images/rnaseq_library.png" alt="10x Library Structure" />
+<div class="figcaption">10x Library Structure</div>
+</div>
+</div>
+<div id="why-umis-matter" class="section level3 hasAnchor" number="1.1.3">
+<h3><span class="header-section-number">1.1.3</span> Why UMIs matter<a href="download-data-and-quantification.html#why-umis-matter" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<p>Here’s the problem: to get enough material for sequencing, we amplify cDNA with PCR. But PCR is exponential - one molecule becomes millions of copies. So if you see 1,000 reads for a gene, did they come from 1 molecule that got over-amplified, or from 1,000 original molecules?</p>
+<p>UMIs (unique molecular identifiers) solve this. They’re random barcodes added <em>before</em> amplification. If those 1,000 reads have 10 unique UMIs, we know there were ~10 original molecules. UMIs let us count molecules instead of reads. This is critical for accurate quantification.</p>
+</div>
+<div id="cell-barcodes" class="section level3 hasAnchor" number="1.1.4">
+<h3><span class="header-section-number">1.1.4</span> Cell barcodes<a href="download-data-and-quantification.html#cell-barcodes" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<p>We sequence millions of cDNA fragments from thousands of cells mixed together. How do we know which cell each fragment came from? Each droplet gets a unique 16bp cell barcode. During sequencing:</p>
+<ul>
+<li>R1 contains the cell barcode (16bp) + UMI (10bp in v2, 12bp in v3). So R1 is 26bp in v2 and 28bp in v3.</li>
+<li>R2 contains the actual cDNA sequence (this is what maps to genes)</li>
+</ul>
+<p>You group reads by cell barcode, count UMIs per gene per cell, and you get your count matrix.</p>
+</div>
+<div id="sparse-matrices" class="section level3 hasAnchor" number="1.1.5">
+<h3><span class="header-section-number">1.1.5</span> Sparse matrices<a href="download-data-and-quantification.html#sparse-matrices" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<p>A typical scRNA-seq dataset might have 10,000 cells and 20,000 genes = 200 million possible gene-cell pairs. But most of them are zeros – both for technical reasons (not all mRNA gets captured) and biological reasons (most genes are not expressed in any given cell). Typical sparsity is &gt;90% zeros.</p>
+<p>So we store only the non-zero entries in sparse matrix format (Matrix Market <code>.mtx</code> files). This can shrink memory usage from 100GB to 1GB. We’ll see this format shortly when we look at the quantification output.</p>
+</div>
+<div id="from-fastq-to-count-matrix" class="section level3 hasAnchor" number="1.1.6">
+<h3><span class="header-section-number">1.1.6</span> From FASTQ to count matrix<a href="download-data-and-quantification.html#from-fastq-to-count-matrix" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<p>The goal of this chapter is straightforward: transform raw sequencing reads (FASTQ files) into a count matrix (genes x cells).</p>
+<pre><code>FASTQ files (R1: barcodes+UMIs, R2: cDNA)
+  ↓ [Extract cell barcodes and UMIs]
+  ↓ [Map R2 reads to reference genome/transcriptome]
+  ↓ [Count UMIs per gene per cell]
+Count matrix (sparse)</code></pre>
+<p>This sounds simple, but there are practical challenges: millions of reads need fast alignment, reads can span splice junctions, and with 10,000 cells x 50,000 reads per cell, you’re dealing with 500M reads.</p>
+</div>
+<div id="why-alevin-fry" class="section level3 hasAnchor" number="1.1.7">
+<h3><span class="header-section-number">1.1.7</span> Why alevin-fry?<a href="download-data-and-quantification.html#why-alevin-fry" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<p>There are several tools for scRNA-seq quantification. Here’s a quick comparison:</p>
+<table>
+<colgroup>
+<col width="15%" />
+<col width="28%" />
+<col width="17%" />
+<col width="20%" />
+<col width="17%" />
+</colgroup>
+<thead>
+<tr>
+<th>Tool</th>
+<th>Algorithm</th>
+<th>Speed</th>
+<th>Memory</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Cell Ranger</td>
+<td>STAR (full alignment)</td>
+<td>Slow</td>
+<td>High (32GB+)</td>
+<td>Official 10x pipeline</td>
+</tr>
+<tr>
+<td>alevin-fry</td>
+<td>Selective alignment</td>
+<td>Fast</td>
+<td>Low (16GB)</td>
+<td>Lightweight, flexible</td>
+</tr>
+<tr>
+<td>kallisto/bustools</td>
+<td>Pseudoalignment</td>
+<td>Very fast</td>
+<td>Low</td>
+<td>Mature, widely used</td>
+</tr>
+<tr>
+<td>STARsolo</td>
+<td>STAR + UMI counting</td>
+<td>Medium</td>
+<td>High</td>
+<td>Multi-platform</td>
+</tr>
+</tbody>
+</table>
+<p>Lightweight mapping tools (alevin-fry, kallisto) are now recommended for standard workflows. The speed and memory savings are substantial, and the accuracy trade-off is minimal. See the “Quantification” chapter at sc-best-practices.org.</p>
+<p>We use alevin-fry (via simpleaf) because it’s fast (5-10x faster than full alignment), runs on laptops with 8-16GB RAM, works with any chemistry, and benchmarks show comparable accuracy to Cell Ranger.</p>
+<p>When would you use Cell Ranger instead? If you need exact reproducibility with published 10x results, if you want Cell Ranger’s QC web reports, or if your lab has an HPC cluster and everyone already uses it. The results are ~98% the same either way.</p>
+<p>For learning and most research, alevin-fry is the pragmatic choice.</p>
+</div>
+<div id="the-splici-index" class="section level3 hasAnchor" number="1.1.8">
+<h3><span class="header-section-number">1.1.8</span> The splici index<a href="download-data-and-quantification.html#the-splici-index" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<p>If you build a transcriptome-only index, reads from intronic regions (unspliced pre-mRNA) won’t map and you’ll undercount. In scRNA-seq, nuclear pre-mRNA is often captured, so this matters.</p>
+<p>alevin-fry solves this with a “splici” index that contains both spliced transcripts (exon-exon junctions) and intronic sequences. To build it, we need:</p>
+<ul>
+<li><code>genome.fa</code>: Reference genome sequence (FASTA format)</li>
+<li><code>genes.gtf</code>: Gene annotations (GTF format - defines exons, genes, transcripts)</li>
+</ul>
+<p>simpleaf builds the splici index from these files automatically.</p>
+<hr />
+</div>
+</div>
+<div id="description-of-the-data" class="section level2 hasAnchor" number="1.2">
+<h2><span class="header-section-number">1.2</span> Description of the Data<a href="download-data-and-quantification.html#description-of-the-data" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>The paper describing the dataset is at <a href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6797728/" class="uri">https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6797728/</a></p>
+<p>The GEO accession:
+<a href="https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE126030" class="uri">https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE126030</a></p>
+<p>Experimental design:</p>
+<blockquote>
+<p>Single-cell RNA-sequencing of control and and anti-CD3/anti-CD28 stimulated T
+cells from human lung, lymph node, bone marrow and blood.</p>
+</blockquote>
+<p>For our purpose, we are going to download the raw data for 4 samples for
+two conditions for blood: resting and CD3/CD28 activated</p>
+<ul>
+<li>SRX5329394 Donor A CD3/CD28 activated</li>
+<li>SRX5329395 Donor A resting</li>
+<li>SRX5329396 Donor B CD3/CD28 activated</li>
+<li>SRX5329397 Donor B resting</li>
+</ul>
+</div>
+<div id="download-the-fastq-files-using-fastq-dl" class="section level2 hasAnchor" number="1.3">
+<h2><span class="header-section-number">1.3</span> Download the fastq files using fastq-dl<a href="download-data-and-quantification.html#download-the-fastq-files-using-fastq-dl" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p><a href="https://github.com/rpetit3/fastq-dl" class="uri">https://github.com/rpetit3/fastq-dl</a></p>
+<p>Introduction of <code>conda</code>.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="download-data-and-quantification.html#cb5-1" tabindex="-1"></a><span class="ex">conda</span> create <span class="at">-n</span> fastq_download <span class="at">-c</span> conda-forge <span class="at">-c</span> bioconda fastq-dl</span>
+<span id="cb5-2"><a href="download-data-and-quantification.html#cb5-2" tabindex="-1"></a><span class="ex">conda</span> activate fastq_download </span></code></pre></div>
+<p><strong>Tip</strong>, <code>conda</code> is very slow. use <code>mamba</code> as a drop-in replacement for <code>conda</code>.</p>
+<p>The relationship of Experiment to Run is a 1-to-many relationship, or there can be many Run accessions associated with a single Experiment Accession (e.g. re-sequencing the same sample). Although in most cases, it is a 1-to-1 relationship, you can use –group-by-experiment to merge multiple runs associated with an Experiment accession into a single FASTQ file.</p>
+<p>This is is the case for our datasets: there are multiple SRR runs for the
+same experiment</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="download-data-and-quantification.html#cb6-1" tabindex="-1"></a><span class="va">FASTQ_DIR</span><span class="op">=</span><span class="st">&quot;</span><span class="va">$PWD</span><span class="st">/pbmc_RNAseq/data&quot;</span></span>
+<span id="cb6-2"><a href="download-data-and-quantification.html#cb6-2" tabindex="-1"></a></span>
+<span id="cb6-3"><a href="download-data-and-quantification.html#cb6-3" tabindex="-1"></a><span class="fu">mkdir</span> <span class="at">-p</span> <span class="va">$FASTQ_DIR</span></span>
+<span id="cb6-4"><a href="download-data-and-quantification.html#cb6-4" tabindex="-1"></a><span class="bu">cd</span> <span class="va">$FASTQ_DIR</span></span>
+<span id="cb6-5"><a href="download-data-and-quantification.html#cb6-5" tabindex="-1"></a></span>
+<span id="cb6-6"><a href="download-data-and-quantification.html#cb6-6" tabindex="-1"></a><span class="ex">fastq-dl</span> <span class="at">--accession</span> SRX5329394  <span class="at">--group-by-experiment</span></span>
+<span id="cb6-7"><a href="download-data-and-quantification.html#cb6-7" tabindex="-1"></a><span class="ex">fastq-dl</span> <span class="at">--accession</span> SRX5329395  <span class="at">--group-by-experiment</span></span>
+<span id="cb6-8"><a href="download-data-and-quantification.html#cb6-8" tabindex="-1"></a><span class="ex">fastq-dl</span> <span class="at">--accession</span> SRX5329396  <span class="at">--group-by-experiment</span></span>
+<span id="cb6-9"><a href="download-data-and-quantification.html#cb6-9" tabindex="-1"></a><span class="ex">fastq-dl</span> <span class="at">--accession</span> SRX5329397  <span class="at">--group-by-experiment</span></span></code></pre></div>
+<p>or write a for loop</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="download-data-and-quantification.html#cb7-1" tabindex="-1"></a><span class="cf">for</span> i <span class="kw">in</span> SRX532939<span class="dt">{</span><span class="dv">4</span><span class="dt">..</span><span class="dv">7</span><span class="dt">}</span></span>
+<span id="cb7-2"><a href="download-data-and-quantification.html#cb7-2" tabindex="-1"></a><span class="cf">do</span></span>
+<span id="cb7-3"><a href="download-data-and-quantification.html#cb7-3" tabindex="-1"></a>   <span class="ex">fastq-dl</span> <span class="at">--accession</span> <span class="va">$i</span>  <span class="at">--group-by-experiment</span></span>
+<span id="cb7-4"><a href="download-data-and-quantification.html#cb7-4" tabindex="-1"></a><span class="cf">done</span></span></code></pre></div>
+<p>depending on your internet speed, it can take hours.
+It took me:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb8-1"><a href="download-data-and-quantification.html#cb8-1" tabindex="-1"></a><span class="ex">real</span>    76m55.724s</span>
+<span id="cb8-2"><a href="download-data-and-quantification.html#cb8-2" tabindex="-1"></a><span class="ex">user</span>    3m53.484s</span>
+<span id="cb8-3"><a href="download-data-and-quantification.html#cb8-3" tabindex="-1"></a><span class="ex">sys</span>     6m15.335s</span></code></pre></div>
+<p>How big are the files?</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb9-1"><a href="download-data-and-quantification.html#cb9-1" tabindex="-1"></a></span>
+<span id="cb9-2"><a href="download-data-and-quantification.html#cb9-2" tabindex="-1"></a><span class="fu">ls</span> <span class="at">-shlt</span></span>
+<span id="cb9-3"><a href="download-data-and-quantification.html#cb9-3" tabindex="-1"></a><span class="ex">total</span> 97G</span>
+<span id="cb9-4"><a href="download-data-and-quantification.html#cb9-4" tabindex="-1"></a><span class="ex">8.0K</span> <span class="at">-rw-r--r--</span> 1 mtang mtang 6.8K Feb 24 22:13 fastq-run-info.tsv</span>
+<span id="cb9-5"><a href="download-data-and-quantification.html#cb9-5" tabindex="-1"></a><span class="ex">4.0K</span> <span class="at">-rw-r--r--</span> 1 mtang mtang  127 Feb 24 22:13 fastq-run-mergers.tsv</span>
+<span id="cb9-6"><a href="download-data-and-quantification.html#cb9-6" tabindex="-1"></a> <span class="ex">19G</span> <span class="at">-rw-r--r--</span> 1 mtang mtang  19G Feb 24 22:12 SRX5329397_R2.fastq.gz</span>
+<span id="cb9-7"><a href="download-data-and-quantification.html#cb9-7" tabindex="-1"></a><span class="ex">5.2G</span> <span class="at">-rw-r--r--</span> 1 mtang mtang 5.2G Feb 24 22:01 SRX5329397_R1.fastq.gz</span>
+<span id="cb9-8"><a href="download-data-and-quantification.html#cb9-8" tabindex="-1"></a> <span class="ex">21G</span> <span class="at">-rw-r--r--</span> 1 mtang mtang  21G Feb 24 21:57 SRX5329396_R2.fastq.gz</span>
+<span id="cb9-9"><a href="download-data-and-quantification.html#cb9-9" tabindex="-1"></a><span class="ex">6.0G</span> <span class="at">-rw-r--r--</span> 1 mtang mtang 6.0G Feb 24 21:44 SRX5329396_R1.fastq.gz</span>
+<span id="cb9-10"><a href="download-data-and-quantification.html#cb9-10" tabindex="-1"></a> <span class="ex">18G</span> <span class="at">-rw-r--r--</span> 1 mtang mtang  18G Feb 24 21:39 SRX5329395_R2.fastq.gz</span>
+<span id="cb9-11"><a href="download-data-and-quantification.html#cb9-11" tabindex="-1"></a><span class="ex">5.2G</span> <span class="at">-rw-r--r--</span> 1 mtang mtang 5.2G Feb 24 21:29 SRX5329395_R1.fastq.gz</span>
+<span id="cb9-12"><a href="download-data-and-quantification.html#cb9-12" tabindex="-1"></a> <span class="ex">18G</span> <span class="at">-rw-r--r--</span> 1 mtang mtang  18G Feb 24 21:10 SRX5329394_R2.fastq.gz</span>
+<span id="cb9-13"><a href="download-data-and-quantification.html#cb9-13" tabindex="-1"></a><span class="ex">5.1G</span> <span class="at">-rw-r--r--</span> 1 mtang mtang 5.1G Feb 24 20:59 SRX5329394_R1.fastq.gz</span></code></pre></div>
+<p>You will need at least 100G disk space for the raw fastq files.</p>
+<div id="a-note-on-the-fastq-files" class="section level3 hasAnchor" number="1.3.1">
+<h3><span class="header-section-number">1.3.1</span> A note on the fastq files<a href="download-data-and-quantification.html#a-note-on-the-fastq-files" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<p>This data is from 10x genomics 3’ data.</p>
+<p>From the 10x manual:</p>
+<blockquote>
+<p>The final Single Cell 3’ Libraries contain the P5 and P7 primers used in Illumina bridge amplification PCR. The 10x Barcode and Read 1 (primer site for sequencing read 1) is added to the molecules during the GEMRT incubation. The P5 primer, Read 2 (primer site for sequencing read 2), Sample Index and P7 primer will be added during library construction</p>
+</blockquote>
+<p><img src="images/rnaseq_library.png" width="100%" style="display: block; margin: auto;" /></p>
+<blockquote>
+<p>A Single Cell 3’ Library comprises standard Illumina paired-end constructs which begin and end with P5 and P7. The Single Cell 3’ <strong>v2</strong> 16 bp 10x Barcodes are encoded at the start of Read 1, while sample index sequences are incorporated as the i7 index read. Read 1 and Read 2 are standard Illumina sequencing primer sites used in paired-end sequencing. Read 1 is used to sequence the 16 bp 10x Barcode and 10 bp UMI, while Read 2 is used to sequence the cDNA fragment.</p>
+</blockquote>
+<blockquote>
+<p>Each sample index provided in the Chromium i7 Sample Index Kit combines 4 different sequences in order to balance across all 4 nucleotides.</p>
+</blockquote>
+<p>After <code>cellranger mkfastq</code>, three <code>fastq.gz</code> files will be produced: <code>I1</code>, <code>R1</code> and <code>R2</code>. <code>I1</code> is the 8 bp sample barcode, <code>R1</code> is the 16bp <code>feature barcode</code> + 10 bp <code>UMI</code>, <code>R2</code> is the reads mapped to the transcriptome.</p>
+<p>Feature barcode whitelist can be found at the cellranger installation path: <code>cellranger-2.1.0/cellranger-cs/2.1.0/lib/python/cellranger/barcodes/737K-august-2016.txt</code></p>
+<p>compare v2 and v3 library <a href="https://teichlab.github.io/scg_lib_structs/methods_html/10xChromium3.html" class="uri">https://teichlab.github.io/scg_lib_structs/methods_html/10xChromium3.html</a></p>
+<blockquote>
+<p>The V3 chemistry gave better sensitivity (detects more genes) comparing to the V2 chemistry. In addition, the oligo beads are modified to support feature barcoding. In terms of the 3’ gene expression library preparation, there are only a few nucleotide differences for some oligos. <strong>The final library structure is exactly the same, except that the UMI is 10-bp long in V2 but 12-bp in V3.</strong> The cell barcodes whitelist for the V3 chemistry can be found here: 3M-february-2018.txt.gz. This file is copied from the Cell Ranger software (using Cell Ranger v3.1.0 as an example): cellranger-3.1.0/cellranger-cs/3.1.0/lib/python/cellranger/barcodes/3M-february-2018.txt.gz. Oligo sequences are provided for both V2 and V3 if they are different. Only V2 library preparation is drawn here.</p>
+</blockquote>
+<p>So how do you know the library is 10x3’ v2 or v3? The paper did not say anything on that. Let’s find it out from the raw fastq files!</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb10-1"><a href="download-data-and-quantification.html#cb10-1" tabindex="-1"></a><span class="fu">zless</span> <span class="at">-S</span> SRX5329394_R1.fastq.gz <span class="kw">|</span> <span class="fu">head</span> <span class="at">-2</span> <span class="kw">|</span><span class="fu">tail</span> <span class="at">-1</span></span>
+<span id="cb10-2"><a href="download-data-and-quantification.html#cb10-2" tabindex="-1"></a><span class="ex">NTGCATACATGGGACATGCTAAGGAT</span></span></code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb11-1"><a href="download-data-and-quantification.html#cb11-1" tabindex="-1"></a><span class="fu">zless</span> <span class="at">-S</span> SRX5329394_R1.fastq.gz <span class="kw">|</span> <span class="fu">head</span> <span class="at">-2</span> <span class="kw">|</span><span class="fu">tail</span> <span class="at">-1</span> <span class="kw">|</span> <span class="fu">wc</span> <span class="at">-L</span></span>
+<span id="cb11-2"><a href="download-data-and-quantification.html#cb11-2" tabindex="-1"></a><span class="ex">26</span></span></code></pre></div>
+<p>The cell barcode is 16bp. Total 26bp, so the UMI is 10bp. It is 10x3’ v2!</p>
+<p>How long are the R2 reads?</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb12-1"><a href="download-data-and-quantification.html#cb12-1" tabindex="-1"></a><span class="fu">zless</span> <span class="at">-S</span> SRX5329397_R2.fastq.gz <span class="kw">|</span> <span class="fu">head</span> <span class="at">-2</span> <span class="kw">|</span> <span class="fu">tail</span> <span class="at">-1</span></span>
+<span id="cb12-2"><a href="download-data-and-quantification.html#cb12-2" tabindex="-1"></a></span>
+<span id="cb12-3"><a href="download-data-and-quantification.html#cb12-3" tabindex="-1"></a><span class="ex">GGCACTCCTCCCCTCCTTCGCTTGCTCATCTTCTTTTGTTCATGTTTGTTAACGTTAATCTAATTTTTACTTCTGGATATCTTACTGTAGCCTCAGAT</span></span></code></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb13-1"><a href="download-data-and-quantification.html#cb13-1" tabindex="-1"></a><span class="fu">zless</span> <span class="at">-S</span> SRX5329397_R2.fastq.gz <span class="kw">|</span> <span class="fu">head</span> <span class="at">-2</span> <span class="kw">|</span> <span class="fu">tail</span> <span class="at">-1</span> <span class="kw">|</span> <span class="fu">wc</span> <span class="at">-L</span></span>
+<span id="cb13-2"><a href="download-data-and-quantification.html#cb13-2" tabindex="-1"></a><span class="ex">98</span></span></code></pre></div>
+</div>
+<div id="alignment-and-quantification-using-simpleaf" class="section level3 hasAnchor" number="1.3.2">
+<h3><span class="header-section-number">1.3.2</span> alignment and quantification using simpleaf<a href="download-data-and-quantification.html#alignment-and-quantification-using-simpleaf" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<p>install <code>simpleaf</code>.</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb14-1"><a href="download-data-and-quantification.html#cb14-1" tabindex="-1"></a><span class="ex">conda</span> create <span class="at">-n</span> af <span class="at">-y</span> <span class="at">-c</span> bioconda <span class="at">-c</span> conda-forge simpleaf</span>
+<span id="cb14-2"><a href="download-data-and-quantification.html#cb14-2" tabindex="-1"></a><span class="ex">conda</span> activate af</span></code></pre></div>
+<p>configuration</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb15-1"><a href="download-data-and-quantification.html#cb15-1" tabindex="-1"></a><span class="co"># define env variable</span></span>
+<span id="cb15-2"><a href="download-data-and-quantification.html#cb15-2" tabindex="-1"></a><span class="bu">export</span> <span class="va">ALEVIN_FRY_HOME</span><span class="op">=</span><span class="st">&quot;</span><span class="va">$PWD</span><span class="st">/pbmc_RNAseq/af_home&quot;</span></span>
+<span id="cb15-3"><a href="download-data-and-quantification.html#cb15-3" tabindex="-1"></a></span>
+<span id="cb15-4"><a href="download-data-and-quantification.html#cb15-4" tabindex="-1"></a><span class="co"># simpleaf configuration</span></span>
+<span id="cb15-5"><a href="download-data-and-quantification.html#cb15-5" tabindex="-1"></a><span class="ex">simpleaf</span> set-paths</span></code></pre></div>
+<p>output:</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb16-1"><a href="download-data-and-quantification.html#cb16-1" tabindex="-1"></a><span class="ex">2024-02-25T04:07:52.567035Z</span>  INFO simpleaf::simpleaf_commands::paths: The ALEVIN_FRY_HOME directory, /mnt/disks/tommy/pbmc_RNAseq/af_home, doesn<span class="st">&#39;t exist, creating...</span></span>
+<span id="cb16-2"><a href="download-data-and-quantification.html#cb16-2" tabindex="-1"></a><span class="st">2024-02-25T04:07:52.567985Z  INFO simpleaf::utils::prog_utils: could not find piscem executable, so salmon will be required.</span></span>
+<span id="cb16-3"><a href="download-data-and-quantification.html#cb16-3" tabindex="-1"></a><span class="st">found `salmon` in the PATH at /home/mtang/miniconda3/envs/af/bin/salmon</span></span>
+<span id="cb16-4"><a href="download-data-and-quantification.html#cb16-4" tabindex="-1"></a><span class="st">found `alevin-fry` in the PATH at /home/mtang/miniconda3/envs/af/bin/alevin-fry</span></span></code></pre></div>
+<p>To align the reads to the transcriptome, we need to build index first</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb17-1"><a href="download-data-and-quantification.html#cb17-1" tabindex="-1"></a><span class="bu">export</span> <span class="va">AF_SAMPLE_DIR</span><span class="op">=</span><span class="st">&quot;</span><span class="va">$PWD</span><span class="st">/pbmc_RNAseq&quot;</span></span>
+<span id="cb17-2"><a href="download-data-and-quantification.html#cb17-2" tabindex="-1"></a></span>
+<span id="cb17-3"><a href="download-data-and-quantification.html#cb17-3" tabindex="-1"></a><span class="va">REF_DIR</span><span class="op">=</span><span class="st">&quot;</span><span class="va">$AF_SAMPLE_DIR</span><span class="st">/data/refdata-gex-GRCh38-2020-A&quot;</span></span>
+<span id="cb17-4"><a href="download-data-and-quantification.html#cb17-4" tabindex="-1"></a></span>
+<span id="cb17-5"><a href="download-data-and-quantification.html#cb17-5" tabindex="-1"></a><span class="fu">mkdir</span> <span class="at">-p</span> <span class="va">$REF_DIR</span></span>
+<span id="cb17-6"><a href="download-data-and-quantification.html#cb17-6" tabindex="-1"></a></span>
+<span id="cb17-7"><a href="download-data-and-quantification.html#cb17-7" tabindex="-1"></a><span class="va">IDX_DIR</span><span class="op">=</span><span class="st">&quot;</span><span class="va">$AF_SAMPLE_DIR</span><span class="st">/human-2020-A_splici&quot;</span></span>
+<span id="cb17-8"><a href="download-data-and-quantification.html#cb17-8" tabindex="-1"></a></span>
+<span id="cb17-9"><a href="download-data-and-quantification.html#cb17-9" tabindex="-1"></a><span class="co"># Download reference genome and gene annotations</span></span>
+<span id="cb17-10"><a href="download-data-and-quantification.html#cb17-10" tabindex="-1"></a><span class="fu">wget</span> <span class="at">-qO-</span> https://cf.10xgenomics.com/supp/cell-exp/refdata-gex-GRCh38-2020-A.tar.gz <span class="kw">|</span> <span class="fu">tar</span> xzf <span class="at">-</span> <span class="at">--strip-components</span><span class="op">=</span>1 <span class="at">-C</span> <span class="va">$REF_DIR</span></span></code></pre></div>
+<p>check the downloaded files</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb18-1"><a href="download-data-and-quantification.html#cb18-1" tabindex="-1"></a><span class="fu">ls</span> refdata-gex-GRCh38-2020-A/<span class="pp">*</span></span>
+<span id="cb18-2"><a href="download-data-and-quantification.html#cb18-2" tabindex="-1"></a><span class="ex">refdata-gex-GRCh38-2020-A/reference.json</span></span>
+<span id="cb18-3"><a href="download-data-and-quantification.html#cb18-3" tabindex="-1"></a></span>
+<span id="cb18-4"><a href="download-data-and-quantification.html#cb18-4" tabindex="-1"></a><span class="ex">refdata-gex-GRCh38-2020-A/fasta:</span></span>
+<span id="cb18-5"><a href="download-data-and-quantification.html#cb18-5" tabindex="-1"></a><span class="ex">genome.fa</span>  genome.fa.fai</span>
+<span id="cb18-6"><a href="download-data-and-quantification.html#cb18-6" tabindex="-1"></a></span>
+<span id="cb18-7"><a href="download-data-and-quantification.html#cb18-7" tabindex="-1"></a><span class="ex">refdata-gex-GRCh38-2020-A/genes:</span></span>
+<span id="cb18-8"><a href="download-data-and-quantification.html#cb18-8" tabindex="-1"></a><span class="ex">genes.gtf</span></span>
+<span id="cb18-9"><a href="download-data-and-quantification.html#cb18-9" tabindex="-1"></a></span>
+<span id="cb18-10"><a href="download-data-and-quantification.html#cb18-10" tabindex="-1"></a><span class="ex">refdata-gex-GRCh38-2020-A/pickle:</span></span>
+<span id="cb18-11"><a href="download-data-and-quantification.html#cb18-11" tabindex="-1"></a><span class="ex">genes.pickle</span></span>
+<span id="cb18-12"><a href="download-data-and-quantification.html#cb18-12" tabindex="-1"></a></span>
+<span id="cb18-13"><a href="download-data-and-quantification.html#cb18-13" tabindex="-1"></a><span class="ex">refdata-gex-GRCh38-2020-A/star:</span></span>
+<span id="cb18-14"><a href="download-data-and-quantification.html#cb18-14" tabindex="-1"></a><span class="ex">Genome</span>   chrLength.txt      chrStart.txt      geneInfo.tab          sjdbList.fromGTF.out.tab</span>
+<span id="cb18-15"><a href="download-data-and-quantification.html#cb18-15" tabindex="-1"></a><span class="ex">SA</span>       chrName.txt        exonGeTrInfo.tab  genomeParameters.txt  sjdbList.out.tab</span>
+<span id="cb18-16"><a href="download-data-and-quantification.html#cb18-16" tabindex="-1"></a><span class="ex">SAindex</span>  chrNameLength.txt  exonInfo.tab      sjdbInfo.txt          transcriptInfo.tab</span></code></pre></div>
+<p>We only need the genome fasta file <code>genome.fa</code> and the gene annotation file
+<code>genes.gtf</code>. Watch my youtube video xxx to understand those files and where
+to get those files in addition to the place from 10x genomics.</p>
+<p>Now, we are ready to build the index. Make sure the read length rlen is set correctly, I went to the fastq and <code>wc -L</code> the first read and it is 98 base pairs long.</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb19-1"><a href="download-data-and-quantification.html#cb19-1" tabindex="-1"></a><span class="bu">time</span> simpleaf index <span class="dt">\</span></span>
+<span id="cb19-2"><a href="download-data-and-quantification.html#cb19-2" tabindex="-1"></a>--output <span class="va">$IDX_DIR</span> <span class="dt">\</span></span>
+<span id="cb19-3"><a href="download-data-and-quantification.html#cb19-3" tabindex="-1"></a>--fasta <span class="va">$REF_DIR</span>/fasta/genome.fa <span class="dt">\</span></span>
+<span id="cb19-4"><a href="download-data-and-quantification.html#cb19-4" tabindex="-1"></a>--gtf <span class="va">$REF_DIR</span>/genes/genes.gtf <span class="dt">\</span></span>
+<span id="cb19-5"><a href="download-data-and-quantification.html#cb19-5" tabindex="-1"></a>--rlen 98 <span class="dt">\</span></span>
+<span id="cb19-6"><a href="download-data-and-quantification.html#cb19-6" tabindex="-1"></a>--threads 16 </span>
+<span id="cb19-7"><a href="download-data-and-quantification.html#cb19-7" tabindex="-1"></a></span>
+<span id="cb19-8"><a href="download-data-and-quantification.html#cb19-8" tabindex="-1"></a></span>
+<span id="cb19-9"><a href="download-data-and-quantification.html#cb19-9" tabindex="-1"></a><span class="ex">2024-02-25T04:24:44.426468Z</span>  INFO simpleaf::simpleaf_commands::indexing: preparing to make reference with roers</span>
+<span id="cb19-10"><a href="download-data-and-quantification.html#cb19-10" tabindex="-1"></a><span class="ex">2024-02-25T04:25:04.016066Z</span>  INFO grangers::reader::gtf: Finished parsing the input file. Found 5 comments and 2765969 records.</span>
+<span id="cb19-11"><a href="download-data-and-quantification.html#cb19-11" tabindex="-1"></a><span class="ex">2024-02-25T04:25:07.665010Z</span>  INFO roers: Built the Grangers object for 2765969 records</span>
+<span id="cb19-12"><a href="download-data-and-quantification.html#cb19-12" tabindex="-1"></a><span class="ex">2024-02-25T04:25:09.438211Z</span>  INFO roers: Proceed 1305354 exon records from 199138 transcripts</span>
+<span id="cb19-13"><a href="download-data-and-quantification.html#cb19-13" tabindex="-1"></a><span class="ex">2024-02-25T04:25:58.222209Z</span>  INFO roers: Processing 1106216 intronic records</span>
+<span id="cb19-14"><a href="download-data-and-quantification.html#cb19-14" tabindex="-1"></a><span class="ex">2024-02-25T04:27:52.481094Z</span>  INFO roers: Done!</span>
+<span id="cb19-15"><a href="download-data-and-quantification.html#cb19-15" tabindex="-1"></a><span class="ex">2024-02-25T04:27:52.797992Z</span>  INFO simpleaf::simpleaf_commands::indexing: salmon index cmd : /home/mtang/miniconda3/envs/af/bin/salmon index <span class="at">-k</span> 31 <span class="at">-i</span> /mnt/disks/tommy/pbmc_RNAseq/human-2020-A_splici/index <span class="at">-t</span> /mnt/disks/tommy/pbmc_RNAseq/human-2020-A_splici/ref/roers_ref.fa <span class="at">--threads</span> 16</span>
+<span id="cb19-16"><a href="download-data-and-quantification.html#cb19-16" tabindex="-1"></a><span class="ex">2024-02-25T04:44:32.659895Z</span>  INFO simpleaf::utils::prog_utils: command returned successfully <span class="er">(</span><span class="bu">exit</span> status: 0<span class="kw">)</span></span>
+<span id="cb19-17"><a href="download-data-and-quantification.html#cb19-17" tabindex="-1"></a></span>
+<span id="cb19-18"><a href="download-data-and-quantification.html#cb19-18" tabindex="-1"></a><span class="ex">real</span>    19m48.292s</span>
+<span id="cb19-19"><a href="download-data-and-quantification.html#cb19-19" tabindex="-1"></a><span class="ex">user</span>    141m45.143s</span>
+<span id="cb19-20"><a href="download-data-and-quantification.html#cb19-20" tabindex="-1"></a><span class="ex">sys</span>     3m6.163s</span></code></pre></div>
+</div>
+<div id="quantification" class="section level3 hasAnchor" number="1.3.3">
+<h3><span class="header-section-number">1.3.3</span> Quantification<a href="download-data-and-quantification.html#quantification" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<p>Let’s test the quantification for one sample</p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb20-1"><a href="download-data-and-quantification.html#cb20-1" tabindex="-1"></a><span class="co"># simpleaf quantification</span></span>
+<span id="cb20-2"><a href="download-data-and-quantification.html#cb20-2" tabindex="-1"></a><span class="ex">simpleaf</span> quant <span class="dt">\</span></span>
+<span id="cb20-3"><a href="download-data-and-quantification.html#cb20-3" tabindex="-1"></a>--reads1 <span class="va">$AF_SAMPLE_DIR</span>/data/SRX5329394_R1.fastq.gz <span class="dt">\</span></span>
+<span id="cb20-4"><a href="download-data-and-quantification.html#cb20-4" tabindex="-1"></a>--reads2 <span class="va">$AF_SAMPLE_DIR</span>/data/SRX5329394_R2.fastq.gz <span class="dt">\</span></span>
+<span id="cb20-5"><a href="download-data-and-quantification.html#cb20-5" tabindex="-1"></a>--threads 16 <span class="dt">\</span></span>
+<span id="cb20-6"><a href="download-data-and-quantification.html#cb20-6" tabindex="-1"></a>--index <span class="va">$IDX_DIR</span>/index <span class="dt">\</span></span>
+<span id="cb20-7"><a href="download-data-and-quantification.html#cb20-7" tabindex="-1"></a>--chemistry 10xv2 <span class="at">--resolution</span> cr-like <span class="dt">\</span></span>
+<span id="cb20-8"><a href="download-data-and-quantification.html#cb20-8" tabindex="-1"></a>--expected-ori fw <span class="at">--unfiltered-pl</span> <span class="dt">\</span></span>
+<span id="cb20-9"><a href="download-data-and-quantification.html#cb20-9" tabindex="-1"></a>--t2g-map <span class="va">$IDX_DIR</span>/index/t2g_3col.tsv <span class="dt">\</span></span>
+<span id="cb20-10"><a href="download-data-and-quantification.html#cb20-10" tabindex="-1"></a>--output <span class="va">$AF_SAMPLE_DIR</span>/<span class="va">${sample}</span>_quant</span></code></pre></div>
+<p>Note, for 3’ chemistry, specify <code>--expected-ori fw</code>;
+if it is 10x 5’ chemistry, specify <code>--expected-ori rc</code>.
+see <a href="https://github.com/COMBINE-lab/alevin-fry/issues/118" class="uri">https://github.com/COMBINE-lab/alevin-fry/issues/118</a></p>
+<p>Now, let’s loop over all the samples. We have two reads files per command
+that are variable. Let’s first create a txt file containing both reads
+using some unix tricks.</p>
+<div class="sourceCode" id="cb21"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb21-1"><a href="download-data-and-quantification.html#cb21-1" tabindex="-1"></a><span class="bu">cd</span> <span class="va">$FASTQ_DIR</span></span>
+<span id="cb21-2"><a href="download-data-and-quantification.html#cb21-2" tabindex="-1"></a></span>
+<span id="cb21-3"><a href="download-data-and-quantification.html#cb21-3" tabindex="-1"></a><span class="co"># -1 print the files one file per line</span></span>
+<span id="cb21-4"><a href="download-data-and-quantification.html#cb21-4" tabindex="-1"></a><span class="fu">ls</span> <span class="at">-1</span> <span class="pp">*</span>gz</span>
+<span id="cb21-5"><a href="download-data-and-quantification.html#cb21-5" tabindex="-1"></a><span class="ex">SRX5329394_R1.fastq.gz</span></span>
+<span id="cb21-6"><a href="download-data-and-quantification.html#cb21-6" tabindex="-1"></a><span class="ex">SRX5329394_R2.fastq.gz</span></span>
+<span id="cb21-7"><a href="download-data-and-quantification.html#cb21-7" tabindex="-1"></a><span class="ex">SRX5329395_R1.fastq.gz</span></span>
+<span id="cb21-8"><a href="download-data-and-quantification.html#cb21-8" tabindex="-1"></a><span class="ex">SRX5329395_R2.fastq.gz</span></span>
+<span id="cb21-9"><a href="download-data-and-quantification.html#cb21-9" tabindex="-1"></a><span class="ex">SRX5329396_R1.fastq.gz</span></span>
+<span id="cb21-10"><a href="download-data-and-quantification.html#cb21-10" tabindex="-1"></a><span class="ex">SRX5329396_R2.fastq.gz</span></span>
+<span id="cb21-11"><a href="download-data-and-quantification.html#cb21-11" tabindex="-1"></a><span class="ex">SRX5329397_R1.fastq.gz</span></span>
+<span id="cb21-12"><a href="download-data-and-quantification.html#cb21-12" tabindex="-1"></a><span class="ex">SRX5329397_R2.fastq.gz</span></span>
+<span id="cb21-13"><a href="download-data-and-quantification.html#cb21-13" tabindex="-1"></a></span>
+<span id="cb21-14"><a href="download-data-and-quantification.html#cb21-14" tabindex="-1"></a><span class="co"># save it to a file</span></span>
+<span id="cb21-15"><a href="download-data-and-quantification.html#cb21-15" tabindex="-1"></a><span class="fu">ls</span> <span class="at">-1</span> <span class="pp">*</span>gz <span class="op">&gt;</span> fastq.txt</span>
+<span id="cb21-16"><a href="download-data-and-quantification.html#cb21-16" tabindex="-1"></a></span>
+<span id="cb21-17"><a href="download-data-and-quantification.html#cb21-17" tabindex="-1"></a><span class="fu">cat</span> fastq.txt</span>
+<span id="cb21-18"><a href="download-data-and-quantification.html#cb21-18" tabindex="-1"></a><span class="ex">SRX5329394_R1.fastq.gz</span></span>
+<span id="cb21-19"><a href="download-data-and-quantification.html#cb21-19" tabindex="-1"></a><span class="ex">SRX5329394_R2.fastq.gz</span></span>
+<span id="cb21-20"><a href="download-data-and-quantification.html#cb21-20" tabindex="-1"></a><span class="ex">SRX5329395_R1.fastq.gz</span></span>
+<span id="cb21-21"><a href="download-data-and-quantification.html#cb21-21" tabindex="-1"></a><span class="ex">SRX5329395_R2.fastq.gz</span></span>
+<span id="cb21-22"><a href="download-data-and-quantification.html#cb21-22" tabindex="-1"></a><span class="ex">SRX5329396_R1.fastq.gz</span></span>
+<span id="cb21-23"><a href="download-data-and-quantification.html#cb21-23" tabindex="-1"></a><span class="ex">SRX5329396_R2.fastq.gz</span></span>
+<span id="cb21-24"><a href="download-data-and-quantification.html#cb21-24" tabindex="-1"></a><span class="ex">SRX5329397_R1.fastq.gz</span></span>
+<span id="cb21-25"><a href="download-data-and-quantification.html#cb21-25" tabindex="-1"></a><span class="ex">SRX5329397_R2.fastq.gz</span></span></code></pre></div>
+<p>we then use the <code>tr</code> command to translate the <code>_</code> to a tab.</p>
+<div class="sourceCode" id="cb22"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb22-1"><a href="download-data-and-quantification.html#cb22-1" tabindex="-1"></a><span class="fu">cat</span> fastq.txt <span class="kw">|</span> <span class="fu">tr</span> <span class="st">&quot;_&quot;</span> <span class="st">&quot;\t&quot;</span></span>
+<span id="cb22-2"><a href="download-data-and-quantification.html#cb22-2" tabindex="-1"></a><span class="ex">SRX5329394</span>      R1.fastq.gz</span>
+<span id="cb22-3"><a href="download-data-and-quantification.html#cb22-3" tabindex="-1"></a><span class="ex">SRX5329394</span>      R2.fastq.gz</span>
+<span id="cb22-4"><a href="download-data-and-quantification.html#cb22-4" tabindex="-1"></a><span class="ex">SRX5329395</span>      R1.fastq.gz</span>
+<span id="cb22-5"><a href="download-data-and-quantification.html#cb22-5" tabindex="-1"></a><span class="ex">SRX5329395</span>      R2.fastq.gz</span>
+<span id="cb22-6"><a href="download-data-and-quantification.html#cb22-6" tabindex="-1"></a><span class="ex">SRX5329396</span>      R1.fastq.gz</span>
+<span id="cb22-7"><a href="download-data-and-quantification.html#cb22-7" tabindex="-1"></a><span class="ex">SRX5329396</span>      R2.fastq.gz</span>
+<span id="cb22-8"><a href="download-data-and-quantification.html#cb22-8" tabindex="-1"></a><span class="ex">SRX5329397</span>      R1.fastq.gz</span>
+<span id="cb22-9"><a href="download-data-and-quantification.html#cb22-9" tabindex="-1"></a><span class="ex">SRX5329397</span>      R2.fastq.gz</span></code></pre></div>
+<p>translate the <code>.</code> to tab and cut the only first two columns</p>
+<div class="sourceCode" id="cb23"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb23-1"><a href="download-data-and-quantification.html#cb23-1" tabindex="-1"></a><span class="fu">cat</span> fastq.txt <span class="kw">|</span> <span class="fu">tr</span> <span class="st">&quot;_&quot;</span> <span class="st">&quot;\t&quot;</span> <span class="kw">|</span> <span class="fu">tr</span> <span class="st">&quot;.&quot;</span> <span class="st">&quot;\t&quot;</span> <span class="kw">|</span> <span class="fu">cut</span> <span class="at">-f1,2</span></span>
+<span id="cb23-2"><a href="download-data-and-quantification.html#cb23-2" tabindex="-1"></a><span class="ex">SRX5329394</span>      R1</span>
+<span id="cb23-3"><a href="download-data-and-quantification.html#cb23-3" tabindex="-1"></a><span class="ex">SRX5329394</span>      R2</span>
+<span id="cb23-4"><a href="download-data-and-quantification.html#cb23-4" tabindex="-1"></a><span class="ex">SRX5329395</span>      R1</span>
+<span id="cb23-5"><a href="download-data-and-quantification.html#cb23-5" tabindex="-1"></a><span class="ex">SRX5329395</span>      R2</span>
+<span id="cb23-6"><a href="download-data-and-quantification.html#cb23-6" tabindex="-1"></a><span class="ex">SRX5329396</span>      R1</span>
+<span id="cb23-7"><a href="download-data-and-quantification.html#cb23-7" tabindex="-1"></a><span class="ex">SRX5329396</span>      R2</span>
+<span id="cb23-8"><a href="download-data-and-quantification.html#cb23-8" tabindex="-1"></a><span class="ex">SRX5329397</span>      R1</span>
+<span id="cb23-9"><a href="download-data-and-quantification.html#cb23-9" tabindex="-1"></a><span class="ex">SRX5329397</span>      R2</span>
+<span id="cb23-10"><a href="download-data-and-quantification.html#cb23-10" tabindex="-1"></a></span>
+<span id="cb23-11"><a href="download-data-and-quantification.html#cb23-11" tabindex="-1"></a><span class="fu">cat</span> fastq.txt <span class="kw">|</span> <span class="fu">tr</span> <span class="st">&quot;_&quot;</span> <span class="st">&quot;\t&quot;</span> <span class="kw">|</span> <span class="fu">tr</span> <span class="st">&quot;.&quot;</span> <span class="st">&quot;\t&quot;</span> <span class="kw">|</span> <span class="fu">cut</span> <span class="at">-f1,2</span> <span class="op">&gt;</span> files.txt</span>
+<span id="cb23-12"><a href="download-data-and-quantification.html#cb23-12" tabindex="-1"></a></span>
+<span id="cb23-13"><a href="download-data-and-quantification.html#cb23-13" tabindex="-1"></a><span class="fu">paste</span> fastq.txt files.txt</span>
+<span id="cb23-14"><a href="download-data-and-quantification.html#cb23-14" tabindex="-1"></a><span class="ex">SRX5329394_R1.fastq.gz</span>  SRX5329394      R1</span>
+<span id="cb23-15"><a href="download-data-and-quantification.html#cb23-15" tabindex="-1"></a><span class="ex">SRX5329394_R2.fastq.gz</span>  SRX5329394      R2</span>
+<span id="cb23-16"><a href="download-data-and-quantification.html#cb23-16" tabindex="-1"></a><span class="ex">SRX5329395_R1.fastq.gz</span>  SRX5329395      R1</span>
+<span id="cb23-17"><a href="download-data-and-quantification.html#cb23-17" tabindex="-1"></a><span class="ex">SRX5329395_R2.fastq.gz</span>  SRX5329395      R2</span>
+<span id="cb23-18"><a href="download-data-and-quantification.html#cb23-18" tabindex="-1"></a><span class="ex">SRX5329396_R1.fastq.gz</span>  SRX5329396      R1</span>
+<span id="cb23-19"><a href="download-data-and-quantification.html#cb23-19" tabindex="-1"></a><span class="ex">SRX5329396_R2.fastq.gz</span>  SRX5329396      R2</span>
+<span id="cb23-20"><a href="download-data-and-quantification.html#cb23-20" tabindex="-1"></a><span class="ex">SRX5329397_R1.fastq.gz</span>  SRX5329397      R1</span>
+<span id="cb23-21"><a href="download-data-and-quantification.html#cb23-21" tabindex="-1"></a><span class="ex">SRX5329397_R2.fastq.gz</span>  SRX5329397      R2</span></code></pre></div>
+<p>see <a href="https://www.gnu.org/software/datamash/manual/html_node/Crosstab.html" class="uri">https://www.gnu.org/software/datamash/manual/html_node/Crosstab.html</a></p>
+<p>We will use <code>datamash</code> to pivot this long table to a wide table.</p>
+<div class="sourceCode" id="cb24"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb24-1"><a href="download-data-and-quantification.html#cb24-1" tabindex="-1"></a><span class="fu">paste</span> fastq.txt files.txt <span class="kw">|</span> <span class="ex">datamash</span> crosstab 2,3 unique 1</span>
+<span id="cb24-2"><a href="download-data-and-quantification.html#cb24-2" tabindex="-1"></a>        <span class="ex">R1</span>      R2</span>
+<span id="cb24-3"><a href="download-data-and-quantification.html#cb24-3" tabindex="-1"></a><span class="ex">SRX5329394</span>      SRX5329394_R1.fastq.gz  SRX5329394_R2.fastq.gz</span>
+<span id="cb24-4"><a href="download-data-and-quantification.html#cb24-4" tabindex="-1"></a><span class="ex">SRX5329395</span>      SRX5329395_R1.fastq.gz  SRX5329395_R2.fastq.gz</span>
+<span id="cb24-5"><a href="download-data-and-quantification.html#cb24-5" tabindex="-1"></a><span class="ex">SRX5329396</span>      SRX5329396_R1.fastq.gz  SRX5329396_R2.fastq.gz</span>
+<span id="cb24-6"><a href="download-data-and-quantification.html#cb24-6" tabindex="-1"></a><span class="ex">SRX5329397</span>      SRX5329397_R1.fastq.gz  SRX5329397_R2.fastq.gz</span>
+<span id="cb24-7"><a href="download-data-and-quantification.html#cb24-7" tabindex="-1"></a></span>
+<span id="cb24-8"><a href="download-data-and-quantification.html#cb24-8" tabindex="-1"></a><span class="co"># remove the first line</span></span>
+<span id="cb24-9"><a href="download-data-and-quantification.html#cb24-9" tabindex="-1"></a><span class="fu">paste</span> fastq.txt files.txt <span class="kw">|</span> <span class="ex">datamash</span> crosstab 2,3 unique 1 <span class="kw">|</span> <span class="fu">sed</span> <span class="st">&#39;1d&#39;</span></span>
+<span id="cb24-10"><a href="download-data-and-quantification.html#cb24-10" tabindex="-1"></a><span class="ex">SRX5329394</span>      SRX5329394_R1.fastq.gz  SRX5329394_R2.fastq.gz</span>
+<span id="cb24-11"><a href="download-data-and-quantification.html#cb24-11" tabindex="-1"></a><span class="ex">SRX5329395</span>      SRX5329395_R1.fastq.gz  SRX5329395_R2.fastq.gz</span>
+<span id="cb24-12"><a href="download-data-and-quantification.html#cb24-12" tabindex="-1"></a><span class="ex">SRX5329396</span>      SRX5329396_R1.fastq.gz  SRX5329396_R2.fastq.gz</span>
+<span id="cb24-13"><a href="download-data-and-quantification.html#cb24-13" tabindex="-1"></a><span class="ex">SRX5329397</span>      SRX5329397_R1.fastq.gz  SRX5329397_R2.fastq.gz</span>
+<span id="cb24-14"><a href="download-data-and-quantification.html#cb24-14" tabindex="-1"></a></span>
+<span id="cb24-15"><a href="download-data-and-quantification.html#cb24-15" tabindex="-1"></a><span class="fu">paste</span> fastq.txt files.txt <span class="kw">|</span> <span class="ex">datamash</span> crosstab 2,3 unique 1 <span class="kw">|</span> <span class="fu">sed</span> <span class="st">&#39;1d&#39;</span> <span class="op">&gt;</span> fq_path.txt</span>
+<span id="cb24-16"><a href="download-data-and-quantification.html#cb24-16" tabindex="-1"></a></span>
+<span id="cb24-17"><a href="download-data-and-quantification.html#cb24-17" tabindex="-1"></a><span class="fu">cat</span> fq_path.txt</span>
+<span id="cb24-18"><a href="download-data-and-quantification.html#cb24-18" tabindex="-1"></a><span class="ex">SRX5329394</span>      SRX5329394_R1.fastq.gz  SRX5329394_R2.fastq.gz</span>
+<span id="cb24-19"><a href="download-data-and-quantification.html#cb24-19" tabindex="-1"></a><span class="ex">SRX5329395</span>      SRX5329395_R1.fastq.gz  SRX5329395_R2.fastq.gz</span>
+<span id="cb24-20"><a href="download-data-and-quantification.html#cb24-20" tabindex="-1"></a><span class="ex">SRX5329396</span>      SRX5329396_R1.fastq.gz  SRX5329396_R2.fastq.gz</span>
+<span id="cb24-21"><a href="download-data-and-quantification.html#cb24-21" tabindex="-1"></a><span class="ex">SRX5329397</span>      SRX5329397_R1.fastq.gz  SRX5329397_R2.fastq.gz</span></code></pre></div>
+<p>Now, we can read in this <code>fq_path.txt</code> file line by line.
+read <code>-r sample R1 R2</code> will split the line into three fields and assign
+to three shell variables: <code>sample</code>, <code>R1</code>, and <code>R2</code>.</p>
+<div class="sourceCode" id="cb25"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb25-1"><a href="download-data-and-quantification.html#cb25-1" tabindex="-1"></a><span class="fu">cat</span> fq_path.txt <span class="kw">|</span> <span class="cf">while</span> <span class="bu">read</span> <span class="at">-r</span> <span class="va">sample</span> <span class="va">R1</span> <span class="va">R2</span></span>
+<span id="cb25-2"><a href="download-data-and-quantification.html#cb25-2" tabindex="-1"></a><span class="cf">do</span> </span>
+<span id="cb25-3"><a href="download-data-and-quantification.html#cb25-3" tabindex="-1"></a>        <span class="bu">echo</span> <span class="va">$sample</span> </span>
+<span id="cb25-4"><a href="download-data-and-quantification.html#cb25-4" tabindex="-1"></a>        <span class="bu">echo</span> <span class="va">$R1</span> </span>
+<span id="cb25-5"><a href="download-data-and-quantification.html#cb25-5" tabindex="-1"></a>        <span class="bu">echo</span> <span class="va">$R2</span></span>
+<span id="cb25-6"><a href="download-data-and-quantification.html#cb25-6" tabindex="-1"></a><span class="cf">done</span></span>
+<span id="cb25-7"><a href="download-data-and-quantification.html#cb25-7" tabindex="-1"></a></span>
+<span id="cb25-8"><a href="download-data-and-quantification.html#cb25-8" tabindex="-1"></a><span class="ex">SRX5329394</span></span>
+<span id="cb25-9"><a href="download-data-and-quantification.html#cb25-9" tabindex="-1"></a><span class="ex">SRX5329394_R1.fastq.gz</span></span>
+<span id="cb25-10"><a href="download-data-and-quantification.html#cb25-10" tabindex="-1"></a><span class="ex">SRX5329394_R2.fastq.gz</span></span>
+<span id="cb25-11"><a href="download-data-and-quantification.html#cb25-11" tabindex="-1"></a><span class="ex">SRX5329395</span></span>
+<span id="cb25-12"><a href="download-data-and-quantification.html#cb25-12" tabindex="-1"></a><span class="ex">SRX5329395_R1.fastq.gz</span></span>
+<span id="cb25-13"><a href="download-data-and-quantification.html#cb25-13" tabindex="-1"></a><span class="ex">SRX5329395_R2.fastq.gz</span></span>
+<span id="cb25-14"><a href="download-data-and-quantification.html#cb25-14" tabindex="-1"></a><span class="ex">SRX5329396</span></span>
+<span id="cb25-15"><a href="download-data-and-quantification.html#cb25-15" tabindex="-1"></a><span class="ex">SRX5329396_R1.fastq.gz</span></span>
+<span id="cb25-16"><a href="download-data-and-quantification.html#cb25-16" tabindex="-1"></a><span class="ex">SRX5329396_R2.fastq.gz</span></span>
+<span id="cb25-17"><a href="download-data-and-quantification.html#cb25-17" tabindex="-1"></a><span class="ex">SRX5329397</span></span>
+<span id="cb25-18"><a href="download-data-and-quantification.html#cb25-18" tabindex="-1"></a><span class="ex">SRX5329397_R1.fastq.gz</span></span>
+<span id="cb25-19"><a href="download-data-and-quantification.html#cb25-19" tabindex="-1"></a><span class="ex">SRX5329397_R2.fastq.gz</span></span></code></pre></div>
+<p>We only have 4 samples, and you can just manually create the <code>fq_path.txt</code>.
+When you have over a dozen of files and you want to be lazy, the unix command
+tricks comes handy!</p>
+<div class="sourceCode" id="cb26"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb26-1"><a href="download-data-and-quantification.html#cb26-1" tabindex="-1"></a><span class="fu">cat</span> fq_path.txt <span class="kw">|</span> <span class="cf">while</span> <span class="bu">read</span> <span class="at">-r</span> <span class="va">sample</span> <span class="va">R1</span> <span class="va">R2</span></span>
+<span id="cb26-2"><a href="download-data-and-quantification.html#cb26-2" tabindex="-1"></a><span class="cf">do</span> </span>
+<span id="cb26-3"><a href="download-data-and-quantification.html#cb26-3" tabindex="-1"></a>   <span class="ex">simpleaf</span> quant <span class="dt">\</span></span>
+<span id="cb26-4"><a href="download-data-and-quantification.html#cb26-4" tabindex="-1"></a>        <span class="at">--reads1</span> <span class="va">$FASTQ_DIR</span>/<span class="va">$R1</span> <span class="dt">\</span></span>
+<span id="cb26-5"><a href="download-data-and-quantification.html#cb26-5" tabindex="-1"></a>        <span class="at">--reads2</span> <span class="va">$FASTQ_DIR</span>/<span class="va">$R2</span> <span class="dt">\</span></span>
+<span id="cb26-6"><a href="download-data-and-quantification.html#cb26-6" tabindex="-1"></a>        <span class="at">--threads</span> 16 <span class="dt">\</span></span>
+<span id="cb26-7"><a href="download-data-and-quantification.html#cb26-7" tabindex="-1"></a>        <span class="at">--index</span> <span class="va">$IDX_DIR</span>/index <span class="dt">\</span></span>
+<span id="cb26-8"><a href="download-data-and-quantification.html#cb26-8" tabindex="-1"></a>        <span class="at">--chemistry</span> 10xv2 <span class="at">--resolution</span> cr-like <span class="dt">\</span></span>
+<span id="cb26-9"><a href="download-data-and-quantification.html#cb26-9" tabindex="-1"></a>        <span class="at">--expected-ori</span> fw <span class="at">--unfiltered-pl</span> <span class="dt">\</span></span>
+<span id="cb26-10"><a href="download-data-and-quantification.html#cb26-10" tabindex="-1"></a>        <span class="at">--t2g-map</span> <span class="va">$IDX_DIR</span>/index/t2g_3col.tsv <span class="dt">\</span></span>
+<span id="cb26-11"><a href="download-data-and-quantification.html#cb26-11" tabindex="-1"></a>        <span class="at">--output</span> <span class="va">$AF_SAMPLE_DIR</span>/<span class="va">${sample}</span>_quant</span>
+<span id="cb26-12"><a href="download-data-and-quantification.html#cb26-12" tabindex="-1"></a><span class="cf">done</span></span></code></pre></div>
+<p>Note on shell variable quoting and {}. see <a href="https://unix.stackexchange.com/questions/4899/var-vs-var-and-to-quote-or-not-to-quote" class="uri">https://unix.stackexchange.com/questions/4899/var-vs-var-and-to-quote-or-not-to-quote</a></p>
+<p>For 4 samples, the quantification takes</p>
+<div class="sourceCode" id="cb27"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb27-1"><a href="download-data-and-quantification.html#cb27-1" tabindex="-1"></a><span class="ex">real</span>    66m20.682s</span>
+<span id="cb27-2"><a href="download-data-and-quantification.html#cb27-2" tabindex="-1"></a><span class="ex">user</span>    525m58.643s</span>
+<span id="cb27-3"><a href="download-data-and-quantification.html#cb27-3" tabindex="-1"></a><span class="ex">sys</span>     14m26.989s</span></code></pre></div>
+<p>That’s very fast! The <code>cellranger</code> workflow may take several hours per sample.</p>
+</div>
+<div id="check-the-output" class="section level3 hasAnchor" number="1.3.4">
+<h3><span class="header-section-number">1.3.4</span> Check the output<a href="download-data-and-quantification.html#check-the-output" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<div class="sourceCode" id="cb28"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb28-1"><a href="download-data-and-quantification.html#cb28-1" tabindex="-1"></a><span class="fu">wc</span> <span class="at">-l</span> SRX5329394_quant/af_quant/alevin/quants_mat<span class="pp">*</span></span>
+<span id="cb28-2"><a href="download-data-and-quantification.html#cb28-2" tabindex="-1"></a> <span class="ex">15316171</span> SRX5329394_quant/af_quant/alevin/quants_mat.mtx</span>
+<span id="cb28-3"><a href="download-data-and-quantification.html#cb28-3" tabindex="-1"></a>   <span class="ex">109803</span> SRX5329394_quant/af_quant/alevin/quants_mat_cols.txt</span>
+<span id="cb28-4"><a href="download-data-and-quantification.html#cb28-4" tabindex="-1"></a>   <span class="ex">213855</span> SRX5329394_quant/af_quant/alevin/quants_mat_rows.txt</span>
+<span id="cb28-5"><a href="download-data-and-quantification.html#cb28-5" tabindex="-1"></a> <span class="ex">15639829</span> total</span></code></pre></div>
+<p><code>quants_mat_cols.txt</code> are the genes, and <code>quants_mat_rows.txt</code> are the unfiltered cells.</p>
+<p><code>quants_mat.mtx</code> is a sparse matrix. A sparse matrix is a way to represent
+matrix with many 0s, it only record the non-zero entries to save space.
+as you see, the full matrix is 213855 genes/rows by 109803 cells/columns.</p>
+<p>Let’s verify by checking the first 10 rows of the
+files.</p>
+<div class="sourceCode" id="cb29"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb29-1"><a href="download-data-and-quantification.html#cb29-1" tabindex="-1"></a><span class="fu">head</span>  SRX5329394_quant/af_quant/alevin/quants_mat<span class="pp">*</span></span>
+<span id="cb29-2"><a href="download-data-and-quantification.html#cb29-2" tabindex="-1"></a><span class="ex">==</span><span class="op">&gt;</span> SRX5329394_quant/af_quant/alevin/quants_mat.mtx <span class="op">&lt;</span>==</span>
+<span id="cb29-3"><a href="download-data-and-quantification.html#cb29-3" tabindex="-1"></a><span class="ex">%%MatrixMarket</span> matrix coordinate real general</span>
+<span id="cb29-4"><a href="download-data-and-quantification.html#cb29-4" tabindex="-1"></a><span class="ex">%</span> written by sprs</span>
+<span id="cb29-5"><a href="download-data-and-quantification.html#cb29-5" tabindex="-1"></a><span class="ex">213855</span> 109803 15316168</span>
+<span id="cb29-6"><a href="download-data-and-quantification.html#cb29-6" tabindex="-1"></a><span class="ex">1</span> 14 1</span>
+<span id="cb29-7"><a href="download-data-and-quantification.html#cb29-7" tabindex="-1"></a><span class="ex">1</span> 15 2</span>
+<span id="cb29-8"><a href="download-data-and-quantification.html#cb29-8" tabindex="-1"></a><span class="ex">1</span> 26 2</span>
+<span id="cb29-9"><a href="download-data-and-quantification.html#cb29-9" tabindex="-1"></a><span class="ex">1</span> 43 8</span>
+<span id="cb29-10"><a href="download-data-and-quantification.html#cb29-10" tabindex="-1"></a><span class="ex">1</span> 48 2</span>
+<span id="cb29-11"><a href="download-data-and-quantification.html#cb29-11" tabindex="-1"></a><span class="ex">1</span> 49 3</span>
+<span id="cb29-12"><a href="download-data-and-quantification.html#cb29-12" tabindex="-1"></a><span class="ex">1</span> 50 1</span>
+<span id="cb29-13"><a href="download-data-and-quantification.html#cb29-13" tabindex="-1"></a></span>
+<span id="cb29-14"><a href="download-data-and-quantification.html#cb29-14" tabindex="-1"></a><span class="ex">==</span><span class="op">&gt;</span> SRX5329394_quant/af_quant/alevin/quants_mat_cols.txt <span class="op">&lt;</span>==</span>
+<span id="cb29-15"><a href="download-data-and-quantification.html#cb29-15" tabindex="-1"></a><span class="ex">ENSG00000243485</span></span>
+<span id="cb29-16"><a href="download-data-and-quantification.html#cb29-16" tabindex="-1"></a><span class="ex">ENSG00000186092</span></span>
+<span id="cb29-17"><a href="download-data-and-quantification.html#cb29-17" tabindex="-1"></a><span class="ex">ENSG00000241599</span></span>
+<span id="cb29-18"><a href="download-data-and-quantification.html#cb29-18" tabindex="-1"></a><span class="ex">ENSG00000237491</span></span>
+<span id="cb29-19"><a href="download-data-and-quantification.html#cb29-19" tabindex="-1"></a><span class="ex">ENSG00000228794</span></span>
+<span id="cb29-20"><a href="download-data-and-quantification.html#cb29-20" tabindex="-1"></a><span class="ex">ENSG00000187634</span></span>
+<span id="cb29-21"><a href="download-data-and-quantification.html#cb29-21" tabindex="-1"></a><span class="ex">ENSG00000223823</span></span>
+<span id="cb29-22"><a href="download-data-and-quantification.html#cb29-22" tabindex="-1"></a><span class="ex">ENSG00000162571</span></span>
+<span id="cb29-23"><a href="download-data-and-quantification.html#cb29-23" tabindex="-1"></a><span class="ex">ENSG00000162572</span></span>
+<span id="cb29-24"><a href="download-data-and-quantification.html#cb29-24" tabindex="-1"></a><span class="ex">ENSG00000224870</span></span>
+<span id="cb29-25"><a href="download-data-and-quantification.html#cb29-25" tabindex="-1"></a></span>
+<span id="cb29-26"><a href="download-data-and-quantification.html#cb29-26" tabindex="-1"></a><span class="ex">==</span><span class="op">&gt;</span> SRX5329394_quant/af_quant/alevin/quants_mat_rows.txt <span class="op">&lt;</span>==</span>
+<span id="cb29-27"><a href="download-data-and-quantification.html#cb29-27" tabindex="-1"></a><span class="ex">TCAGCTCGTATTACCG</span></span>
+<span id="cb29-28"><a href="download-data-and-quantification.html#cb29-28" tabindex="-1"></a><span class="ex">GTACTTTAGTGTCTCA</span></span>
+<span id="cb29-29"><a href="download-data-and-quantification.html#cb29-29" tabindex="-1"></a><span class="ex">CTGATAGTCATGCATG</span></span>
+<span id="cb29-30"><a href="download-data-and-quantification.html#cb29-30" tabindex="-1"></a><span class="ex">TGAGAGGCATCACGAT</span></span>
+<span id="cb29-31"><a href="download-data-and-quantification.html#cb29-31" tabindex="-1"></a><span class="ex">AACCATGCATGGTCAT</span></span>
+<span id="cb29-32"><a href="download-data-and-quantification.html#cb29-32" tabindex="-1"></a><span class="ex">TGTGGTACATCATCCC</span></span>
+<span id="cb29-33"><a href="download-data-and-quantification.html#cb29-33" tabindex="-1"></a><span class="ex">CGGAGTCTCCTACAGA</span></span>
+<span id="cb29-34"><a href="download-data-and-quantification.html#cb29-34" tabindex="-1"></a><span class="ex">GCGACCAGTAGCGTAG</span></span>
+<span id="cb29-35"><a href="download-data-and-quantification.html#cb29-35" tabindex="-1"></a><span class="ex">CGGTTAAAGAATCTCC</span></span>
+<span id="cb29-36"><a href="download-data-and-quantification.html#cb29-36" tabindex="-1"></a><span class="ex">GACCTGGCAAGTAGTA</span></span></code></pre></div>
+<p>The first numeric row of the sparse <code>mtx</code> file is</p>
+<p>213855 109803 15316168 which means 213855 rows and 109803 columns, and
+15316168 non-zero entries.</p>
+<p>1 14 1 means row 1, column 14 has an entry of 1.
+1 15 2 means row 1, column 15 has an entry of 2.
+etc etc.</p>
+<p>If you want to learn more about working with sparse matrices in R, Kamil Slowikowski has an excellent tutorial: <a href="https://slowkow.com/notes/sparse-matrix/" class="uri">https://slowkow.com/notes/sparse-matrix/</a></p>
+<p>Also check out the <code>sparseMatrixStats</code> Bioconductor package: <a href="https://bioconductor.org/packages/release/bioc/html/sparseMatrixStats.html" class="uri">https://bioconductor.org/packages/release/bioc/html/sparseMatrixStats.html</a></p>
+<hr />
+</div>
+</div>
+<div id="troubleshooting" class="section level2 hasAnchor" number="1.4">
+<h2><span class="header-section-number">1.4</span> Troubleshooting<a href="download-data-and-quantification.html#troubleshooting" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>Here are some common issues you might run into. I’ve seen all of these at one point or another.</p>
+<p><strong>Index building fails or runs out of memory.</strong> Index building needs ~16-32GB RAM. Try reducing thread count (<code>--threads 4</code> instead of 16) which uses less memory. If you don’t have enough RAM, use pre-built indices or run on a cloud instance.</p>
+<p><strong>Very few cells detected (&lt;100 when expecting thousands).</strong> This is almost always wrong chemistry specification. Check your R1 read length: 26bp means v2 (16bp barcode + 10bp UMI), 28bp means v3 (16bp barcode + 12bp UMI). Use <code>--chemistry 10xv2</code> or <code>--chemistry 10xv3</code> accordingly. We showed how to check this earlier with <code>wc -L</code>.</p>
+<p><strong>Low mapping rate (&lt;50%).</strong> The most common causes: wrong organism reference (human data + mouse genome = disaster), wrong orientation (3’ chemistry uses <code>--expected-ori fw</code>, 5’ uses <code>rc</code>), or R1/R2 files swapped. Quick sanity check: R2 files should be ~3-4x larger than R1.</p>
+<p><strong>“command not found: simpleaf”.</strong> Make sure your conda environment is activated (<code>conda activate af</code>). Check with <code>which simpleaf</code>.</p>
+<p><strong>Out of disk space.</strong> You need ~150GB total for this dataset (100GB FASTQ + 10GB index + output). Run <code>df -h</code> to check what you have.</p>
+<p><strong>Permission denied.</strong> Check write permissions with <code>ls -ld $PWD</code> and fix with <code>chmod u+w output_directory</code> if needed.</p>
+<hr />
+</div>
+<div id="alternative-quantification-workflows" class="section level2 hasAnchor" number="1.5">
+<h2><span class="header-section-number">1.5</span> Alternative quantification workflows<a href="download-data-and-quantification.html#alternative-quantification-workflows" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>We use alevin-fry in this tutorial, but you should know about the alternatives. I briefly mention them here and in the Appendix below.</p>
+<p><code>kallisto/bustools</code> is very fast, widely used, and mature. <code>Cell Ranger</code> is the official 10x pipeline – slower and more memory-hungry, but produces nice QC web reports and is widely accepted by reviewers. One gotcha with Cell Ranger: it requires specific FASTQ naming conventions (e.g., <code>SRX5329394_S1_L001_R1_001.fastq.gz</code>), so you’ll need to rename files. See <a href="https://kb.10xgenomics.com/hc/en-us/articles/115003802691" class="uri">https://kb.10xgenomics.com/hc/en-us/articles/115003802691</a>.</p>
+<p><code>STARsolo</code> is accurate and supports multiple platforms, but needs 32GB+ RAM.</p>
+<hr />
+</div>
+<div id="summary" class="section level2 hasAnchor" number="1.6">
+<h2><span class="header-section-number">1.6</span> Summary<a href="download-data-and-quantification.html#summary" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>In this chapter, we went from raw FASTQ files to count matrices. We downloaded 4 samples (~97GB), built a splici index, and quantified everything in ~66 minutes with alevin-fry. The output is 213,855 genes x 109,803 barcodes (unfiltered) in sparse matrix format.</p>
+<p>The key files you have now:</p>
+<ul>
+<li><code>human-2020-A_splici/index/</code>: Reusable index for future samples</li>
+<li><code>SRX532939{4-7}_quant/</code>: Quantification results (sparse matrices)</li>
+</ul>
+<p>A few things to remember: always check your chemistry version (v2 vs v3) before running quantification. Use the <code>--unfiltered-pl</code> flag so you get ALL barcodes – we’ll need them for empty droplet removal in Chapter 2. And don’t accidentally delete your FASTQ files before you’re sure the quantification worked. Re-downloading 97GB is painful.</p>
+<p>In the next chapter, we’ll take these unfiltered matrices and do QC: generate reports with <code>alevinQC</code>, remove empty droplets with DropletUtils, and filter low-quality cells.</p>
+<div id="further-reading" class="section level3 hasAnchor" number="1.6.1">
+<h3><span class="header-section-number">1.6.1</span> Further reading<a href="download-data-and-quantification.html#further-reading" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<ul>
+<li>simpleaf tutorial: <a href="https://github.com/COMBINE-lab/simpleaf" class="uri">https://github.com/COMBINE-lab/simpleaf</a></li>
+<li>alevin-fry documentation: <a href="https://alevin-fry.readthedocs.io/" class="uri">https://alevin-fry.readthedocs.io/</a></li>
+<li>10x Chemistry details: <a href="https://teichlab.github.io/scg_lib_structs/methods_html/10xChromium3.html" class="uri">https://teichlab.github.io/scg_lib_structs/methods_html/10xChromium3.html</a></li>
+<li>sc-best-practices.org preprocessing chapter: <a href="https://www.sc-best-practices.org/preprocessing_visualization/preprocessing_quality_control.html" class="uri">https://www.sc-best-practices.org/preprocessing_visualization/preprocessing_quality_control.html</a></li>
+<li>OSCA book: <a href="https://bioconductor.org/books/release/OSCA.intro/" class="uri">https://bioconductor.org/books/release/OSCA.intro/</a></li>
+<li>He et al. (2022), “alevin-fry unlocks rapid, accurate and memory-frugal quantification of single-cell RNA-seq data”</li>
+</ul>
+</div>
+</div>
+<div id="session-information" class="section level2 unnumbered hasAnchor">
+<h2>Session Information<a href="download-data-and-quantification.html#session-information" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<div class="sourceCode" id="cb30"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb30-1"><a href="download-data-and-quantification.html#cb30-1" tabindex="-1"></a><span class="fu">sessionInfo</span>()</span></code></pre></div>
+<pre><code>#&gt; R version 4.4.1 (2024-06-14)
+#&gt; Platform: aarch64-apple-darwin20
+#&gt; Running under: macOS Sonoma 14.1
+#&gt; 
+#&gt; Matrix products: default
+#&gt; BLAS:   /Library/Frameworks/R.framework/Versions/4.4-arm64/Resources/lib/libRblas.0.dylib 
+#&gt; LAPACK: /Library/Frameworks/R.framework/Versions/4.4-arm64/Resources/lib/libRlapack.dylib;  LAPACK version 3.12.0
+#&gt; 
+#&gt; locale:
+#&gt; [1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8
+#&gt; 
+#&gt; time zone: America/New_York
+#&gt; tzcode source: internal
+#&gt; 
+#&gt; attached base packages:
+#&gt; [1] stats     graphics  grDevices utils     datasets  methods   base     
+#&gt; 
+#&gt; loaded via a namespace (and not attached):
+#&gt;  [1] digest_0.6.36     R6_2.5.1          codetools_0.2-20  bookdown_0.40    
+#&gt;  [5] fastmap_1.2.0     xfun_0.52         cachem_1.1.0      knitr_1.48       
+#&gt;  [9] htmltools_0.5.8.1 rmarkdown_2.27    lifecycle_1.0.4   cli_3.6.3        
+#&gt; [13] sass_0.4.9        jquerylib_0.1.4   compiler_4.4.1    highr_0.11       
+#&gt; [17] rstudioapi_0.16.0 tools_4.4.1       evaluate_0.24.0   bslib_0.8.0      
+#&gt; [21] yaml_2.3.10       jsonlite_1.8.8    rlang_1.1.4</code></pre>
+
+</div>
+</div>
+            </section>
+
+          </div>
+        </div>
+      </div>
+<a href="index.html" class="navigation navigation-prev " aria-label="Previous page"><i class="fa fa-angle-left"></i></a>
+<a href="quality-control.html" class="navigation navigation-next " aria-label="Next page"><i class="fa fa-angle-right"></i></a>
+    </div>
+  </div>
+<script src="libs/gitbook-2.6.7/js/app.min.js"></script>
+<script src="libs/gitbook-2.6.7/js/clipboard.min.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-search.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-sharing.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-fontsettings.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-bookdown.js"></script>
+<script src="libs/gitbook-2.6.7/js/jquery.highlight.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-clipboard.js"></script>
+<script>
+gitbook.require(["gitbook"], function(gitbook) {
+gitbook.start({
+  "sharing": {
+    "github": true,
+    "facebook": false,
+    "twitter": true,
+    "linkedin": true,
+    "weibo": false,
+    "instapaper": false,
+    "vk": false,
+    "whatsapp": false,
+    "all": ["facebook", "twitter", "linkedin", "weibo", "instapaper"]
+  },
+  "fontsettings": {
+    "theme": "white",
+    "family": "sans",
+    "size": 2
+  },
+  "edit": {
+    "link": "https://github.com/crazyhottommy/practical_scRNAseq_analysis_with_R/edit/main/01-data-download-quantification.Rmd",
+    "text": "Edit"
+  },
+  "history": {
+    "link": null,
+    "text": null
+  },
+  "view": {
+    "link": null,
+    "text": null
+  },
+  "download": ["practical_scRNAseq_analysis.pdf", "practical_scRNAseq_analysis.epub"],
+  "search": {
+    "engine": "fuse",
+    "options": null
+  },
+  "toc": {
+    "collapse": "subsection"
+  }
+});
+});
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    var src = "true";
+    if (src === "" || src === "true") src = "https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.9/latest.js?config=TeX-MML-AM_CHTML";
+    if (location.protocol !== "file:")
+      if (/^https?:/.test(src))
+        src = src.replace(/^https?:/, '');
+    script.src = src;
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+</body>
+
+</html>

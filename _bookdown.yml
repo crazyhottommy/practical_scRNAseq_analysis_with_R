@@ -1,4 +1,5 @@
-book_filename: "bookdown-demo"
+book_filename: "practical_scRNAseq_analysis"
+output_dir: "docs"
 language:
   ui:
     chapter_name: "Chapter "

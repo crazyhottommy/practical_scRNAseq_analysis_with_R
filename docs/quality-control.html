@@ -1,0 +1,1235 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+<head>
+
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>Chapter 2 Quality Control | Practical scRNAseq Analysis with R</title>
+  <meta name="description" content="A comprehensive, reproducible guide for single-cell RNA-seq analysis using R, covering data quantification, quality control, clustering, cell annotation, and functional enrichment using real-world datasets." />
+  <meta name="generator" content="bookdown 0.40 and GitBook 2.6.7" />
+
+  <meta property="og:title" content="Chapter 2 Quality Control | Practical scRNAseq Analysis with R" />
+  <meta property="og:type" content="book" />
+  
+  <meta property="og:description" content="A comprehensive, reproducible guide for single-cell RNA-seq analysis using R, covering data quantification, quality control, clustering, cell annotation, and functional enrichment using real-world datasets." />
+  <meta name="github-repo" content="crazyhottommy/practical_scRNAseq_analysis_with_R" />
+
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Chapter 2 Quality Control | Practical scRNAseq Analysis with R" />
+  
+  <meta name="twitter:description" content="A comprehensive, reproducible guide for single-cell RNA-seq analysis using R, covering data quantification, quality control, clustering, cell annotation, and functional enrichment using real-world datasets." />
+  
+
+<meta name="author" content="Ming Tommy Tang" />
+
+
+<meta name="date" content="2026-03-15" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+  
+  
+<link rel="prev" href="download-data-and-quantification.html"/>
+<link rel="next" href="seurat-workflow.html"/>
+<script src="libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fuse.js@6.4.6/dist/fuse.min.js"></script>
+<link href="libs/gitbook-2.6.7/css/style.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-table.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-bookdown.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-highlight.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-search.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-fontsettings.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-clipboard.css" rel="stylesheet" />
+
+
+
+
+
+
+
+
+<link href="libs/anchor-sections-1.1.0/anchor-sections.css" rel="stylesheet" />
+<link href="libs/anchor-sections-1.1.0/anchor-sections-hash.css" rel="stylesheet" />
+<script src="libs/anchor-sections-1.1.0/anchor-sections.js"></script>
+
+
+<style type="text/css">
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #aaaaaa;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code span.at { color: #7d9029; } /* Attribute */
+code span.bn { color: #40a070; } /* BaseN */
+code span.bu { color: #008000; } /* BuiltIn */
+code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #4070a0; } /* Char */
+code span.cn { color: #880000; } /* Constant */
+code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code span.dt { color: #902000; } /* DataType */
+code span.dv { color: #40a070; } /* DecVal */
+code span.er { color: #ff0000; font-weight: bold; } /* Error */
+code span.ex { } /* Extension */
+code span.fl { color: #40a070; } /* Float */
+code span.fu { color: #06287e; } /* Function */
+code span.im { color: #008000; font-weight: bold; } /* Import */
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code span.op { color: #666666; } /* Operator */
+code span.ot { color: #007020; } /* Other */
+code span.pp { color: #bc7a00; } /* Preprocessor */
+code span.sc { color: #4070a0; } /* SpecialChar */
+code span.ss { color: #bb6688; } /* SpecialString */
+code span.st { color: #4070a0; } /* String */
+code span.va { color: #19177c; } /* Variable */
+code span.vs { color: #4070a0; } /* VerbatimString */
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+</style>
+
+<style type="text/css">
+  
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+</style>
+
+<link rel="stylesheet" href="style.css" type="text/css" />
+</head>
+
+<body>
+
+
+
+  <div class="book without-animation with-summary font-size-2 font-family-1" data-basepath=".">
+
+    <div class="book-summary">
+      <nav role="navigation">
+
+<ul class="summary">
+<li><a href="./">Practical scRNAseq Analysis with R</a></li>
+
+<li class="divider"></li>
+<li class="chapter" data-level="" data-path="index.html"><a href="index.html"><i class="fa fa-check"></i>Prerequisites</a>
+<ul>
+<li class="chapter" data-level="" data-path="index.html"><a href="index.html#what-youll-learn"><i class="fa fa-check"></i>What You’ll Learn</a></li>
+<li class="chapter" data-level="" data-path="index.html"><a href="index.html#what-you-need-before-starting"><i class="fa fa-check"></i>What You Need Before Starting</a></li>
+<li class="chapter" data-level="" data-path="index.html"><a href="index.html#computing-resources"><i class="fa fa-check"></i>Computing Resources</a></li>
+<li class="chapter" data-level="" data-path="index.html"><a href="index.html#system-dependencies"><i class="fa fa-check"></i>System Dependencies</a></li>
+<li class="chapter" data-level="" data-path="index.html"><a href="index.html#how-to-use-this-book"><i class="fa fa-check"></i>How to Use This Book</a></li>
+<li class="chapter" data-level="" data-path="index.html"><a href="index.html#the-dataset"><i class="fa fa-check"></i>The Dataset</a></li>
+<li class="chapter" data-level="" data-path="index.html"><a href="index.html#reproducibility"><i class="fa fa-check"></i>Reproducibility</a></li>
+<li class="chapter" data-level="" data-path="index.html"><a href="index.html#acknowledgments"><i class="fa fa-check"></i>Acknowledgments</a></li>
+<li class="chapter" data-level="" data-path="index.html"><a href="index.html#license"><i class="fa fa-check"></i>License</a></li>
+</ul></li>
+<li class="chapter" data-level="1" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html"><i class="fa fa-check"></i><b>1</b> Download Data and Quantification</a>
+<ul>
+<li class="chapter" data-level="1.1" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html#what-is-single-cell-rna-seq"><i class="fa fa-check"></i><b>1.1</b> What is single-cell RNA-seq?</a>
+<ul>
+<li class="chapter" data-level="1.1.1" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html#but-do-you-really-need-single-cell-rna-seq"><i class="fa fa-check"></i><b>1.1.1</b> But do you really need single-cell RNA-seq?</a></li>
+<li class="chapter" data-level="1.1.2" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html#the-10x-genomics-chromium-platform"><i class="fa fa-check"></i><b>1.1.2</b> The 10x Genomics Chromium platform</a></li>
+<li class="chapter" data-level="1.1.3" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html#why-umis-matter"><i class="fa fa-check"></i><b>1.1.3</b> Why UMIs matter</a></li>
+<li class="chapter" data-level="1.1.4" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html#cell-barcodes"><i class="fa fa-check"></i><b>1.1.4</b> Cell barcodes</a></li>
+<li class="chapter" data-level="1.1.5" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html#sparse-matrices"><i class="fa fa-check"></i><b>1.1.5</b> Sparse matrices</a></li>
+<li class="chapter" data-level="1.1.6" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html#from-fastq-to-count-matrix"><i class="fa fa-check"></i><b>1.1.6</b> From FASTQ to count matrix</a></li>
+<li class="chapter" data-level="1.1.7" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html#why-alevin-fry"><i class="fa fa-check"></i><b>1.1.7</b> Why alevin-fry?</a></li>
+<li class="chapter" data-level="1.1.8" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html#the-splici-index"><i class="fa fa-check"></i><b>1.1.8</b> The splici index</a></li>
+</ul></li>
+<li class="chapter" data-level="1.2" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html#description-of-the-data"><i class="fa fa-check"></i><b>1.2</b> Description of the Data</a></li>
+<li class="chapter" data-level="1.3" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html#download-the-fastq-files-using-fastq-dl"><i class="fa fa-check"></i><b>1.3</b> Download the fastq files using fastq-dl</a>
+<ul>
+<li class="chapter" data-level="1.3.1" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html#a-note-on-the-fastq-files"><i class="fa fa-check"></i><b>1.3.1</b> A note on the fastq files</a></li>
+<li class="chapter" data-level="1.3.2" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html#alignment-and-quantification-using-simpleaf"><i class="fa fa-check"></i><b>1.3.2</b> alignment and quantification using simpleaf</a></li>
+<li class="chapter" data-level="1.3.3" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html#quantification"><i class="fa fa-check"></i><b>1.3.3</b> Quantification</a></li>
+<li class="chapter" data-level="1.3.4" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html#check-the-output"><i class="fa fa-check"></i><b>1.3.4</b> Check the output</a></li>
+</ul></li>
+<li class="chapter" data-level="1.4" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html#troubleshooting"><i class="fa fa-check"></i><b>1.4</b> Troubleshooting</a></li>
+<li class="chapter" data-level="1.5" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html#alternative-quantification-workflows"><i class="fa fa-check"></i><b>1.5</b> Alternative quantification workflows</a></li>
+<li class="chapter" data-level="1.6" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html#summary"><i class="fa fa-check"></i><b>1.6</b> Summary</a>
+<ul>
+<li class="chapter" data-level="1.6.1" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html#further-reading"><i class="fa fa-check"></i><b>1.6.1</b> Further reading</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="download-data-and-quantification.html"><a href="download-data-and-quantification.html#session-information"><i class="fa fa-check"></i>Session Information</a></li>
+</ul></li>
+<li class="chapter" data-level="2" data-path="quality-control.html"><a href="quality-control.html"><i class="fa fa-check"></i><b>2</b> Quality Control</a>
+<ul>
+<li class="chapter" data-level="2.1" data-path="quality-control.html"><a href="quality-control.html#before-you-filter-think-about-what-youre-throwing-away"><i class="fa fa-check"></i><b>2.1</b> Before you filter: think about what you’re throwing away</a>
+<ul>
+<li class="chapter" data-level="2.1.1" data-path="quality-control.html"><a href="quality-control.html#what-counts-as-normal-depends-on-your-biology"><i class="fa fa-check"></i><b>2.1.1</b> What counts as “normal” depends on your biology</a></li>
+<li class="chapter" data-level="2.1.2" data-path="quality-control.html"><a href="quality-control.html#fixed-thresholds-vs-adaptive-thresholds"><i class="fa fa-check"></i><b>2.1.2</b> Fixed thresholds vs adaptive thresholds</a></li>
+<li class="chapter" data-level="2.1.3" data-path="quality-control.html"><a href="quality-control.html#the-knee-plot"><i class="fa fa-check"></i><b>2.1.3</b> The knee plot</a></li>
+<li class="chapter" data-level="2.1.4" data-path="quality-control.html"><a href="quality-control.html#the-empty-droplet-problem"><i class="fa fa-check"></i><b>2.1.4</b> The empty droplet problem</a></li>
+<li class="chapter" data-level="2.1.5" data-path="quality-control.html"><a href="quality-control.html#qc-is-iterative"><i class="fa fa-check"></i><b>2.1.5</b> QC is iterative</a></li>
+</ul></li>
+<li class="chapter" data-level="2.2" data-path="quality-control.html"><a href="quality-control.html#a-note-on-preparing-the-computing-environment"><i class="fa fa-check"></i><b>2.2</b> A note on preparing the computing environment</a></li>
+<li class="chapter" data-level="2.3" data-path="quality-control.html"><a href="quality-control.html#a-note-on-project-folder-structure"><i class="fa fa-check"></i><b>2.3</b> A note on project folder structure</a>
+<ul>
+<li class="chapter" data-level="2.3.1" data-path="quality-control.html"><a href="quality-control.html#stop-using-setwd-and-rmlist-ls"><i class="fa fa-check"></i><b>2.3.1</b> Stop using <code>setwd()</code> and <code>rm(list = ls())</code></a></li>
+<li class="chapter" data-level="2.3.2" data-path="quality-control.html"><a href="quality-control.html#use-rstudio-projects-and-here"><i class="fa fa-check"></i><b>2.3.2</b> Use RStudio Projects and <code>here()</code></a></li>
+<li class="chapter" data-level="2.3.3" data-path="quality-control.html"><a href="quality-control.html#download-the-data"><i class="fa fa-check"></i><b>2.3.3</b> Download the data</a></li>
+</ul></li>
+<li class="chapter" data-level="2.4" data-path="quality-control.html"><a href="quality-control.html#quality-control-1"><i class="fa fa-check"></i><b>2.4</b> Quality Control</a>
+<ul>
+<li class="chapter" data-level="2.4.1" data-path="quality-control.html"><a href="quality-control.html#remove-empty-droplets"><i class="fa fa-check"></i><b>2.4.1</b> Remove empty droplets</a></li>
+<li class="chapter" data-level="2.4.2" data-path="quality-control.html"><a href="quality-control.html#the-knee-plot-1"><i class="fa fa-check"></i><b>2.4.2</b> The knee plot</a></li>
+<li class="chapter" data-level="2.4.3" data-path="quality-control.html"><a href="quality-control.html#convert-the-ensembl-id-to-gene-symbol"><i class="fa fa-check"></i><b>2.4.3</b> convert the ENSEMBL ID to gene symbol</a></li>
+<li class="chapter" data-level="2.4.4" data-path="quality-control.html"><a href="quality-control.html#adaptive-thresholding-with-mad-optional"><i class="fa fa-check"></i><b>2.4.4</b> Adaptive thresholding with MAD (optional)</a></li>
+<li class="chapter" data-level="2.4.5" data-path="quality-control.html"><a href="quality-control.html#do-it-for-all-four-samples-with-purrr"><i class="fa fa-check"></i><b>2.4.5</b> Do it for all four samples with purrr</a></li>
+<li class="chapter" data-level="2.4.6" data-path="quality-control.html"><a href="quality-control.html#what-we-covered"><i class="fa fa-check"></i><b>2.4.6</b> What we covered</a></li>
+<li class="chapter" data-level="2.4.7" data-path="quality-control.html"><a href="quality-control.html#things-to-watch-out-for"><i class="fa fa-check"></i><b>2.4.7</b> Things to watch out for</a></li>
+<li class="chapter" data-level="2.4.8" data-path="quality-control.html"><a href="quality-control.html#further-reading-1"><i class="fa fa-check"></i><b>2.4.8</b> Further reading</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="quality-control.html"><a href="quality-control.html#session-information-1"><i class="fa fa-check"></i>Session Information</a></li>
+</ul></li>
+<li class="chapter" data-level="3" data-path="seurat-workflow.html"><a href="seurat-workflow.html"><i class="fa fa-check"></i><b>3</b> Seurat workflow</a>
+<ul>
+<li class="chapter" data-level="3.1" data-path="seurat-workflow.html"><a href="seurat-workflow.html#what-we-are-doing-in-this-chapter"><i class="fa fa-check"></i><b>3.1</b> What we are doing in this chapter</a>
+<ul>
+<li class="chapter" data-level="3.1.1" data-path="seurat-workflow.html"><a href="seurat-workflow.html#how-i-structured-this-chapter"><i class="fa fa-check"></i><b>3.1.1</b> How I structured this chapter</a></li>
+</ul></li>
+<li class="chapter" data-level="3.2" data-path="seurat-workflow.html"><a href="seurat-workflow.html#read-in-the-filtered-matrices-and-make-a-seurat-object"><i class="fa fa-check"></i><b>3.2</b> Read in the filtered matrices and make a Seurat object</a></li>
+<li class="chapter" data-level="3.3" data-path="seurat-workflow.html"><a href="seurat-workflow.html#alternative-input-formats-to-make-a-seurat-object"><i class="fa fa-check"></i><b>3.3</b> alternative input formats to make a seurat object</a>
+<ul>
+<li class="chapter" data-level="3.3.1" data-path="seurat-workflow.html"><a href="seurat-workflow.html#cellranger-input"><i class="fa fa-check"></i><b>3.3.1</b> cellranger input</a></li>
+</ul></li>
+<li class="chapter" data-level="3.4" data-path="seurat-workflow.html"><a href="seurat-workflow.html#add-metadata-to-the-seurat-object"><i class="fa fa-check"></i><b>3.4</b> add metadata to the seurat object</a></li>
+<li class="chapter" data-level="3.5" data-path="seurat-workflow.html"><a href="seurat-workflow.html#more-quality-control"><i class="fa fa-check"></i><b>3.5</b> more quality control</a></li>
+<li class="chapter" data-level="3.6" data-path="seurat-workflow.html"><a href="seurat-workflow.html#routine-processing"><i class="fa fa-check"></i><b>3.6</b> Routine Processing</a>
+<ul>
+<li class="chapter" data-level="3.6.1" data-path="seurat-workflow.html"><a href="seurat-workflow.html#why-do-we-need-dimensionality-reduction"><i class="fa fa-check"></i><b>3.6.1</b> Why do we need dimensionality reduction?</a></li>
+<li class="chapter" data-level="3.6.2" data-path="seurat-workflow.html"><a href="seurat-workflow.html#why-we-need-integration-harmony"><i class="fa fa-check"></i><b>3.6.2</b> Why we need integration (Harmony)</a></li>
+<li class="chapter" data-level="3.6.3" data-path="seurat-workflow.html"><a href="seurat-workflow.html#the-pipeline-in-one-code-block"><i class="fa fa-check"></i><b>3.6.3</b> The pipeline in one code block</a></li>
+<li class="chapter" data-level="3.6.4" data-path="seurat-workflow.html"><a href="seurat-workflow.html#how-to-choose-parameters"><i class="fa fa-check"></i><b>3.6.4</b> How to choose parameters</a></li>
+<li class="chapter" data-level="3.6.5" data-path="seurat-workflow.html"><a href="seurat-workflow.html#our-parameter-choices-for-this-dataset"><i class="fa fa-check"></i><b>3.6.5</b> Our parameter choices for this dataset</a></li>
+</ul></li>
+<li class="chapter" data-level="3.7" data-path="seurat-workflow.html"><a href="seurat-workflow.html#remove-other-low-quality-cells"><i class="fa fa-check"></i><b>3.7</b> remove other low quality cells</a></li>
+<li class="chapter" data-level="3.8" data-path="seurat-workflow.html"><a href="seurat-workflow.html#understanding-the-math-behind-each-step"><i class="fa fa-check"></i><b>3.8</b> Understanding the math behind each step</a>
+<ul>
+<li class="chapter" data-level="3.8.1" data-path="seurat-workflow.html"><a href="seurat-workflow.html#why-do-we-normalize"><i class="fa fa-check"></i><b>3.8.1</b> Why do we normalize?</a></li>
+<li class="chapter" data-level="3.8.2" data-path="seurat-workflow.html"><a href="seurat-workflow.html#lognormalize-what-exactly-does-it-do"><i class="fa fa-check"></i><b>3.8.2</b> LogNormalize: what exactly does it do?</a></li>
+<li class="chapter" data-level="3.8.3" data-path="seurat-workflow.html"><a href="seurat-workflow.html#when-to-use-different-normalization-methods"><i class="fa fa-check"></i><b>3.8.3</b> When to use different normalization methods</a></li>
+<li class="chapter" data-level="3.8.4" data-path="seurat-workflow.html"><a href="seurat-workflow.html#which-normalization-should-you-use"><i class="fa fa-check"></i><b>3.8.4</b> Which normalization should you use?</a></li>
+<li class="chapter" data-level="3.8.5" data-path="seurat-workflow.html"><a href="seurat-workflow.html#find-variable-genes"><i class="fa fa-check"></i><b>3.8.5</b> Find Variable Genes</a></li>
+<li class="chapter" data-level="3.8.6" data-path="seurat-workflow.html"><a href="seurat-workflow.html#visualization"><i class="fa fa-check"></i><b>3.8.6</b> visualization</a></li>
+<li class="chapter" data-level="3.8.7" data-path="seurat-workflow.html"><a href="seurat-workflow.html#finding-cluster-markers-with-differential-expression"><i class="fa fa-check"></i><b>3.8.7</b> Finding cluster markers with differential expression</a></li>
+</ul></li>
+<li class="chapter" data-level="3.9" data-path="seurat-workflow.html"><a href="seurat-workflow.html#doublet-detection"><i class="fa fa-check"></i><b>3.9</b> Doublet detection</a></li>
+<li class="chapter" data-level="3.10" data-path="seurat-workflow.html"><a href="seurat-workflow.html#ambient-rna-removal"><i class="fa fa-check"></i><b>3.10</b> Ambient RNA removal</a></li>
+<li class="chapter" data-level="3.11" data-path="seurat-workflow.html"><a href="seurat-workflow.html#remove-contaminating-clusters"><i class="fa fa-check"></i><b>3.11</b> Remove contaminating clusters</a></li>
+<li class="chapter" data-level="3.12" data-path="seurat-workflow.html"><a href="seurat-workflow.html#pseudo-bulk-differential-expression-with-deseq2"><i class="fa fa-check"></i><b>3.12</b> Pseudo-bulk differential expression with DESeq2</a>
+<ul>
+<li class="chapter" data-level="3.12.1" data-path="seurat-workflow.html"><a href="seurat-workflow.html#step-1-aggregate-counts-to-pseudo-bulk"><i class="fa fa-check"></i><b>3.12.1</b> Step 1: Aggregate counts to pseudo-bulk</a></li>
+<li class="chapter" data-level="3.12.2" data-path="seurat-workflow.html"><a href="seurat-workflow.html#step-2-prepare-metadata-for-deseq2"><i class="fa fa-check"></i><b>3.12.2</b> Step 2: Prepare metadata for DESeq2</a></li>
+<li class="chapter" data-level="3.12.3" data-path="seurat-workflow.html"><a href="seurat-workflow.html#step-3-run-deseq2-for-one-cluster"><i class="fa fa-check"></i><b>3.12.3</b> Step 3: Run DESeq2 for one cluster</a></li>
+<li class="chapter" data-level="3.12.4" data-path="seurat-workflow.html"><a href="seurat-workflow.html#step-4-run-deseq2-for-all-clusters-with-purrr"><i class="fa fa-check"></i><b>3.12.4</b> Step 4: Run DESeq2 for all clusters with purrr</a></li>
+<li class="chapter" data-level="3.12.5" data-path="seurat-workflow.html"><a href="seurat-workflow.html#step-5-visualize-the-results"><i class="fa fa-check"></i><b>3.12.5</b> Step 5: Visualize the results</a></li>
+<li class="chapter" data-level="3.12.6" data-path="seurat-workflow.html"><a href="seurat-workflow.html#when-to-use-pseudo-bulk-vs-findallmarkers"><i class="fa fa-check"></i><b>3.12.6</b> When to use pseudo-bulk vs FindAllMarkers</a></li>
+</ul></li>
+<li class="chapter" data-level="3.13" data-path="seurat-workflow.html"><a href="seurat-workflow.html#what-we-covered-1"><i class="fa fa-check"></i><b>3.13</b> What we covered</a>
+<ul>
+<li class="chapter" data-level="3.13.1" data-path="seurat-workflow.html"><a href="seurat-workflow.html#things-that-go-wrong"><i class="fa fa-check"></i><b>3.13.1</b> Things that go wrong</a></li>
+<li class="chapter" data-level="3.13.2" data-path="seurat-workflow.html"><a href="seurat-workflow.html#further-reading-2"><i class="fa fa-check"></i><b>3.13.2</b> Further reading</a></li>
+<li class="chapter" data-level="3.13.3" data-path="seurat-workflow.html"><a href="seurat-workflow.html#key-takeaways"><i class="fa fa-check"></i><b>3.13.3</b> Key takeaways</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="seurat-workflow.html"><a href="seurat-workflow.html#session-information-2"><i class="fa fa-check"></i>Session Information</a></li>
+</ul></li>
+<li class="chapter" data-level="4" data-path="cell-annotation.html"><a href="cell-annotation.html"><i class="fa fa-check"></i><b>4</b> Cell Annotation</a>
+<ul>
+<li class="chapter" data-level="4.1" data-path="cell-annotation.html"><a href="cell-annotation.html#there-is-no-ground-truth"><i class="fa fa-check"></i><b>4.1</b> There Is No Ground Truth</a>
+<ul>
+<li class="chapter" data-level="4.1.1" data-path="cell-annotation.html"><a href="cell-annotation.html#how-well-approach-annotation"><i class="fa fa-check"></i><b>4.1.1</b> How we’ll approach annotation</a></li>
+</ul></li>
+<li class="chapter" data-level="4.2" data-path="cell-annotation.html"><a href="cell-annotation.html#manual-annotation"><i class="fa fa-check"></i><b>4.2</b> Manual Annotation</a>
+<ul>
+<li class="chapter" data-level="4.2.1" data-path="cell-annotation.html"><a href="cell-annotation.html#define-a-marker-gene-dictionary"><i class="fa fa-check"></i><b>4.2.1</b> Define a marker gene dictionary</a></li>
+<li class="chapter" data-level="4.2.2" data-path="cell-annotation.html"><a href="cell-annotation.html#visualize-markers-systematically"><i class="fa fa-check"></i><b>4.2.2</b> Visualize markers systematically</a></li>
+<li class="chapter" data-level="4.2.3" data-path="cell-annotation.html"><a href="cell-annotation.html#use-feature-plots-for-spatial-context"><i class="fa fa-check"></i><b>4.2.3</b> Use feature plots for spatial context</a></li>
+<li class="chapter" data-level="4.2.4" data-path="cell-annotation.html"><a href="cell-annotation.html#create-a-manual-annotation-table"><i class="fa fa-check"></i><b>4.2.4</b> Create a manual annotation table</a></li>
+</ul></li>
+<li class="chapter" data-level="4.3" data-path="cell-annotation.html"><a href="cell-annotation.html#automated-annotation-methods"><i class="fa fa-check"></i><b>4.3</b> Automated Annotation Methods</a></li>
+<li class="chapter" data-level="4.4" data-path="cell-annotation.html"><a href="cell-annotation.html#method-1-singler-reference-based-classification"><i class="fa fa-check"></i><b>4.4</b> Method 1: SingleR (Reference-based Classification)</a>
+<ul>
+<li class="chapter" data-level="4.4.1" data-path="cell-annotation.html"><a href="cell-annotation.html#choosing-a-reference-dataset"><i class="fa fa-check"></i><b>4.4.1</b> Choosing a reference dataset</a></li>
+<li class="chapter" data-level="4.4.2" data-path="cell-annotation.html"><a href="cell-annotation.html#built-in-references-from-celldex"><i class="fa fa-check"></i><b>4.4.2</b> Built-in references from celldex</a></li>
+<li class="chapter" data-level="4.4.3" data-path="cell-annotation.html"><a href="cell-annotation.html#custom-references"><i class="fa fa-check"></i><b>4.4.3</b> Custom references</a></li>
+<li class="chapter" data-level="4.4.4" data-path="cell-annotation.html"><a href="cell-annotation.html#how-singler-works"><i class="fa fa-check"></i><b>4.4.4</b> How SingleR works</a></li>
+</ul></li>
+<li class="chapter" data-level="4.5" data-path="cell-annotation.html"><a href="cell-annotation.html#clustifyr"><i class="fa fa-check"></i><b>4.5</b> clustifyr</a></li>
+<li class="chapter" data-level="4.6" data-path="cell-annotation.html"><a href="cell-annotation.html#seurat-label-transfer"><i class="fa fa-check"></i><b>4.6</b> Seurat label transfer</a></li>
+<li class="chapter" data-level="4.7" data-path="cell-annotation.html"><a href="cell-annotation.html#comparing-annotation-methods"><i class="fa fa-check"></i><b>4.7</b> Comparing Annotation Methods</a>
+<ul>
+<li class="chapter" data-level="4.7.1" data-path="cell-annotation.html"><a href="cell-annotation.html#create-a-comparison-table"><i class="fa fa-check"></i><b>4.7.1</b> Create a comparison table</a></li>
+<li class="chapter" data-level="4.7.2" data-path="cell-annotation.html"><a href="cell-annotation.html#calculate-agreement"><i class="fa fa-check"></i><b>4.7.2</b> Calculate agreement</a></li>
+<li class="chapter" data-level="4.7.3" data-path="cell-annotation.html"><a href="cell-annotation.html#visualize-side-by-side"><i class="fa fa-check"></i><b>4.7.3</b> Visualize side by side</a></li>
+<li class="chapter" data-level="4.7.4" data-path="cell-annotation.html"><a href="cell-annotation.html#investigate-discrepancies"><i class="fa fa-check"></i><b>4.7.4</b> Investigate discrepancies</a></li>
+<li class="chapter" data-level="4.7.5" data-path="cell-annotation.html"><a href="cell-annotation.html#make-a-final-annotation-decision"><i class="fa fa-check"></i><b>4.7.5</b> Make a final annotation decision</a></li>
+<li class="chapter" data-level="4.7.6" data-path="cell-annotation.html"><a href="cell-annotation.html#method-comparison"><i class="fa fa-check"></i><b>4.7.6</b> Method comparison</a></li>
+</ul></li>
+<li class="chapter" data-level="4.8" data-path="cell-annotation.html"><a href="cell-annotation.html#deeper-understanding-of-the-anchor-finding-and-label-transfer-step"><i class="fa fa-check"></i><b>4.8</b> Deeper Understanding of the Anchor Finding and Label Transfer Step</a></li>
+<li class="chapter" data-level="4.9" data-path="cell-annotation.html"><a href="cell-annotation.html#other-annotation-approaches"><i class="fa fa-check"></i><b>4.9</b> Other Annotation Approaches</a>
+<ul>
+<li class="chapter" data-level="4.9.1" data-path="cell-annotation.html"><a href="cell-annotation.html#marker-based-tools"><i class="fa fa-check"></i><b>4.9.1</b> Marker-based tools</a></li>
+<li class="chapter" data-level="4.9.2" data-path="cell-annotation.html"><a href="cell-annotation.html#deep-learning-approaches"><i class="fa fa-check"></i><b>4.9.2</b> Deep learning approaches</a></li>
+</ul></li>
+<li class="chapter" data-level="4.10" data-path="cell-annotation.html"><a href="cell-annotation.html#things-to-watch-out-for-1"><i class="fa fa-check"></i><b>4.10</b> Things to watch out for</a>
+<ul>
+<li class="chapter" data-level="4.10.1" data-path="cell-annotation.html"><a href="cell-annotation.html#further-reading-3"><i class="fa fa-check"></i><b>4.10.1</b> Further reading</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="cell-annotation.html"><a href="cell-annotation.html#session-information-3"><i class="fa fa-check"></i>Session Information</a></li>
+</ul></li>
+<li class="chapter" data-level="5" data-path="gene-set-analysis.html"><a href="gene-set-analysis.html"><i class="fa fa-check"></i><b>5</b> Gene set analysis</a>
+<ul>
+<li class="chapter" data-level="5.1" data-path="gene-set-analysis.html"><a href="gene-set-analysis.html#why-think-in-gene-sets"><i class="fa fa-check"></i><b>5.1</b> Why think in gene sets?</a></li>
+<li class="chapter" data-level="5.2" data-path="gene-set-analysis.html"><a href="gene-set-analysis.html#two-approaches-ora-vs-gsea"><i class="fa fa-check"></i><b>5.2</b> Two approaches: ORA vs GSEA</a>
+<ul>
+<li class="chapter" data-level="5.2.1" data-path="gene-set-analysis.html"><a href="gene-set-analysis.html#over-representation-analysis-ora"><i class="fa fa-check"></i><b>5.2.1</b> Over-Representation Analysis (ORA)</a></li>
+<li class="chapter" data-level="5.2.2" data-path="gene-set-analysis.html"><a href="gene-set-analysis.html#gene-set-enrichment-analysis-gsea"><i class="fa fa-check"></i><b>5.2.2</b> Gene Set Enrichment Analysis (GSEA)</a></li>
+<li class="chapter" data-level="5.2.3" data-path="gene-set-analysis.html"><a href="gene-set-analysis.html#the-gsea-algorithm-in-three-steps"><i class="fa fa-check"></i><b>5.2.3</b> The GSEA algorithm in three steps</a></li>
+<li class="chapter" data-level="5.2.4" data-path="gene-set-analysis.html"><a href="gene-set-analysis.html#gene-signature-scoring-per-cell"><i class="fa fa-check"></i><b>5.2.4</b> Gene signature scoring (per-cell)</a></li>
+</ul></li>
+<li class="chapter" data-level="5.3" data-path="gene-set-analysis.html"><a href="gene-set-analysis.html#choosing-gene-sets"><i class="fa fa-check"></i><b>5.3</b> Choosing Gene Sets</a>
+<ul>
+<li class="chapter" data-level="5.3.1" data-path="gene-set-analysis.html"><a href="gene-set-analysis.html#major-gene-set-resources"><i class="fa fa-check"></i><b>5.3.1</b> Major Gene Set Resources</a></li>
+</ul></li>
+<li class="chapter" data-level="5.4" data-path="gene-set-analysis.html"><a href="gene-set-analysis.html#loading-gene-sets"><i class="fa fa-check"></i><b>5.4</b> Loading Gene Sets</a>
+<ul>
+<li class="chapter" data-level="5.4.1" data-path="gene-set-analysis.html"><a href="gene-set-analysis.html#blood-transcription-modules"><i class="fa fa-check"></i><b>5.4.1</b> Blood Transcription Modules</a></li>
+<li class="chapter" data-level="5.4.2" data-path="gene-set-analysis.html"><a href="gene-set-analysis.html#msigdb-hallmark-gene-sets"><i class="fa fa-check"></i><b>5.4.2</b> MSigDB Hallmark Gene Sets</a></li>
+</ul></li>
+<li class="chapter" data-level="5.5" data-path="gene-set-analysis.html"><a href="gene-set-analysis.html#preparing-data-for-gsea"><i class="fa fa-check"></i><b>5.5</b> Preparing Data for GSEA</a>
+<ul>
+<li class="chapter" data-level="5.5.1" data-path="gene-set-analysis.html"><a href="gene-set-analysis.html#calculate-marker-genes-with-presto"><i class="fa fa-check"></i><b>5.5.1</b> Calculate Marker Genes with presto</a></li>
+<li class="chapter" data-level="5.5.2" data-path="gene-set-analysis.html"><a href="gene-set-analysis.html#organizing-data-with-nested-dataframes"><i class="fa fa-check"></i><b>5.5.2</b> Organizing Data with Nested Dataframes</a></li>
+<li class="chapter" data-level="5.5.3" data-path="gene-set-analysis.html"><a href="gene-set-analysis.html#creating-a-ranked-gene-list"><i class="fa fa-check"></i><b>5.5.3</b> Creating a Ranked Gene List</a></li>
+</ul></li>
+<li class="chapter" data-level="5.6" data-path="gene-set-analysis.html"><a href="gene-set-analysis.html#running-gsea-for-all-clusters-with-purrr"><i class="fa fa-check"></i><b>5.6</b> Running GSEA for All Clusters with purrr</a>
+<ul>
+<li class="chapter" data-level="5.6.1" data-path="gene-set-analysis.html"><a href="gene-set-analysis.html#create-ranked-gene-lists-for-all-clusters"><i class="fa fa-check"></i><b>5.6.1</b> Create ranked gene lists for all clusters</a></li>
+</ul></li>
+<li class="chapter" data-level="5.7" data-path="gene-set-analysis.html"><a href="gene-set-analysis.html#interpreting-gsea-results"><i class="fa fa-check"></i><b>5.7</b> Interpreting GSEA Results</a>
+<ul>
+<li class="chapter" data-level="5.7.1" data-path="gene-set-analysis.html"><a href="gene-set-analysis.html#biological-interpretation"><i class="fa fa-check"></i><b>5.7.1</b> Biological Interpretation</a></li>
+<li class="chapter" data-level="5.7.2" data-path="gene-set-analysis.html"><a href="gene-set-analysis.html#visualizing-results-across-clusters"><i class="fa fa-check"></i><b>5.7.2</b> Visualizing Results Across Clusters</a></li>
+</ul></li>
+<li class="chapter" data-level="5.8" data-path="gene-set-analysis.html"><a href="gene-set-analysis.html#alternative-approach-gene-signature-scoring"><i class="fa fa-check"></i><b>5.8</b> Alternative Approach: Gene Signature Scoring</a>
+<ul>
+<li class="chapter" data-level="5.8.1" data-path="gene-set-analysis.html"><a href="gene-set-analysis.html#methods-for-signature-scoring"><i class="fa fa-check"></i><b>5.8.1</b> Methods for Signature Scoring</a></li>
+<li class="chapter" data-level="5.8.2" data-path="gene-set-analysis.html"><a href="gene-set-analysis.html#how-ucell-works"><i class="fa fa-check"></i><b>5.8.2</b> How UCell Works</a></li>
+<li class="chapter" data-level="5.8.3" data-path="gene-set-analysis.html"><a href="gene-set-analysis.html#practical-example-with-ucell"><i class="fa fa-check"></i><b>5.8.3</b> Practical Example with UCell</a></li>
+<li class="chapter" data-level="5.8.4" data-path="gene-set-analysis.html"><a href="gene-set-analysis.html#when-to-use-gsea-vs.-signature-scoring"><i class="fa fa-check"></i><b>5.8.4</b> When to Use GSEA vs. Signature Scoring</a></li>
+</ul></li>
+<li class="chapter" data-level="5.9" data-path="gene-set-analysis.html"><a href="gene-set-analysis.html#things-to-remember"><i class="fa fa-check"></i><b>5.9</b> Things to Remember</a></li>
+<li class="chapter" data-level="5.10" data-path="gene-set-analysis.html"><a href="gene-set-analysis.html#further-reading-4"><i class="fa fa-check"></i><b>5.10</b> Further Reading</a></li>
+<li class="chapter" data-level="" data-path="gene-set-analysis.html"><a href="gene-set-analysis.html#session-information-4"><i class="fa fa-check"></i>Session Information</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="references.html"><a href="references.html"><i class="fa fa-check"></i>References</a>
+<ul>
+<li class="chapter" data-level="5.11" data-path="references.html"><a href="references.html#determine-optimal-number-of-clusters"><i class="fa fa-check"></i><b>5.11</b> Determine optimal number of clusters</a></li>
+</ul></li>
+<li class="divider"></li>
+<li><a href="https://github.com/crazyhottommy/practical_scRNAseq_analysis_with_R" target="blank">View on GitHub</a></li>
+
+</ul>
+
+      </nav>
+    </div>
+
+    <div class="book-body">
+      <div class="body-inner">
+        <div class="book-header" role="navigation">
+          <h1>
+            <i class="fa fa-circle-o-notch fa-spin"></i><a href="./">Practical scRNAseq Analysis with R</a>
+          </h1>
+        </div>
+
+        <div class="page-wrapper" tabindex="-1" role="main">
+          <div class="page-inner">
+
+            <section class="normal" id="section-">
+<div id="quality-control" class="section level1 hasAnchor" number="2">
+<h1><span class="header-section-number">Chapter 2</span> Quality Control<a href="quality-control.html#quality-control" class="anchor-section" aria-label="Anchor link to header"></a></h1>
+<div id="before-you-filter-think-about-what-youre-throwing-away" class="section level2 hasAnchor" number="2.1">
+<h2><span class="header-section-number">2.1</span> Before you filter: think about what you’re throwing away<a href="quality-control.html#before-you-filter-think-about-what-youre-throwing-away" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>I’ve seen people lose entire cell populations because they applied QC thresholds without thinking. So before we get into the code, let me share how I think about quality control.</p>
+<p>The temptation is to be strict. Remove anything that looks questionable. But here’s the problem: a cell with low gene counts might be a dying cell, or it might be a perfectly healthy naive T cell that just doesn’t express many genes. How do you tell the difference?</p>
+<p>You look at multiple metrics together. Not just gene counts. Not just UMI counts. You look at UMI counts, number of detected genes, mitochondrial percentage, and ribosomal percentage – jointly. A quiescent cell will have low UMI counts but normal mitochondrial percentage. A dying cell will have low UMI counts <em>and</em> high mitochondrial percentage, because the cytoplasmic RNA leaks out while mitochondrial RNA stays trapped.</p>
+<blockquote>
+<p>Be permissive during quality control to preserve rare cell subpopulations. Never filter on a single metric in isolation. – sc-best-practices.org</p>
+</blockquote>
+<div id="what-counts-as-normal-depends-on-your-biology" class="section level3 hasAnchor" number="2.1.1">
+<h3><span class="header-section-number">2.1.1</span> What counts as “normal” depends on your biology<a href="quality-control.html#what-counts-as-normal-depends-on-your-biology" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<p>This is something people don’t think about enough. Naive T cells have low transcriptional activity, so low UMI counts are expected. Plasma B cells are antibody factories with extremely high ribosomal content. Activated T cells are metabolically active and will have higher UMI counts than resting cells. Red blood cell precursors naturally have high mitochondrial content.</p>
+<p>If you blindly filter “cells with &lt;500 genes detected,” you might wipe out your naive T cells. If you filter “cells with &gt;20% mitochondrial reads,” you might lose erythroid lineages. I’ve seen this happen in real datasets.</p>
+</div>
+<div id="fixed-thresholds-vs-adaptive-thresholds" class="section level3 hasAnchor" number="2.1.2">
+<h3><span class="header-section-number">2.1.2</span> Fixed thresholds vs adaptive thresholds<a href="quality-control.html#fixed-thresholds-vs-adaptive-thresholds" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<p>There are two ways to set QC cutoffs. Fixed thresholds are simple and interpretable – “keep cells with 200-5000 genes detected.” They work fine when you know your data well. But they don’t adapt to biological heterogeneity.</p>
+<p>Adaptive thresholds use median absolute deviation (MAD) to set data-driven cutoffs. The idea is: flag cells that are more than N MADs from the median for each QC metric. This automatically adjusts to your data’s distribution. We’ll demonstrate both approaches in this chapter.</p>
+</div>
+<div id="the-knee-plot" class="section level3 hasAnchor" number="2.1.3">
+<h3><span class="header-section-number">2.1.3</span> The knee plot<a href="quality-control.html#the-knee-plot" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<p>Before applying any cutoffs, we visualize the data with a knee plot – a ranked plot of UMI counts per barcode. It shows you where real cells (high counts) transition to empty droplets (background). A sharp knee means clear separation; a gradual knee means you’ll need more sophisticated methods like <code>emptyDrops()</code>.</p>
+</div>
+<div id="the-empty-droplet-problem" class="section level3 hasAnchor" number="2.1.4">
+<h3><span class="header-section-number">2.1.4</span> The empty droplet problem<a href="quality-control.html#the-empty-droplet-problem" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<p>During 10x encapsulation, not every droplet captures a cell. Empty droplets still have some counts from ambient RNA floating in solution (from cells that lysed during sample prep). So you need to distinguish real cells from empty droplets from damaged cells.</p>
+<p>You could just set a fixed UMI threshold – “anything above 1000 UMIs is a cell.” But that’s arbitrary and tissue-dependent. A better approach is <code>DropletUtils::emptyDrops()</code>, which statistically tests whether each barcode’s expression profile differs from the ambient RNA pool. This preserves small cells while removing background.</p>
+</div>
+<div id="qc-is-iterative" class="section level3 hasAnchor" number="2.1.5">
+<h3><span class="header-section-number">2.1.5</span> QC is iterative<a href="quality-control.html#qc-is-iterative" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<p>One thing I want to emphasize: QC is not a one-and-done step. You do initial filtering, cluster the data, look at QC metrics per cluster, and then go back and re-evaluate. If you see a cluster where 80% of cells have high mitochondrial content, that’s probably dying cells – remove them and re-cluster.</p>
+<hr />
+</div>
+</div>
+<div id="a-note-on-preparing-the-computing-environment" class="section level2 hasAnchor" number="2.2">
+<h2><span class="header-section-number">2.2</span> A note on preparing the computing environment<a href="quality-control.html#a-note-on-preparing-the-computing-environment" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>Let’s be honest: one of the hardest parts of single-cell analysis is not the biology or the statistics – it’s getting the software installed in the first place.</p>
+<p>I want you to read this blog post by Aron Gyenge: <a href="https://notarocketscientist.xyz/posts/2024-01-18-how-difficult-is-it-to-start-your-single-cell-analysis-as-a-beginner/">How difficult is it to start your single-cell analysis as a beginner?</a>. He tried installing Seurat and the OSCA packages on a fresh Ubuntu machine and documented every failure along the way. The installation log was over 13,000 lines long. That’s not a typo.</p>
+<p>The problem is that R packages like Seurat depend on compiled C/C++/Fortran code, which in turn depends on system libraries that your operating system may not have. When these are missing, you get cryptic error messages buried in thousands of lines of output. You’ll see things like “dependency ‘xyz’ is not available” or a compilation error that makes no sense until you realize you’re missing <code>libhdf5-dev</code> or <code>libharfbuzz-dev</code> on your system.</p>
+<p>Here’s what I recommend:</p>
+<p><strong>If you’re on macOS</strong>, install <a href="https://brew.sh/">Homebrew</a> first, then install the common system dependencies:</p>
+<div class="sourceCode" id="cb32"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb32-1"><a href="quality-control.html#cb32-1" tabindex="-1"></a><span class="ex">brew</span> install libxml2 openssl curl libgit2 hdf5</span></code></pre></div>
+<p><strong>If you’re on Ubuntu/Debian</strong>, install these before you even open R:</p>
+<div class="sourceCode" id="cb33"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb33-1"><a href="quality-control.html#cb33-1" tabindex="-1"></a><span class="fu">sudo</span> apt-get install <span class="at">-y</span> <span class="dt">\</span></span>
+<span id="cb33-2"><a href="quality-control.html#cb33-2" tabindex="-1"></a>  libxml2-dev libssl-dev libcurl4-openssl-dev <span class="dt">\</span></span>
+<span id="cb33-3"><a href="quality-control.html#cb33-3" tabindex="-1"></a>  libfontconfig1-dev libfreetype6-dev libpng-dev <span class="dt">\</span></span>
+<span id="cb33-4"><a href="quality-control.html#cb33-4" tabindex="-1"></a>  libtiff5-dev libjpeg-dev libharfbuzz-dev <span class="dt">\</span></span>
+<span id="cb33-5"><a href="quality-control.html#cb33-5" tabindex="-1"></a>  libfribidi-dev libgit2-dev libhdf5-dev <span class="dt">\</span></span>
+<span id="cb33-6"><a href="quality-control.html#cb33-6" tabindex="-1"></a>  make gfortran liblzma-dev libbz2-dev</span></code></pre></div>
+<p>Install these <em>before</em> running <code>renv::restore()</code> or <code>BiocManager::install()</code>. It will save you a lot of frustration.</p>
+<p><strong>If you’re on a shared cluster or HPC</strong>, talk to your system admin. They’ve probably dealt with this before and may already have modules set up for you (<code>module load R/4.3</code> etc.).</p>
+<p>The good news is that this course uses <code>renv</code>, which locks all package versions. Once you get <code>renv::restore()</code> to succeed, you’re done – everything is reproducible from there. The bad news is that first <code>renv::restore()</code> can take 30-60 minutes and might fail a few times before you get all the system dependencies sorted out. Be patient. It’s a one-time cost.</p>
+</div>
+<div id="a-note-on-project-folder-structure" class="section level2 hasAnchor" number="2.3">
+<h2><span class="header-section-number">2.3</span> A note on project folder structure<a href="quality-control.html#a-note-on-project-folder-structure" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>Before we start writing any analysis code, let me talk about something that will save you (and your collaborators) a lot of headaches: project organization and file paths.</p>
+<div id="stop-using-setwd-and-rmlist-ls" class="section level3 hasAnchor" number="2.3.1">
+<h3><span class="header-section-number">2.3.1</span> Stop using <code>setwd()</code> and <code>rm(list = ls())</code><a href="quality-control.html#stop-using-setwd-and-rmlist-ls" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<p>I see this at the top of so many R scripts:</p>
+<div class="sourceCode" id="cb34"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb34-1"><a href="quality-control.html#cb34-1" tabindex="-1"></a><span class="fu">setwd</span>(<span class="st">&quot;/Users/tommy/Desktop/my_scrna_project/&quot;</span>)</span>
+<span id="cb34-2"><a href="quality-control.html#cb34-2" tabindex="-1"></a><span class="fu">rm</span>(<span class="at">list =</span> <span class="fu">ls</span>())</span></code></pre></div>
+<p>Both of these are bad habits. Let me explain why.</p>
+<p><code>setwd()</code> hardcodes an absolute path that only works on your machine. As Jenny Bryan put it in her famous blog post <a href="https://www.tidyverse.org/blog/2017/12/workflow-vs-script/">Project-oriented workflow</a>: “The chance of the <code>setwd()</code> command having the desired effect…for anyone besides its author is 0%.” When a collaborator (or future you on a different computer) tries to run your script, it breaks immediately.</p>
+<p><code>rm(list = ls())</code> seems like it gives you a clean slate, but it doesn’t. It clears user objects from your environment, but it does not unload packages, reset changed options, or restart R. You end up with hidden dependencies on things you ran earlier in the session. The real solution is to restart R frequently (Cmd/Ctrl + Shift + F10 in RStudio).</p>
+<p>The deeper issue is the distinction between <strong>workflow</strong> and <strong>product</strong>. Your workflow is personal – which editor you use, where your home directory is, your screen layout. Your product – the R scripts, the data, the results – should be portable and self-contained. Don’t bake your personal workflow into your product.</p>
+</div>
+<div id="use-rstudio-projects-and-here" class="section level3 hasAnchor" number="2.3.2">
+<h3><span class="header-section-number">2.3.2</span> Use RStudio Projects and <code>here()</code><a href="quality-control.html#use-rstudio-projects-and-here" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<p>The fix is simple: organize each analysis as a self-contained project folder, and use the <code>here</code> package to build file paths.</p>
+<p>Our project folder looks like this:</p>
+<pre><code>practical_scRNAseq_analysis_with_R/
+├── index.Rmd
+├── 01-data-download-quantification.Rmd
+├── 02-quality-control.Rmd
+├── 03-seurat-workflow-explained.Rmd
+├── 04-cell-annotation.Rmd
+├── 05-gene-set-enrichment.Rmd
+├── data/                    # raw and processed data
+│   ├── SRX5329394_quant/
+│   ├── SRX5329395_quant/
+│   ├── SRX5329396_quant/
+│   ├── SRX5329397_quant/
+│   └── pbmc_seurat_obj.rds
+├── results/                 # analysis outputs
+│   └── QC/
+├── scripts/                 # helper scripts
+│   └── download_data.R
+├── images/                  # figures for the book
+├── bookdown-demo.Rproj      # RStudio project file
+└── DESCRIPTION</code></pre>
+<p>The <code>.Rproj</code> file marks the root of the project. When you open this file in RStudio, it automatically sets your working directory to the project root. No <code>setwd()</code> needed.</p>
+<p>The <code>here()</code> function builds file paths relative to the project root, no matter where your current script lives:</p>
+<div class="sourceCode" id="cb36"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb36-1"><a href="quality-control.html#cb36-1" tabindex="-1"></a><span class="fu">library</span>(here)</span>
+<span id="cb36-2"><a href="quality-control.html#cb36-2" tabindex="-1"></a></span>
+<span id="cb36-3"><a href="quality-control.html#cb36-3" tabindex="-1"></a><span class="co"># this always works, on any machine, from any script</span></span>
+<span id="cb36-4"><a href="quality-control.html#cb36-4" tabindex="-1"></a><span class="fu">here</span>(<span class="st">&quot;data/SRX5329394_quant&quot;</span>)</span>
+<span id="cb36-5"><a href="quality-control.html#cb36-5" tabindex="-1"></a><span class="co">#&gt; [1] &quot;/Users/tommy/githup_repo/practical_scRNAseq_analysis_with_R/data/SRX5329394_quant&quot;</span></span>
+<span id="cb36-6"><a href="quality-control.html#cb36-6" tabindex="-1"></a></span>
+<span id="cb36-7"><a href="quality-control.html#cb36-7" tabindex="-1"></a><span class="co"># compare to the fragile alternative:</span></span>
+<span id="cb36-8"><a href="quality-control.html#cb36-8" tabindex="-1"></a><span class="st">&quot;/Users/tommy/Desktop/my_project/data/SRX5329394_quant&quot;</span>  <span class="co"># breaks on every other machine</span></span></code></pre></div>
+<p><code>here()</code> figures out the project root by looking for markers like <code>.Rproj</code>, <code>.git</code>, or <code>.here</code> files. It works the same way on Mac, Windows, and Linux. Throughout this book, you will see <code>here()</code> used everywhere for file paths. Get in the habit of using it – your future self and your collaborators will thank you.</p>
+<p>For more on this topic, I highly recommend reading Jenny Bryan’s blog post: <a href="https://www.tidyverse.org/blog/2017/12/workflow-vs-script/" class="uri">https://www.tidyverse.org/blog/2017/12/workflow-vs-script/</a></p>
+</div>
+<div id="download-the-data" class="section level3 hasAnchor" number="2.3.3">
+<h3><span class="header-section-number">2.3.3</span> Download the data<a href="quality-control.html#download-the-data" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<p>If you skipped Chapter 1 or didn’t have the compute resources to run <code>simpleaf</code> yourself, that’s fine. You can download the pre-computed quantification output and pick up from here.</p>
+<p>Download the simpleaf output from: <a href="https://osf.io/r7cmk/" class="uri">https://osf.io/r7cmk/</a></p>
+<p>After downloading, place the files in the <code>data/</code> folder at the root of your project so the directory structure looks like this:</p>
+<pre><code>practical_scRNAseq_analysis_with_R/
+└── data/
+    ├── SRX5329394_quant/
+    │   └── af_quant/
+    ├── SRX5329395_quant/
+    │   └── af_quant/
+    ├── SRX5329396_quant/
+    │   └── af_quant/
+    ├── SRX5329397_quant/
+    │   └── af_quant/
+    └── genes.gtf</code></pre>
+<p>Each <code>_quant</code> folder contains the <code>simpleaf</code> output for one sample, and <code>af_quant</code> inside it has the actual count matrix files. The <code>genes.gtf</code> file is used later for mapping ENSEMBL IDs to gene symbols.</p>
+<p>Make sure the folder names match exactly – the code in this chapter uses <code>list.files(here("data/"), pattern = "quant")</code> to find them automatically. If the names don’t match, nothing will be found.</p>
+<p>You can verify everything is in the right place by running:</p>
+<div class="sourceCode" id="cb38"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb38-1"><a href="quality-control.html#cb38-1" tabindex="-1"></a><span class="fu">library</span>(here)</span>
+<span id="cb38-2"><a href="quality-control.html#cb38-2" tabindex="-1"></a><span class="fu">list.files</span>(<span class="fu">here</span>(<span class="st">&quot;data/&quot;</span>), <span class="at">pattern =</span> <span class="st">&quot;quant&quot;</span>)</span>
+<span id="cb38-3"><a href="quality-control.html#cb38-3" tabindex="-1"></a><span class="co">#&gt; [1] &quot;SRX5329394_quant&quot; &quot;SRX5329395_quant&quot; &quot;SRX5329396_quant&quot; &quot;SRX5329397_quant&quot;</span></span></code></pre></div>
+<p>If you see four folders listed, you’re good to go.</p>
+</div>
+</div>
+<div id="quality-control-1" class="section level2 hasAnchor" number="2.4">
+<h2><span class="header-section-number">2.4</span> Quality Control<a href="quality-control.html#quality-control-1" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>Now that we have the final count matrix, it is pivotal to do some quality control first.</p>
+<p>If you have used <code>cellranger</code> it gives you a nice html report on the number of genes detected per cell and mean number of reads per cell. see <a href="https://www.10xgenomics.com/analysis-guides/quality-assessment-using-the-cell-ranger-web-summary" class="uri">https://www.10xgenomics.com/analysis-guides/quality-assessment-using-the-cell-ranger-web-summary</a></p>
+<p>we will use <a href="https://bioconductor.org/packages/release/bioc/html/alevinQC.html">alevinQC</a></p>
+<p>I asked a question on it a few years ago. <a href="https://github.com/csoneson/alevinQC/issues/31" class="uri">https://github.com/csoneson/alevinQC/issues/31</a>
+You will need <code>R version &gt; 4.3</code>.</p>
+<div class="sourceCode" id="cb39"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb39-1"><a href="quality-control.html#cb39-1" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="st">&quot;here&quot;</span>)</span>
+<span id="cb39-2"><a href="quality-control.html#cb39-2" tabindex="-1"></a><span class="cf">if</span> (<span class="sc">!</span><span class="fu">require</span>(<span class="st">&quot;BiocManager&quot;</span>, <span class="at">quietly =</span> <span class="cn">TRUE</span>))</span>
+<span id="cb39-3"><a href="quality-control.html#cb39-3" tabindex="-1"></a>    <span class="fu">install.packages</span>(<span class="st">&quot;BiocManager&quot;</span>)</span>
+<span id="cb39-4"><a href="quality-control.html#cb39-4" tabindex="-1"></a></span>
+<span id="cb39-5"><a href="quality-control.html#cb39-5" tabindex="-1"></a>BiocManager<span class="sc">::</span><span class="fu">install</span>(<span class="st">&quot;alevinQC&quot;</span>)</span>
+<span id="cb39-6"><a href="quality-control.html#cb39-6" tabindex="-1"></a></span>
+<span id="cb39-7"><a href="quality-control.html#cb39-7" tabindex="-1"></a><span class="co">#install.packages(&quot;tictoc&quot;)</span></span>
+<span id="cb39-8"><a href="quality-control.html#cb39-8" tabindex="-1"></a></span>
+<span id="cb39-9"><a href="quality-control.html#cb39-9" tabindex="-1"></a><span class="fu">library</span>(alevinQC)</span>
+<span id="cb39-10"><a href="quality-control.html#cb39-10" tabindex="-1"></a><span class="fu">library</span>(here)</span>
+<span id="cb39-11"><a href="quality-control.html#cb39-11" tabindex="-1"></a><span class="fu">library</span>(tictoc)</span>
+<span id="cb39-12"><a href="quality-control.html#cb39-12" tabindex="-1"></a></span>
+<span id="cb39-13"><a href="quality-control.html#cb39-13" tabindex="-1"></a><span class="fu">dir.create</span>(<span class="fu">here</span>(<span class="st">&quot;results/QC&quot;</span>), <span class="at">recursive =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb39-14"><a href="quality-control.html#cb39-14" tabindex="-1"></a></span>
+<span id="cb39-15"><a href="quality-control.html#cb39-15" tabindex="-1"></a><span class="fu">tic</span>()</span>
+<span id="cb39-16"><a href="quality-control.html#cb39-16" tabindex="-1"></a></span>
+<span id="cb39-17"><a href="quality-control.html#cb39-17" tabindex="-1"></a><span class="fu">simpleafQCReport</span>(<span class="fu">here</span>(<span class="st">&quot;data/SRX5329394_quant&quot;</span>), </span>
+<span id="cb39-18"><a href="quality-control.html#cb39-18" tabindex="-1"></a>                 <span class="at">sampleId =</span> <span class="st">&quot;SRX5329394&quot;</span>,</span>
+<span id="cb39-19"><a href="quality-control.html#cb39-19" tabindex="-1"></a>                 <span class="at">outputFile =</span> <span class="fu">here</span>(<span class="st">&quot;results/QC/SRX5329394.html&quot;</span>),</span>
+<span id="cb39-20"><a href="quality-control.html#cb39-20" tabindex="-1"></a>                 <span class="at">outputFormat =</span> <span class="st">&quot;html_document&quot;</span>,</span>
+<span id="cb39-21"><a href="quality-control.html#cb39-21" tabindex="-1"></a>                 <span class="at">outputDir =</span> <span class="fu">here</span>(<span class="st">&quot;results/QC&quot;</span>))</span>
+<span id="cb39-22"><a href="quality-control.html#cb39-22" tabindex="-1"></a></span>
+<span id="cb39-23"><a href="quality-control.html#cb39-23" tabindex="-1"></a><span class="fu">toc</span>()</span></code></pre></div>
+<p>It should take you less than 1 min to finish the QC by <code>alevinQC</code>.</p>
+<p>Now, run it for all four samples.</p>
+<div class="sourceCode" id="cb40"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb40-1"><a href="quality-control.html#cb40-1" tabindex="-1"></a>all_quant_folders<span class="ot">&lt;-</span> <span class="fu">list.files</span>(<span class="fu">here</span>(<span class="st">&quot;data/&quot;</span>), <span class="at">pattern =</span> <span class="st">&quot;quant&quot;</span>)</span>
+<span id="cb40-2"><a href="quality-control.html#cb40-2" tabindex="-1"></a></span>
+<span id="cb40-3"><a href="quality-control.html#cb40-3" tabindex="-1"></a>all_quant_folders</span>
+<span id="cb40-4"><a href="quality-control.html#cb40-4" tabindex="-1"></a></span>
+<span id="cb40-5"><a href="quality-control.html#cb40-5" tabindex="-1"></a>samples<span class="ot">&lt;-</span> stringr<span class="sc">::</span><span class="fu">str_replace</span>(all_quant_folders, <span class="st">&quot;_quant&quot;</span>, <span class="st">&quot;&quot;</span>)</span>
+<span id="cb40-6"><a href="quality-control.html#cb40-6" tabindex="-1"></a></span>
+<span id="cb40-7"><a href="quality-control.html#cb40-7" tabindex="-1"></a>samples</span>
+<span id="cb40-8"><a href="quality-control.html#cb40-8" tabindex="-1"></a></span>
+<span id="cb40-9"><a href="quality-control.html#cb40-9" tabindex="-1"></a><span class="cf">for</span> (quant <span class="cf">in</span> all_quant_folders){</span>
+<span id="cb40-10"><a href="quality-control.html#cb40-10" tabindex="-1"></a>        sample<span class="ot">&lt;-</span> stringr<span class="sc">::</span><span class="fu">str_replace</span>(quant, <span class="st">&quot;_quant&quot;</span>, <span class="st">&quot;&quot;</span>)</span>
+<span id="cb40-11"><a href="quality-control.html#cb40-11" tabindex="-1"></a>        <span class="fu">simpleafQCReport</span>(<span class="fu">here</span>(<span class="fu">paste0</span>(<span class="st">&quot;data/&quot;</span>, quant)), </span>
+<span id="cb40-12"><a href="quality-control.html#cb40-12" tabindex="-1"></a>                 <span class="at">sampleId =</span> sample,</span>
+<span id="cb40-13"><a href="quality-control.html#cb40-13" tabindex="-1"></a>                 <span class="at">outputFile =</span> <span class="fu">here</span>(<span class="fu">paste0</span>(<span class="st">&quot;results/QC/&quot;</span>, sample,<span class="st">&quot;.html&quot;</span>)),</span>
+<span id="cb40-14"><a href="quality-control.html#cb40-14" tabindex="-1"></a>                 <span class="at">outputFormat =</span> <span class="st">&quot;html_document&quot;</span>,</span>
+<span id="cb40-15"><a href="quality-control.html#cb40-15" tabindex="-1"></a>                 <span class="at">outputDir =</span> <span class="fu">here</span>(<span class="st">&quot;results/QC&quot;</span>),</span>
+<span id="cb40-16"><a href="quality-control.html#cb40-16" tabindex="-1"></a>                 <span class="at">forceOverwrite =</span> <span class="cn">TRUE</span>)     </span>
+<span id="cb40-17"><a href="quality-control.html#cb40-17" tabindex="-1"></a>}</span></code></pre></div>
+<div id="remove-empty-droplets" class="section level3 hasAnchor" number="2.4.1">
+<h3><span class="header-section-number">2.4.1</span> Remove empty droplets<a href="quality-control.html#remove-empty-droplets" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<p>When we ran <code>simpleaf</code>, we specified no filtering (<code>--unfiltered-pl</code>), so the count matrix contains all barcodes – real cells and empty droplets alike. This is intentional. We want to apply statistical methods for cell calling rather than relying on arbitrary thresholds.</p>
+<p>Let’s load the data and see what we’re working with.</p>
+<div class="sourceCode" id="cb41"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb41-1"><a href="quality-control.html#cb41-1" tabindex="-1"></a><span class="co"># BiocManager::install(&quot;SingleCellExperiment&quot;)</span></span>
+<span id="cb41-2"><a href="quality-control.html#cb41-2" tabindex="-1"></a><span class="fu">library</span>(SingleCellExperiment)</span>
+<span id="cb41-3"><a href="quality-control.html#cb41-3" tabindex="-1"></a><span class="fu">library</span>(Seurat)</span>
+<span id="cb41-4"><a href="quality-control.html#cb41-4" tabindex="-1"></a><span class="fu">library</span>(here)</span>
+<span id="cb41-5"><a href="quality-control.html#cb41-5" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
+<span id="cb41-6"><a href="quality-control.html#cb41-6" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
+<span id="cb41-7"><a href="quality-control.html#cb41-7" tabindex="-1"></a><span class="fu">library</span>(stringr)</span>
+<span id="cb41-8"><a href="quality-control.html#cb41-8" tabindex="-1"></a><span class="co"># BiocManager::install(&quot;fishpond&quot;)</span></span>
+<span id="cb41-9"><a href="quality-control.html#cb41-9" tabindex="-1"></a><span class="co"># load count matrix</span></span>
+<span id="cb41-10"><a href="quality-control.html#cb41-10" tabindex="-1"></a>sce <span class="ot">&lt;-</span> fishpond<span class="sc">::</span><span class="fu">loadFry</span>(<span class="fu">here</span>(<span class="st">&quot;data/SRX5329394_quant/af_quant&quot;</span>))</span></code></pre></div>
+<p><code>loadFry</code> read in the count matrix as a single-cell experiment object.
+Read <a href="https://bioconductor.org/books/3.18/OSCA.intro/the-singlecellexperiment-class.html" class="uri">https://bioconductor.org/books/3.18/OSCA.intro/the-singlecellexperiment-class.html</a>
+to understand the object. We will use it in</p>
+<p>Let’s get the counts.</p>
+<div class="sourceCode" id="cb42"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb42-1"><a href="quality-control.html#cb42-1" tabindex="-1"></a>raw_mtx<span class="ot">&lt;-</span> <span class="fu">counts</span>(sce)</span>
+<span id="cb42-2"><a href="quality-control.html#cb42-2" tabindex="-1"></a></span>
+<span id="cb42-3"><a href="quality-control.html#cb42-3" tabindex="-1"></a>raw_mtx[<span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>, <span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>]</span></code></pre></div>
+<pre><code>#&gt; 5 x 5 sparse Matrix of class &quot;dgCMatrix&quot;
+#&gt;                 TCAGCTCGTATTACCG GTACTTTAGTGTCTCA CTGATAGTCATGCATG
+#&gt; ENSG00000243485                .                .                .
+#&gt; ENSG00000186092                .                .                .
+#&gt; ENSG00000241599                .                .                .
+#&gt; ENSG00000237491                .                .                .
+#&gt; ENSG00000228794                .                .                .
+#&gt;                 TGAGAGGCATCACGAT AACCATGCATGGTCAT
+#&gt; ENSG00000243485                .                .
+#&gt; ENSG00000186092                .                .
+#&gt; ENSG00000241599                .                .
+#&gt; ENSG00000237491                .                .
+#&gt; ENSG00000228794                .                .</code></pre>
+<p><code>raw_mtx</code> is a sparse matrix, and <code>.</code> means 0.</p>
+<p>filter the empty droplets using <code>DropletUtils</code> bioconductor package.</p>
+<div class="sourceCode" id="cb44"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb44-1"><a href="quality-control.html#cb44-1" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">123</span>)</span>
+<span id="cb44-2"><a href="quality-control.html#cb44-2" tabindex="-1"></a><span class="co">#BiocManager::install(&quot;DropletUtils&quot;)</span></span>
+<span id="cb44-3"><a href="quality-control.html#cb44-3" tabindex="-1"></a></span>
+<span id="cb44-4"><a href="quality-control.html#cb44-4" tabindex="-1"></a><span class="fu">library</span>(DropletUtils, <span class="at">quietly=</span>T)</span>
+<span id="cb44-5"><a href="quality-control.html#cb44-5" tabindex="-1"></a>out <span class="ot">&lt;-</span> <span class="fu">emptyDrops</span>(raw_mtx) <span class="co"># get probability that each barcode is a cell</span></span>
+<span id="cb44-6"><a href="quality-control.html#cb44-6" tabindex="-1"></a>keep <span class="ot">&lt;-</span> out<span class="sc">$</span>FDR <span class="sc">&lt;=</span> <span class="fl">0.05</span> <span class="co"># define threshold probability for calling a cell</span></span>
+<span id="cb44-7"><a href="quality-control.html#cb44-7" tabindex="-1"></a>keep[<span class="fu">is.na</span>(keep)] <span class="ot">&lt;-</span> <span class="cn">FALSE</span></span>
+<span id="cb44-8"><a href="quality-control.html#cb44-8" tabindex="-1"></a>filt_mtx <span class="ot">&lt;-</span> raw_mtx[,keep] <span class="co"># subset raw mtx to remove empty drops</span></span>
+<span id="cb44-9"><a href="quality-control.html#cb44-9" tabindex="-1"></a></span>
+<span id="cb44-10"><a href="quality-control.html#cb44-10" tabindex="-1"></a><span class="fu">dim</span>(filt_mtx)</span></code></pre></div>
+<pre><code>#&gt; [1] 36601  5665</code></pre>
+<p>after filtering, only 5665 cells left.</p>
+<p>Let’s calculate the total number of reads per cell/column.</p>
+<div class="sourceCode" id="cb46"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb46-1"><a href="quality-control.html#cb46-1" tabindex="-1"></a>tot_counts <span class="ot">&lt;-</span> <span class="fu">colSums</span>(raw_mtx)</span>
+<span id="cb46-2"><a href="quality-control.html#cb46-2" tabindex="-1"></a></span>
+<span id="cb46-3"><a href="quality-control.html#cb46-3" tabindex="-1"></a>df <span class="ot">&lt;-</span> <span class="fu">tibble</span>(<span class="at">total =</span> tot_counts,</span>
+<span id="cb46-4"><a href="quality-control.html#cb46-4" tabindex="-1"></a>             <span class="at">rank =</span> <span class="fu">row_number</span>(dplyr<span class="sc">::</span><span class="fu">desc</span>(total))) <span class="sc">%&gt;%</span></span>
+<span id="cb46-5"><a href="quality-control.html#cb46-5" tabindex="-1"></a>      <span class="fu">distinct</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb46-6"><a href="quality-control.html#cb46-6" tabindex="-1"></a>      <span class="fu">arrange</span>(rank)</span>
+<span id="cb46-7"><a href="quality-control.html#cb46-7" tabindex="-1"></a></span>
+<span id="cb46-8"><a href="quality-control.html#cb46-8" tabindex="-1"></a><span class="fu">head</span>(df)</span></code></pre></div>
+<pre><code>#&gt; # A tibble: 6 × 2
+#&gt;   total  rank
+#&gt;   &lt;dbl&gt; &lt;int&gt;
+#&gt; 1 77111     1
+#&gt; 2 73376     2
+#&gt; 3 65913     3
+#&gt; 4 50896     4
+#&gt; 5 46850     5
+#&gt; 6 46551     6</code></pre>
+</div>
+<div id="the-knee-plot-1" class="section level3 hasAnchor" number="2.4.2">
+<h3><span class="header-section-number">2.4.2</span> The knee plot<a href="quality-control.html#the-knee-plot-1" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<p>The knee plot is one of the first things I look at for any scRNA-seq dataset. It’s a ranked plot of UMI counts per barcode (both axes on log scale), and it tells you a lot about your data quality.</p>
+<p>You see the pattern: real cells sit on a high plateau on the left (thousands of mRNA molecules). Then there’s a sharp drop – the “knee” – and below that, empty droplets with just ambient RNA (10-100x less than real cells). A sharp knee means clean separation between cells and background. A gradual, mushy knee means trouble.</p>
+<p>Let’s make one:</p>
+<div class="sourceCode" id="cb48"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb48-1"><a href="quality-control.html#cb48-1" tabindex="-1"></a><span class="fu">ggplot</span>(df, <span class="fu">aes</span>(rank, total)) <span class="sc">+</span></span>
+<span id="cb48-2"><a href="quality-control.html#cb48-2" tabindex="-1"></a>  <span class="fu">geom_path</span>() <span class="sc">+</span></span>
+<span id="cb48-3"><a href="quality-control.html#cb48-3" tabindex="-1"></a>  <span class="fu">scale_x_log10</span>() <span class="sc">+</span></span>
+<span id="cb48-4"><a href="quality-control.html#cb48-4" tabindex="-1"></a>  <span class="fu">scale_y_log10</span>() <span class="sc">+</span></span>
+<span id="cb48-5"><a href="quality-control.html#cb48-5" tabindex="-1"></a>  <span class="fu">annotation_logticks</span>() <span class="sc">+</span></span>
+<span id="cb48-6"><a href="quality-control.html#cb48-6" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">&quot;Barcode rank&quot;</span>, <span class="at">y =</span> <span class="st">&quot;Total UMI count&quot;</span>) <span class="sc">+</span></span>
+<span id="cb48-7"><a href="quality-control.html#cb48-7" tabindex="-1"></a>  <span class="fu">geom_vline</span>(<span class="at">xintercept =</span> <span class="dv">5666</span>, <span class="at">linetype =</span> <span class="dv">2</span>, <span class="at">color =</span> <span class="st">&quot;red&quot;</span>) <span class="sc">+</span></span>
+<span id="cb48-8"><a href="quality-control.html#cb48-8" tabindex="-1"></a>  <span class="fu">annotate</span>(<span class="st">&quot;text&quot;</span>, <span class="at">x=</span><span class="dv">5665</span>, <span class="at">y=</span><span class="dv">1000</span>, <span class="at">label=</span><span class="st">&quot;5665 cells&quot;</span>, <span class="at">angle=</span> <span class="dv">0</span>, <span class="at">size=</span> <span class="dv">5</span>, <span class="at">color=</span><span class="st">&quot;blue&quot;</span>)<span class="sc">+</span></span>
+<span id="cb48-9"><a href="quality-control.html#cb48-9" tabindex="-1"></a>  <span class="fu">theme_bw</span>(<span class="at">base_size =</span> <span class="dv">14</span>)</span></code></pre></div>
+<p><img src="practical_scRNAseq_analysis_files/figure-html/unnamed-chunk-38-1.png" width="100%" style="display: block; margin: auto;" /></p>
+<p>The red vertical line marks the 5,665 barcodes that <code>emptyDrops()</code> identified as cells. See how it captures the plateau and excludes the background? The knee is reasonably sharp here, which is a good sign.</p>
+<p>You could just say “keep all barcodes with &gt;1,000 UMIs” and call it a day. But that’s arbitrary. A dataset with small cells (like naive T cells) might have real cells below 1,000 UMIs, and you’d lose them. The <code>emptyDrops()</code> approach adapts to your data.</p>
+</div>
+<div id="convert-the-ensembl-id-to-gene-symbol" class="section level3 hasAnchor" number="2.4.3">
+<h3><span class="header-section-number">2.4.3</span> convert the ENSEMBL ID to gene symbol<a href="quality-control.html#convert-the-ensembl-id-to-gene-symbol" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<p>The rownames of the count matrix are ENSEMBL IDs, we want to convert them to
+symbols.</p>
+<p>Of course, we can use functions such as <code>clusterprofiler::bitr()</code>. In this
+example, let’s use the gtf file to map the ENSEMBL ID to gene symbols.</p>
+<div class="sourceCode" id="cb49"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb49-1"><a href="quality-control.html#cb49-1" tabindex="-1"></a>gene_dat<span class="ot">&lt;-</span> <span class="fu">rownames</span>(filt_mtx) <span class="sc">%&gt;%</span></span>
+<span id="cb49-2"><a href="quality-control.html#cb49-2" tabindex="-1"></a>  tibble<span class="sc">::</span><span class="fu">enframe</span>(<span class="at">value =</span> <span class="st">&quot;gene_id&quot;</span>) </span>
+<span id="cb49-3"><a href="quality-control.html#cb49-3" tabindex="-1"></a><span class="fu">head</span>(gene_dat)</span></code></pre></div>
+<pre><code>#&gt; # A tibble: 6 × 2
+#&gt;    name gene_id        
+#&gt;   &lt;int&gt; &lt;chr&gt;          
+#&gt; 1     1 ENSG00000243485
+#&gt; 2     2 ENSG00000186092
+#&gt; 3     3 ENSG00000241599
+#&gt; 4     4 ENSG00000237491
+#&gt; 5     5 ENSG00000228794
+#&gt; 6     6 ENSG00000187634</code></pre>
+<div class="sourceCode" id="cb51"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb51-1"><a href="quality-control.html#cb51-1" tabindex="-1"></a><span class="co"># let&#39;s use the same gtf file when we build the simpleaf index</span></span>
+<span id="cb51-2"><a href="quality-control.html#cb51-2" tabindex="-1"></a><span class="co"># rtracklayer import function to read in the gtf file</span></span>
+<span id="cb51-3"><a href="quality-control.html#cb51-3" tabindex="-1"></a>gtf <span class="ot">&lt;-</span> rtracklayer<span class="sc">::</span><span class="fu">import</span>(<span class="fu">here</span>(<span class="st">&quot;data/genes.gtf&quot;</span>))</span>
+<span id="cb51-4"><a href="quality-control.html#cb51-4" tabindex="-1"></a></span>
+<span id="cb51-5"><a href="quality-control.html#cb51-5" tabindex="-1"></a>gtf</span></code></pre></div>
+<pre><code>#&gt; GRanges object with 2765969 ranges and 24 metadata columns:
+#&gt;               seqnames        ranges strand |   source       type     score
+#&gt;                  &lt;Rle&gt;     &lt;IRanges&gt;  &lt;Rle&gt; | &lt;factor&gt;   &lt;factor&gt; &lt;numeric&gt;
+#&gt;         [1]       chr1   29554-31109      + |   HAVANA gene              NA
+#&gt;         [2]       chr1   29554-31097      + |   HAVANA transcript        NA
+#&gt;         [3]       chr1   29554-30039      + |   HAVANA exon              NA
+#&gt;         [4]       chr1   30564-30667      + |   HAVANA exon              NA
+#&gt;         [5]       chr1   30976-31097      + |   HAVANA exon              NA
+#&gt;         ...        ...           ...    ... .      ...        ...       ...
+#&gt;   [2765965] KI270734.1 138483-138667      - |  ENSEMBL CDS               NA
+#&gt;   [2765966] KI270734.1 138480-138482      - |  ENSEMBL stop_codon        NA
+#&gt;   [2765967] KI270734.1 161689-161852      - |  ENSEMBL UTR               NA
+#&gt;   [2765968] KI270734.1 161587-161626      - |  ENSEMBL UTR               NA
+#&gt;   [2765969] KI270734.1 138082-138482      - |  ENSEMBL UTR               NA
+#&gt;                 phase         gene_id gene_version      gene_type   gene_name
+#&gt;             &lt;integer&gt;     &lt;character&gt;  &lt;character&gt;    &lt;character&gt; &lt;character&gt;
+#&gt;         [1]      &lt;NA&gt; ENSG00000243485            5         lncRNA MIR1302-2HG
+#&gt;         [2]      &lt;NA&gt; ENSG00000243485            5         lncRNA MIR1302-2HG
+#&gt;         [3]      &lt;NA&gt; ENSG00000243485            5         lncRNA MIR1302-2HG
+#&gt;         [4]      &lt;NA&gt; ENSG00000243485            5         lncRNA MIR1302-2HG
+#&gt;         [5]      &lt;NA&gt; ENSG00000243485            5         lncRNA MIR1302-2HG
+#&gt;         ...       ...             ...          ...            ...         ...
+#&gt;   [2765965]         2 ENSG00000277196            4 protein_coding  AC007325.2
+#&gt;   [2765966]         0 ENSG00000277196            4 protein_coding  AC007325.2
+#&gt;   [2765967]      &lt;NA&gt; ENSG00000277196            4 protein_coding  AC007325.2
+#&gt;   [2765968]      &lt;NA&gt; ENSG00000277196            4 protein_coding  AC007325.2
+#&gt;   [2765969]      &lt;NA&gt; ENSG00000277196            4 protein_coding  AC007325.2
+#&gt;                   level     hgnc_id         tag          havana_gene
+#&gt;             &lt;character&gt; &lt;character&gt; &lt;character&gt;          &lt;character&gt;
+#&gt;         [1]           2  HGNC:52482  ncRNA_host OTTHUMG00000000959.2
+#&gt;         [2]           2  HGNC:52482       basic OTTHUMG00000000959.2
+#&gt;         [3]           2  HGNC:52482       basic OTTHUMG00000000959.2
+#&gt;         [4]           2  HGNC:52482       basic OTTHUMG00000000959.2
+#&gt;         [5]           2  HGNC:52482       basic OTTHUMG00000000959.2
+#&gt;         ...         ...         ...         ...                  ...
+#&gt;   [2765965]           3        &lt;NA&gt;       basic                 &lt;NA&gt;
+#&gt;   [2765966]           3        &lt;NA&gt;       basic                 &lt;NA&gt;
+#&gt;   [2765967]           3        &lt;NA&gt;       basic                 &lt;NA&gt;
+#&gt;   [2765968]           3        &lt;NA&gt;       basic                 &lt;NA&gt;
+#&gt;   [2765969]           3        &lt;NA&gt;       basic                 &lt;NA&gt;
+#&gt;               transcript_id transcript_version transcript_type transcript_name
+#&gt;                 &lt;character&gt;        &lt;character&gt;     &lt;character&gt;     &lt;character&gt;
+#&gt;         [1]            &lt;NA&gt;               &lt;NA&gt;            &lt;NA&gt;            &lt;NA&gt;
+#&gt;         [2] ENST00000473358                  1          lncRNA MIR1302-2HG-202
+#&gt;         [3] ENST00000473358                  1          lncRNA MIR1302-2HG-202
+#&gt;         [4] ENST00000473358                  1          lncRNA MIR1302-2HG-202
+#&gt;         [5] ENST00000473358                  1          lncRNA MIR1302-2HG-202
+#&gt;         ...             ...                ...             ...             ...
+#&gt;   [2765965] ENST00000621424                  4  protein_coding  AC007325.2-201
+#&gt;   [2765966] ENST00000621424                  4  protein_coding  AC007325.2-201
+#&gt;   [2765967] ENST00000621424                  4  protein_coding  AC007325.2-201
+#&gt;   [2765968] ENST00000621424                  4  protein_coding  AC007325.2-201
+#&gt;   [2765969] ENST00000621424                  4  protein_coding  AC007325.2-201
+#&gt;             transcript_support_level    havana_transcript exon_number
+#&gt;                          &lt;character&gt;          &lt;character&gt; &lt;character&gt;
+#&gt;         [1]                     &lt;NA&gt;                 &lt;NA&gt;        &lt;NA&gt;
+#&gt;         [2]                        5 OTTHUMT00000002840.1        &lt;NA&gt;
+#&gt;         [3]                        5 OTTHUMT00000002840.1           1
+#&gt;         [4]                        5 OTTHUMT00000002840.1           2
+#&gt;         [5]                        5 OTTHUMT00000002840.1           3
+#&gt;         ...                      ...                  ...         ...
+#&gt;   [2765965]                        1                 &lt;NA&gt;          15
+#&gt;   [2765966]                        1                 &lt;NA&gt;          15
+#&gt;   [2765967]                        1                 &lt;NA&gt;           1
+#&gt;   [2765968]                        1                 &lt;NA&gt;           2
+#&gt;   [2765969]                        1                 &lt;NA&gt;          15
+#&gt;                     exon_id exon_version        protein_id      ccdsid
+#&gt;                 &lt;character&gt;  &lt;character&gt;       &lt;character&gt; &lt;character&gt;
+#&gt;         [1]            &lt;NA&gt;         &lt;NA&gt;              &lt;NA&gt;        &lt;NA&gt;
+#&gt;         [2]            &lt;NA&gt;         &lt;NA&gt;              &lt;NA&gt;        &lt;NA&gt;
+#&gt;         [3] ENSE00001947070            1              &lt;NA&gt;        &lt;NA&gt;
+#&gt;         [4] ENSE00001922571            1              &lt;NA&gt;        &lt;NA&gt;
+#&gt;         [5] ENSE00001827679            1              &lt;NA&gt;        &lt;NA&gt;
+#&gt;         ...             ...          ...               ...         ...
+#&gt;   [2765965] ENSE00003753010            1 ENSP00000481127.1        &lt;NA&gt;
+#&gt;   [2765966] ENSE00003753010            1 ENSP00000481127.1        &lt;NA&gt;
+#&gt;   [2765967] ENSE00003746084            1 ENSP00000481127.1        &lt;NA&gt;
+#&gt;   [2765968] ENSE00003719550            1 ENSP00000481127.1        &lt;NA&gt;
+#&gt;   [2765969] ENSE00003753010            1 ENSP00000481127.1        &lt;NA&gt;
+#&gt;                     ont
+#&gt;             &lt;character&gt;
+#&gt;         [1]        &lt;NA&gt;
+#&gt;         [2]        &lt;NA&gt;
+#&gt;         [3]        &lt;NA&gt;
+#&gt;         [4]        &lt;NA&gt;
+#&gt;         [5]        &lt;NA&gt;
+#&gt;         ...         ...
+#&gt;   [2765965]        &lt;NA&gt;
+#&gt;   [2765966]        &lt;NA&gt;
+#&gt;   [2765967]        &lt;NA&gt;
+#&gt;   [2765968]        &lt;NA&gt;
+#&gt;   [2765969]        &lt;NA&gt;
+#&gt;   -------
+#&gt;   seqinfo: 40 sequences from an unspecified genome; no seqlengths</code></pre>
+<p>The metadata columns <code>gene_id</code> and <code>gene_name</code> are the mapping we need.</p>
+<p>convert the GRanges object to a dataframe</p>
+<div class="sourceCode" id="cb53"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb53-1"><a href="quality-control.html#cb53-1" tabindex="-1"></a>gtf_df<span class="ot">&lt;-</span> <span class="fu">as.data.frame</span>(gtf)</span>
+<span id="cb53-2"><a href="quality-control.html#cb53-2" tabindex="-1"></a></span>
+<span id="cb53-3"><a href="quality-control.html#cb53-3" tabindex="-1"></a>filter_gene_names <span class="ot">&lt;-</span> gtf_df <span class="sc">%&gt;%</span> </span>
+<span id="cb53-4"><a href="quality-control.html#cb53-4" tabindex="-1"></a>  <span class="fu">filter</span>(type <span class="sc">==</span> <span class="st">&quot;gene&quot;</span>) <span class="sc">%&gt;%</span>  <span class="co"># filter the gtf file to only genes</span></span>
+<span id="cb53-5"><a href="quality-control.html#cb53-5" tabindex="-1"></a>  <span class="fu">select</span>(gene_id, gene_name) </span>
+<span id="cb53-6"><a href="quality-control.html#cb53-6" tabindex="-1"></a></span>
+<span id="cb53-7"><a href="quality-control.html#cb53-7" tabindex="-1"></a><span class="fu">head</span>(filter_gene_names)</span></code></pre></div>
+<pre><code>#&gt;           gene_id   gene_name
+#&gt; 1 ENSG00000243485 MIR1302-2HG
+#&gt; 2 ENSG00000237613     FAM138A
+#&gt; 3 ENSG00000186092       OR4F5
+#&gt; 4 ENSG00000238009  AL627309.1
+#&gt; 5 ENSG00000239945  AL627309.3
+#&gt; 6 ENSG00000239906  AL627309.2</code></pre>
+<div class="sourceCode" id="cb55"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb55-1"><a href="quality-control.html#cb55-1" tabindex="-1"></a>gene_dat <span class="ot">&lt;-</span> <span class="fu">left_join</span>(gene_dat, filter_gene_names)</span>
+<span id="cb55-2"><a href="quality-control.html#cb55-2" tabindex="-1"></a></span>
+<span id="cb55-3"><a href="quality-control.html#cb55-3" tabindex="-1"></a><span class="co"># take a peek at the data</span></span>
+<span id="cb55-4"><a href="quality-control.html#cb55-4" tabindex="-1"></a><span class="fu">head</span>(gene_dat)</span></code></pre></div>
+<pre><code>#&gt; # A tibble: 6 × 3
+#&gt;    name gene_id         gene_name  
+#&gt;   &lt;int&gt; &lt;chr&gt;           &lt;chr&gt;      
+#&gt; 1     1 ENSG00000243485 MIR1302-2HG
+#&gt; 2     2 ENSG00000186092 OR4F5      
+#&gt; 3     3 ENSG00000241599 AL627309.4 
+#&gt; 4     4 ENSG00000237491 LINC01409  
+#&gt; 5     5 ENSG00000228794 LINC01128  
+#&gt; 6     6 ENSG00000187634 SAMD11</code></pre>
+<div class="sourceCode" id="cb57"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb57-1"><a href="quality-control.html#cb57-1" tabindex="-1"></a><span class="co"># there are some duplicated gene_names</span></span>
+<span id="cb57-2"><a href="quality-control.html#cb57-2" tabindex="-1"></a>gene_dat <span class="sc">%&gt;%</span></span>
+<span id="cb57-3"><a href="quality-control.html#cb57-3" tabindex="-1"></a>        <span class="fu">filter</span>(<span class="fu">duplicated</span>(gene_dat<span class="sc">$</span>gene_name))</span></code></pre></div>
+<pre><code>#&gt; # A tibble: 10 × 3
+#&gt;     name gene_id         gene_name     
+#&gt;    &lt;int&gt; &lt;chr&gt;           &lt;chr&gt;         
+#&gt;  1   437 ENSG00000284770 TBCE          
+#&gt;  2  2573 ENSG00000015479 MATR3         
+#&gt;  3  9835 ENSG00000114395 CYB561D2      
+#&gt;  4 20593 ENSG00000158427 TMSB15B       
+#&gt;  5 21719 ENSG00000234229 LINC01505     
+#&gt;  6 21800 ENSG00000284024 HSPA14        
+#&gt;  7 22815 ENSG00000286070 GGT1          
+#&gt;  8 22875 ENSG00000286237 ARMCX5-GPRASP2
+#&gt;  9 30677 ENSG00000261186 LINC01238     
+#&gt; 10 33397 ENSG00000261480 GOLGA8M</code></pre>
+<p>if there is a duplicated row for the <code>gene_name</code> column, it will return
+the row. We see there are 10 genes that have the same gene symobl but different
+ENSEMBL ID.</p>
+<p>Let’s take a look at one example</p>
+<div class="sourceCode" id="cb59"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb59-1"><a href="quality-control.html#cb59-1" tabindex="-1"></a>gene_dat <span class="sc">%&gt;%</span></span>
+<span id="cb59-2"><a href="quality-control.html#cb59-2" tabindex="-1"></a>        <span class="fu">filter</span>(gene_name <span class="sc">==</span> <span class="st">&quot;TBCE&quot;</span>)</span></code></pre></div>
+<pre><code>#&gt; # A tibble: 2 × 3
+#&gt;    name gene_id         gene_name
+#&gt;   &lt;int&gt; &lt;chr&gt;           &lt;chr&gt;    
+#&gt; 1   436 ENSG00000285053 TBCE     
+#&gt; 2   437 ENSG00000284770 TBCE</code></pre>
+<p>We see there are two ENSEMBL IDs mapped to the same <code>TBCE</code> gene.</p>
+<div class="sourceCode" id="cb61"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb61-1"><a href="quality-control.html#cb61-1" tabindex="-1"></a><span class="co"># make sure the rownames of the count matrix is the same as the gene_dat ENSEMBL ID</span></span>
+<span id="cb61-2"><a href="quality-control.html#cb61-2" tabindex="-1"></a><span class="fu">all.equal</span>(<span class="fu">rownames</span>(filt_mtx), gene_dat<span class="sc">$</span>gene_id)</span></code></pre></div>
+<pre><code>#&gt; [1] TRUE</code></pre>
+<div class="sourceCode" id="cb63"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb63-1"><a href="quality-control.html#cb63-1" tabindex="-1"></a><span class="do">## change the rownames to gene symbol, </span></span>
+<span id="cb63-2"><a href="quality-control.html#cb63-2" tabindex="-1"></a><span class="do">## use make.names function to make the names unique</span></span>
+<span id="cb63-3"><a href="quality-control.html#cb63-3" tabindex="-1"></a><span class="fu">rownames</span>(filt_mtx)<span class="ot">&lt;-</span> <span class="fu">make.names</span>(gene_dat<span class="sc">$</span>gene_name, <span class="at">unique=</span><span class="cn">TRUE</span>)</span>
+<span id="cb63-4"><a href="quality-control.html#cb63-4" tabindex="-1"></a></span>
+<span id="cb63-5"><a href="quality-control.html#cb63-5" tabindex="-1"></a>filt_mtx[<span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>, <span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>]</span></code></pre></div>
+<pre><code>#&gt; 5 x 5 sparse Matrix of class &quot;dgCMatrix&quot;
+#&gt;             TCAGCTCGTATTACCG GTACTTTAGTGTCTCA CTGATAGTCATGCATG TGAGAGGCATCACGAT
+#&gt; MIR1302.2HG                .                .                .                .
+#&gt; OR4F5                      .                .                .                .
+#&gt; AL627309.4                 .                .                .                .
+#&gt; LINC01409                  .                .                .                .
+#&gt; LINC01128                  .                .                .                .
+#&gt;             AACCATGCATGGTCAT
+#&gt; MIR1302.2HG                .
+#&gt; OR4F5                      .
+#&gt; AL627309.4                 .
+#&gt; LINC01409                  .
+#&gt; LINC01128                  .</code></pre>
+<p>See this <a href="https://www.youtube.com/watch?v=eV-PCCsbnnE">Youtube video on <code>make.names</code></a>.</p>
+</div>
+<div id="adaptive-thresholding-with-mad-optional" class="section level3 hasAnchor" number="2.4.4">
+<h3><span class="header-section-number">2.4.4</span> Adaptive thresholding with MAD (optional)<a href="quality-control.html#adaptive-thresholding-with-mad-optional" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<p>So <code>emptyDrops()</code> handles the empty droplets. But what about filtering low-quality <em>cells</em> that made it past that step?</p>
+<p>You’ll see recommendations like “remove cells with &lt;200 genes” or “remove cells with &gt;20% mitochondrial reads.” These can work, but they’re arbitrary. What if your data has a different distribution?</p>
+<p>A more principled approach uses median absolute deviation (MAD). For each QC metric, you calculate the median across all cells, calculate the MAD (a robust measure of spread), and flag cells more than N MADs from the median. Typically N=3 for stringent filtering, N=5 for permissive. The nice thing is it automatically adapts to your data.</p>
+<p>Here’s how to do it with the <code>scuttle</code> package:</p>
+<div class="sourceCode" id="cb65"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb65-1"><a href="quality-control.html#cb65-1" tabindex="-1"></a><span class="co"># BiocManager::install(&quot;scuttle&quot;)</span></span>
+<span id="cb65-2"><a href="quality-control.html#cb65-2" tabindex="-1"></a><span class="fu">library</span>(scuttle)</span>
+<span id="cb65-3"><a href="quality-control.html#cb65-3" tabindex="-1"></a></span>
+<span id="cb65-4"><a href="quality-control.html#cb65-4" tabindex="-1"></a><span class="co"># Convert our filtered matrix back to SCE for MAD filtering</span></span>
+<span id="cb65-5"><a href="quality-control.html#cb65-5" tabindex="-1"></a>sce_filtered <span class="ot">&lt;-</span> <span class="fu">SingleCellExperiment</span>(<span class="at">assays =</span> <span class="fu">list</span>(<span class="at">counts =</span> filt_mtx))</span>
+<span id="cb65-6"><a href="quality-control.html#cb65-6" tabindex="-1"></a></span>
+<span id="cb65-7"><a href="quality-control.html#cb65-7" tabindex="-1"></a><span class="co"># Calculate QC metrics</span></span>
+<span id="cb65-8"><a href="quality-control.html#cb65-8" tabindex="-1"></a><span class="co"># First, identify mitochondrial genes</span></span>
+<span id="cb65-9"><a href="quality-control.html#cb65-9" tabindex="-1"></a>is_mito <span class="ot">&lt;-</span> <span class="fu">grepl</span>(<span class="st">&quot;^MT</span><span class="sc">\\</span><span class="st">.&quot;</span>, <span class="fu">rownames</span>(sce_filtered))</span>
+<span id="cb65-10"><a href="quality-control.html#cb65-10" tabindex="-1"></a></span>
+<span id="cb65-11"><a href="quality-control.html#cb65-11" tabindex="-1"></a><span class="co"># Compute per-cell QC metrics</span></span>
+<span id="cb65-12"><a href="quality-control.html#cb65-12" tabindex="-1"></a>qc_metrics <span class="ot">&lt;-</span> <span class="fu">perCellQCMetrics</span>(sce_filtered, <span class="at">subsets =</span> <span class="fu">list</span>(<span class="at">Mito =</span> is_mito))</span>
+<span id="cb65-13"><a href="quality-control.html#cb65-13" tabindex="-1"></a></span>
+<span id="cb65-14"><a href="quality-control.html#cb65-14" tabindex="-1"></a><span class="co"># Look at the metrics</span></span>
+<span id="cb65-15"><a href="quality-control.html#cb65-15" tabindex="-1"></a><span class="fu">head</span>(qc_metrics)</span>
+<span id="cb65-16"><a href="quality-control.html#cb65-16" tabindex="-1"></a></span>
+<span id="cb65-17"><a href="quality-control.html#cb65-17" tabindex="-1"></a><span class="co"># Apply MAD-based filtering</span></span>
+<span id="cb65-18"><a href="quality-control.html#cb65-18" tabindex="-1"></a><span class="co"># nmads = 3 means &quot;flag cells &gt;3 MADs from median&quot;</span></span>
+<span id="cb65-19"><a href="quality-control.html#cb65-19" tabindex="-1"></a>qc_filter <span class="ot">&lt;-</span> <span class="fu">quickPerCellQC</span>(qc_metrics,</span>
+<span id="cb65-20"><a href="quality-control.html#cb65-20" tabindex="-1"></a>                             <span class="at">percent_subsets =</span> <span class="st">&quot;subsets_Mito_percent&quot;</span>,</span>
+<span id="cb65-21"><a href="quality-control.html#cb65-21" tabindex="-1"></a>                             <span class="at">nmads =</span> <span class="dv">3</span>)</span>
+<span id="cb65-22"><a href="quality-control.html#cb65-22" tabindex="-1"></a></span>
+<span id="cb65-23"><a href="quality-control.html#cb65-23" tabindex="-1"></a><span class="co"># See what would be filtered</span></span>
+<span id="cb65-24"><a href="quality-control.html#cb65-24" tabindex="-1"></a><span class="fu">table</span>(qc_filter<span class="sc">$</span>discard)</span>
+<span id="cb65-25"><a href="quality-control.html#cb65-25" tabindex="-1"></a></span>
+<span id="cb65-26"><a href="quality-control.html#cb65-26" tabindex="-1"></a><span class="co"># Visualize the thresholds</span></span>
+<span id="cb65-27"><a href="quality-control.html#cb65-27" tabindex="-1"></a><span class="fu">library</span>(scater)</span>
+<span id="cb65-28"><a href="quality-control.html#cb65-28" tabindex="-1"></a><span class="fu">plotColData</span>(sce_filtered, <span class="at">y =</span> <span class="st">&quot;detected&quot;</span>, <span class="at">colour_by =</span> <span class="fu">I</span>(qc_filter<span class="sc">$</span>discard)) <span class="sc">+</span></span>
+<span id="cb65-29"><a href="quality-control.html#cb65-29" tabindex="-1"></a>  <span class="fu">ggtitle</span>(<span class="st">&quot;Detected genes (MAD filtering)&quot;</span>)</span>
+<span id="cb65-30"><a href="quality-control.html#cb65-30" tabindex="-1"></a></span>
+<span id="cb65-31"><a href="quality-control.html#cb65-31" tabindex="-1"></a><span class="co"># If you wanted to apply the filtering:</span></span>
+<span id="cb65-32"><a href="quality-control.html#cb65-32" tabindex="-1"></a><span class="co"># sce_filtered_mad &lt;- sce_filtered[, !qc_filter$discard]</span></span></code></pre></div>
+<p>When should you use MAD vs fixed thresholds? I use MAD-based filtering when I have heterogeneous cell populations or when I’m working with a new tissue type and don’t have good intuition for cutoffs. I use fixed thresholds when I’m following an established protocol and know what “normal” looks like for my system.</p>
+<p>In this tutorial, we’ll stick with <code>emptyDrops()</code> for removing empty droplets and apply additional fixed-threshold QC in the Seurat workflow chapter. But it’s good to have MAD in your toolkit for tricky datasets.</p>
+<p>One important note from the <a href="https://bioconductor.org/books/release/OSCA/">OSCA</a> book: for multi-sample experiments, apply MAD filtering within each sample separately. Different samples can have different quality distributions, and you don’t want one bad sample dragging down the thresholds for your good samples.</p>
+</div>
+<div id="do-it-for-all-four-samples-with-purrr" class="section level3 hasAnchor" number="2.4.5">
+<h3><span class="header-section-number">2.4.5</span> Do it for all four samples with purrr<a href="quality-control.html#do-it-for-all-four-samples-with-purrr" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<p>We’ve processed one sample. But we have four. The temptation is to copy-paste the code four times, changing the sample name each time. Don’t do that.</p>
+<p>Why? It’s error-prone (easy to forget to change a sample name), hard to maintain (fix a bug in 4 places?), and doesn’t scale. What if you had 100 samples?</p>
+<p>The better approach: write the logic once, then iterate over all samples using <code>purrr</code>. The workflow is straightforward – write code for one sample (done), figure out what varies (the sample name/path), wrap it in a function, and use <code>purrr::map()</code> to apply it to everything.</p>
+<p>Note my <a href="https://chatomics.com/course/real-world-bioinformatics-with-r">Real World Bioinformatics with R course</a> teaches you <code>purrr</code>.</p>
+<div id="get-all-sample-paths" class="section level4 hasAnchor" number="2.4.5.1">
+<h4><span class="header-section-number">2.4.5.1</span> Get all sample paths<a href="quality-control.html#get-all-sample-paths" class="anchor-section" aria-label="Anchor link to header"></a></h4>
+<div class="sourceCode" id="cb66"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb66-1"><a href="quality-control.html#cb66-1" tabindex="-1"></a>all_quant_folders<span class="ot">&lt;-</span> <span class="fu">list.files</span>(<span class="fu">here</span>(<span class="st">&quot;data/&quot;</span>), <span class="at">pattern =</span> <span class="st">&quot;*quant&quot;</span>)</span>
+<span id="cb66-2"><a href="quality-control.html#cb66-2" tabindex="-1"></a></span>
+<span id="cb66-3"><a href="quality-control.html#cb66-3" tabindex="-1"></a>all_quant_folders</span></code></pre></div>
+<pre><code>#&gt; [1] &quot;SRX5329394_quant&quot; &quot;SRX5329395_quant&quot; &quot;SRX5329396_quant&quot; &quot;SRX5329397_quant&quot;</code></pre>
+<div class="sourceCode" id="cb68"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb68-1"><a href="quality-control.html#cb68-1" tabindex="-1"></a>samples<span class="ot">&lt;-</span> stringr<span class="sc">::</span><span class="fu">str_replace</span>(all_quant_folders, <span class="st">&quot;_quant&quot;</span>, <span class="st">&quot;&quot;</span>)</span>
+<span id="cb68-2"><a href="quality-control.html#cb68-2" tabindex="-1"></a>samples</span></code></pre></div>
+<pre><code>#&gt; [1] &quot;SRX5329394&quot; &quot;SRX5329395&quot; &quot;SRX5329396&quot; &quot;SRX5329397&quot;</code></pre>
+<p>We now have two vectors:
+- <code>all_quant_folders</code>: The directory names (with <code>_quant</code>)
+- <code>samples</code>: The sample IDs (without <code>_quant</code>)</p>
+</div>
+<div id="load-all-samples-with-purrrmap" class="section level4 hasAnchor" number="2.4.5.2">
+<h4><span class="header-section-number">2.4.5.2</span> Load all samples with purrr::map()<a href="quality-control.html#load-all-samples-with-purrrmap" class="anchor-section" aria-label="Anchor link to header"></a></h4>
+<p>The <code>map()</code> function applies a function to each element of a vector/list and returns a list of results.</p>
+<div class="sourceCode" id="cb70"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb70-1"><a href="quality-control.html#cb70-1" tabindex="-1"></a>sces<span class="ot">&lt;-</span> purrr<span class="sc">::</span><span class="fu">map</span>(all_quant_folders,</span>
+<span id="cb70-2"><a href="quality-control.html#cb70-2" tabindex="-1"></a>           <span class="sc">~</span>fishpond<span class="sc">::</span><span class="fu">loadFry</span>(<span class="fu">here</span>(<span class="fu">paste0</span>(<span class="st">&quot;data/&quot;</span>, .x, <span class="st">&quot;/af_quant&quot;</span>))))</span>
+<span id="cb70-3"><a href="quality-control.html#cb70-3" tabindex="-1"></a></span>
+<span id="cb70-4"><a href="quality-control.html#cb70-4" tabindex="-1"></a><span class="co"># give the elements of the list names</span></span>
+<span id="cb70-5"><a href="quality-control.html#cb70-5" tabindex="-1"></a><span class="fu">names</span>(sces)<span class="ot">&lt;-</span> samples</span>
+<span id="cb70-6"><a href="quality-control.html#cb70-6" tabindex="-1"></a></span>
+<span id="cb70-7"><a href="quality-control.html#cb70-7" tabindex="-1"></a>sces</span></code></pre></div>
+<p>What just happened? <code>purrr::map()</code> took each element of <code>all_quant_folders</code> (the <code>.x</code> placeholder) and applied the function to it. The <code>~</code> is shorthand for creating an anonymous function. This is equivalent to writing:</p>
+<div class="sourceCode" id="cb71"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb71-1"><a href="quality-control.html#cb71-1" tabindex="-1"></a>sces <span class="ot">&lt;-</span> <span class="fu">map</span>(all_quant_folders, <span class="cf">function</span>(folder) {</span>
+<span id="cb71-2"><a href="quality-control.html#cb71-2" tabindex="-1"></a>  fishpond<span class="sc">::</span><span class="fu">loadFry</span>(<span class="fu">here</span>(<span class="fu">paste0</span>(<span class="st">&quot;data/&quot;</span>, folder, <span class="st">&quot;/af_quant&quot;</span>)))</span>
+<span id="cb71-3"><a href="quality-control.html#cb71-3" tabindex="-1"></a>})</span></code></pre></div>
+<p>Now <code>sces</code> is a named list of 4 SingleCellExperiment objects, one per sample.</p>
+</div>
+<div id="write-a-reusable-function" class="section level4 hasAnchor" number="2.4.5.3">
+<h4><span class="header-section-number">2.4.5.3</span> Write a reusable function<a href="quality-control.html#write-a-reusable-function" class="anchor-section" aria-label="Anchor link to header"></a></h4>
+<p>Now we wrap our single-sample code into a function. The idea is simple: take the code that works for one sample, figure out what varies (the <code>sce</code> object and the <code>sample</code> name), and make those the function parameters. The function body is almost identical to what we wrote above.</p>
+<p>One thing worth noting: the function removes mito/ribo genes <em>before</em> running <code>emptyDrops()</code>, but keeps them in the final filtered matrix. Why? Mitochondrial and ribosomal genes are often overrepresented in ambient RNA (from lysed cells), so they can confound empty droplet detection. See <a href="https://github.com/MarioniLab/DropletUtils/issues/36">DropletUtils issue #36</a> for the discussion. But for downstream analysis, we want the full transcriptome – mito/ribo genes are biologically informative (e.g., high MT% tells you about cell stress).</p>
+<div class="sourceCode" id="cb72"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb72-1"><a href="quality-control.html#cb72-1" tabindex="-1"></a><span class="co"># we will need to use this gene name mapping file</span></span>
+<span id="cb72-2"><a href="quality-control.html#cb72-2" tabindex="-1"></a><span class="fu">head</span>(filter_gene_names)</span>
+<span id="cb72-3"><a href="quality-control.html#cb72-3" tabindex="-1"></a></span>
+<span id="cb72-4"><a href="quality-control.html#cb72-4" tabindex="-1"></a>qc_alevin<span class="ot">&lt;-</span> <span class="cf">function</span>(sce, sample){</span>
+<span id="cb72-5"><a href="quality-control.html#cb72-5" tabindex="-1"></a>        <span class="co"># load count matrix</span></span>
+<span id="cb72-6"><a href="quality-control.html#cb72-6" tabindex="-1"></a>        raw_mtx<span class="ot">&lt;-</span> <span class="fu">counts</span>(sce)</span>
+<span id="cb72-7"><a href="quality-control.html#cb72-7" tabindex="-1"></a>        </span>
+<span id="cb72-8"><a href="quality-control.html#cb72-8" tabindex="-1"></a>        <span class="do">### mapping gene names </span></span>
+<span id="cb72-9"><a href="quality-control.html#cb72-9" tabindex="-1"></a>        gene_dat<span class="ot">&lt;-</span> <span class="fu">rownames</span>(raw_mtx) <span class="sc">%&gt;%</span></span>
+<span id="cb72-10"><a href="quality-control.html#cb72-10" tabindex="-1"></a>                tibble<span class="sc">::</span><span class="fu">enframe</span>(<span class="at">value =</span> <span class="st">&quot;gene_id&quot;</span>) </span>
+<span id="cb72-11"><a href="quality-control.html#cb72-11" tabindex="-1"></a></span>
+<span id="cb72-12"><a href="quality-control.html#cb72-12" tabindex="-1"></a>        gene_dat <span class="ot">&lt;-</span> <span class="fu">left_join</span>(gene_dat, filter_gene_names)</span>
+<span id="cb72-13"><a href="quality-control.html#cb72-13" tabindex="-1"></a></span>
+<span id="cb72-14"><a href="quality-control.html#cb72-14" tabindex="-1"></a>        <span class="co"># there are some duplicated symbols </span></span>
+<span id="cb72-15"><a href="quality-control.html#cb72-15" tabindex="-1"></a>        <span class="fu">all.equal</span>(<span class="fu">rownames</span>(raw_mtx), gene_dat<span class="sc">$</span>gene_id)</span>
+<span id="cb72-16"><a href="quality-control.html#cb72-16" tabindex="-1"></a>        </span>
+<span id="cb72-17"><a href="quality-control.html#cb72-17" tabindex="-1"></a>        <span class="fu">rownames</span>(raw_mtx)<span class="ot">&lt;-</span> <span class="fu">make.names</span>(gene_dat<span class="sc">$</span>gene_name, <span class="at">unique=</span><span class="cn">TRUE</span>)</span>
+<span id="cb72-18"><a href="quality-control.html#cb72-18" tabindex="-1"></a>  </span>
+<span id="cb72-19"><a href="quality-control.html#cb72-19" tabindex="-1"></a>        <span class="co"># mitochondrial genes</span></span>
+<span id="cb72-20"><a href="quality-control.html#cb72-20" tabindex="-1"></a>        mito_genes<span class="ot">&lt;-</span> <span class="fu">rownames</span>(raw_mtx) <span class="sc">%&gt;%</span></span>
+<span id="cb72-21"><a href="quality-control.html#cb72-21" tabindex="-1"></a>                <span class="fu">str_subset</span>(<span class="st">&quot;^MT</span><span class="sc">\\</span><span class="st">.&quot;</span>)</span>
+<span id="cb72-22"><a href="quality-control.html#cb72-22" tabindex="-1"></a>        </span>
+<span id="cb72-23"><a href="quality-control.html#cb72-23" tabindex="-1"></a>        <span class="co"># ribosomal genes</span></span>
+<span id="cb72-24"><a href="quality-control.html#cb72-24" tabindex="-1"></a>        rps_genes<span class="ot">&lt;-</span> <span class="fu">rownames</span>(raw_mtx) <span class="sc">%&gt;%</span></span>
+<span id="cb72-25"><a href="quality-control.html#cb72-25" tabindex="-1"></a>                <span class="fu">str_subset</span>(<span class="st">&quot;^RPS&quot;</span>)</span>
+<span id="cb72-26"><a href="quality-control.html#cb72-26" tabindex="-1"></a>        </span>
+<span id="cb72-27"><a href="quality-control.html#cb72-27" tabindex="-1"></a>        rpl_genes<span class="ot">&lt;-</span> <span class="fu">rownames</span>(raw_mtx) <span class="sc">%&gt;%</span></span>
+<span id="cb72-28"><a href="quality-control.html#cb72-28" tabindex="-1"></a>                <span class="fu">str_subset</span>(<span class="st">&quot;^RPL&quot;</span>)</span>
+<span id="cb72-29"><a href="quality-control.html#cb72-29" tabindex="-1"></a>        </span>
+<span id="cb72-30"><a href="quality-control.html#cb72-30" tabindex="-1"></a>        <span class="do">## filter </span></span>
+<span id="cb72-31"><a href="quality-control.html#cb72-31" tabindex="-1"></a>        <span class="fu">set.seed</span>(<span class="dv">123</span>)</span>
+<span id="cb72-32"><a href="quality-control.html#cb72-32" tabindex="-1"></a>        <span class="fu">library</span>(DropletUtils, <span class="at">quietly=</span>T)</span>
+<span id="cb72-33"><a href="quality-control.html#cb72-33" tabindex="-1"></a>        non_mito_ribo_genes<span class="ot">&lt;-</span> <span class="sc">!</span><span class="fu">rownames</span>(raw_mtx) <span class="sc">%in%</span> </span>
+<span id="cb72-34"><a href="quality-control.html#cb72-34" tabindex="-1"></a>                <span class="fu">c</span>(mito_genes, rps_genes, rpl_genes)</span>
+<span id="cb72-35"><a href="quality-control.html#cb72-35" tabindex="-1"></a>        </span>
+<span id="cb72-36"><a href="quality-control.html#cb72-36" tabindex="-1"></a>        out <span class="ot">&lt;-</span> <span class="fu">emptyDrops</span>(raw_mtx[non_mito_ribo_genes, ]) </span>
+<span id="cb72-37"><a href="quality-control.html#cb72-37" tabindex="-1"></a>        keep <span class="ot">&lt;-</span> out<span class="sc">$</span>FDR <span class="sc">&lt;=</span> <span class="fl">0.05</span> </span>
+<span id="cb72-38"><a href="quality-control.html#cb72-38" tabindex="-1"></a>        keep[<span class="fu">is.na</span>(keep)] <span class="ot">&lt;-</span> <span class="cn">FALSE</span></span>
+<span id="cb72-39"><a href="quality-control.html#cb72-39" tabindex="-1"></a>        filt_mtx <span class="ot">&lt;-</span> raw_mtx[,keep] <span class="co"># subset raw mtx to remove empty drops</span></span>
+<span id="cb72-40"><a href="quality-control.html#cb72-40" tabindex="-1"></a></span>
+<span id="cb72-41"><a href="quality-control.html#cb72-41" tabindex="-1"></a>        <span class="fu">dim</span>(filt_mtx)</span>
+<span id="cb72-42"><a href="quality-control.html#cb72-42" tabindex="-1"></a>        </span>
+<span id="cb72-43"><a href="quality-control.html#cb72-43" tabindex="-1"></a>        <span class="co"># save the filtered matrix as a RDS file</span></span>
+<span id="cb72-44"><a href="quality-control.html#cb72-44" tabindex="-1"></a>        <span class="fu">saveRDS</span>(filt_mtx, <span class="fu">here</span>(<span class="fu">paste0</span>(<span class="st">&quot;data/&quot;</span>, </span>
+<span id="cb72-45"><a href="quality-control.html#cb72-45" tabindex="-1"></a>                                      sample, <span class="st">&quot;_quant/filtered_mat.rds&quot;</span>)))</span>
+<span id="cb72-46"><a href="quality-control.html#cb72-46" tabindex="-1"></a></span>
+<span id="cb72-47"><a href="quality-control.html#cb72-47" tabindex="-1"></a>        cells_remain<span class="ot">&lt;-</span> <span class="fu">ncol</span>(filt_mtx)</span>
+<span id="cb72-48"><a href="quality-control.html#cb72-48" tabindex="-1"></a></span>
+<span id="cb72-49"><a href="quality-control.html#cb72-49" tabindex="-1"></a>        <span class="do">### plotting</span></span>
+<span id="cb72-50"><a href="quality-control.html#cb72-50" tabindex="-1"></a></span>
+<span id="cb72-51"><a href="quality-control.html#cb72-51" tabindex="-1"></a>        tot_counts <span class="ot">&lt;-</span> <span class="fu">colSums</span>(raw_mtx)</span>
+<span id="cb72-52"><a href="quality-control.html#cb72-52" tabindex="-1"></a></span>
+<span id="cb72-53"><a href="quality-control.html#cb72-53" tabindex="-1"></a>        df <span class="ot">&lt;-</span> <span class="fu">tibble</span>(<span class="at">total =</span> tot_counts, <span class="at">rank =</span> <span class="fu">row_number</span>(<span class="fu">desc</span>(total))) <span class="sc">%&gt;%</span></span>
+<span id="cb72-54"><a href="quality-control.html#cb72-54" tabindex="-1"></a>                <span class="fu">distinct</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb72-55"><a href="quality-control.html#cb72-55" tabindex="-1"></a>                <span class="fu">arrange</span>(rank)</span>
+<span id="cb72-56"><a href="quality-control.html#cb72-56" tabindex="-1"></a>        </span>
+<span id="cb72-57"><a href="quality-control.html#cb72-57" tabindex="-1"></a>        <span class="fu">ggplot</span>(df, <span class="fu">aes</span>(rank, total)) <span class="sc">+</span></span>
+<span id="cb72-58"><a href="quality-control.html#cb72-58" tabindex="-1"></a>                <span class="fu">geom_path</span>() <span class="sc">+</span></span>
+<span id="cb72-59"><a href="quality-control.html#cb72-59" tabindex="-1"></a>                <span class="fu">scale_x_log10</span>() <span class="sc">+</span> </span>
+<span id="cb72-60"><a href="quality-control.html#cb72-60" tabindex="-1"></a>                <span class="fu">scale_y_log10</span>() <span class="sc">+</span> </span>
+<span id="cb72-61"><a href="quality-control.html#cb72-61" tabindex="-1"></a>                <span class="fu">annotation_logticks</span>() <span class="sc">+</span></span>
+<span id="cb72-62"><a href="quality-control.html#cb72-62" tabindex="-1"></a>                <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">&quot;Barcode rank&quot;</span>, <span class="at">y =</span> <span class="st">&quot;Total UMI count&quot;</span>) <span class="sc">+</span></span>
+<span id="cb72-63"><a href="quality-control.html#cb72-63" tabindex="-1"></a>                <span class="fu">geom_vline</span>(<span class="at">xintercept =</span> cells_remain, <span class="at">linetype =</span> <span class="dv">2</span>, <span class="at">color =</span> <span class="st">&quot;red&quot;</span>) <span class="sc">+</span></span>
+<span id="cb72-64"><a href="quality-control.html#cb72-64" tabindex="-1"></a>                <span class="fu">annotate</span>(<span class="st">&quot;text&quot;</span>, <span class="at">x=</span> cells_remain, <span class="at">y=</span><span class="dv">1000</span>, </span>
+<span id="cb72-65"><a href="quality-control.html#cb72-65" tabindex="-1"></a>                         <span class="at">label=</span> <span class="fu">paste0</span>(cells_remain, <span class="st">&quot; cells&quot;</span>), </span>
+<span id="cb72-66"><a href="quality-control.html#cb72-66" tabindex="-1"></a>                         <span class="at">angle=</span> <span class="dv">0</span>, <span class="at">size=</span> <span class="dv">5</span>, <span class="at">color=</span><span class="st">&quot;blue&quot;</span>) <span class="sc">+</span></span>
+<span id="cb72-67"><a href="quality-control.html#cb72-67" tabindex="-1"></a>                <span class="fu">theme_bw</span>(<span class="at">base_size =</span> <span class="dv">14</span>) <span class="sc">+</span></span>
+<span id="cb72-68"><a href="quality-control.html#cb72-68" tabindex="-1"></a>                <span class="fu">ggtitle</span>(sample)</span>
+<span id="cb72-69"><a href="quality-control.html#cb72-69" tabindex="-1"></a>        </span>
+<span id="cb72-70"><a href="quality-control.html#cb72-70" tabindex="-1"></a>        <span class="fu">ggsave</span>(<span class="fu">here</span>(<span class="fu">paste0</span>(<span class="st">&quot;results/&quot;</span>, sample, <span class="st">&quot;_knee_plot.pdf&quot;</span>)), </span>
+<span id="cb72-71"><a href="quality-control.html#cb72-71" tabindex="-1"></a>               <span class="at">width =</span> <span class="dv">6</span>, <span class="at">height =</span> <span class="dv">4</span>)</span>
+<span id="cb72-72"><a href="quality-control.html#cb72-72" tabindex="-1"></a>  </span>
+<span id="cb72-73"><a href="quality-control.html#cb72-73" tabindex="-1"></a>}</span></code></pre></div>
+</div>
+<div id="apply-the-function-to-all-samples-with-purrrmap2" class="section level4 hasAnchor" number="2.4.5.4">
+<h4><span class="header-section-number">2.4.5.4</span> Apply the function to all samples with purrr::map2()<a href="quality-control.html#apply-the-function-to-all-samples-with-purrrmap2" class="anchor-section" aria-label="Anchor link to header"></a></h4>
+<p>Now we process all four samples in one line:</p>
+<div class="sourceCode" id="cb73"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb73-1"><a href="quality-control.html#cb73-1" tabindex="-1"></a>purrr<span class="sc">::</span><span class="fu">map2</span>(sces, <span class="fu">names</span>(sces), qc_alevin)</span></code></pre></div>
+<p>Why <code>map2()</code> instead of <code>map()</code>? Our function needs two inputs: the <code>sce</code> object and the <code>sample</code> name. <code>map()</code> iterates over one vector; <code>map2()</code> iterates over two vectors in parallel:</p>
+<div class="sourceCode" id="cb74"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb74-1"><a href="quality-control.html#cb74-1" tabindex="-1"></a><span class="co"># Iteration 1: qc_alevin(sces[[1]], names(sces)[1]) -&gt; qc_alevin(sce_obj1, &quot;SRX5329394&quot;)</span></span>
+<span id="cb74-2"><a href="quality-control.html#cb74-2" tabindex="-1"></a><span class="co"># Iteration 2: qc_alevin(sces[[2]], names(sces)[2]) -&gt; qc_alevin(sce_obj2, &quot;SRX5329395&quot;)</span></span>
+<span id="cb74-3"><a href="quality-control.html#cb74-3" tabindex="-1"></a><span class="co"># Iteration 3: qc_alevin(sces[[3]], names(sces)[3]) -&gt; qc_alevin(sce_obj3, &quot;SRX5329396&quot;)</span></span>
+<span id="cb74-4"><a href="quality-control.html#cb74-4" tabindex="-1"></a><span class="co"># Iteration 4: qc_alevin(sces[[4]], names(sces)[4]) -&gt; qc_alevin(sce_obj4, &quot;SRX5329397&quot;)</span></span></code></pre></div>
+<p>Our <code>qc_alevin()</code> function doesn’t return anything – it saves files and creates plots (side effects). For functions like this, you could also use <code>purrr::walk2()</code>:</p>
+<div class="sourceCode" id="cb75"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb75-1"><a href="quality-control.html#cb75-1" tabindex="-1"></a><span class="co"># Alternative: walk2 explicitly indicates we care about side effects, not return values</span></span>
+<span id="cb75-2"><a href="quality-control.html#cb75-2" tabindex="-1"></a>purrr<span class="sc">::</span><span class="fu">walk2</span>(sces, <span class="fu">names</span>(sces), qc_alevin)</span></code></pre></div>
+<p><code>map2()</code> returns a list of results (which we ignore here). <code>walk2()</code> does the same thing but doesn’t return anything – it’s more semantically correct when you only care about side effects.</p>
+<p>What if one sample fails? By default, the entire iteration stops. If you want to keep going even when one sample fails, wrap the function with <code>safely()</code>:</p>
+<div class="sourceCode" id="cb76"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb76-1"><a href="quality-control.html#cb76-1" tabindex="-1"></a><span class="co"># Wrap the function with safely() to catch errors</span></span>
+<span id="cb76-2"><a href="quality-control.html#cb76-2" tabindex="-1"></a>safe_qc <span class="ot">&lt;-</span> purrr<span class="sc">::</span><span class="fu">safely</span>(qc_alevin)</span>
+<span id="cb76-3"><a href="quality-control.html#cb76-3" tabindex="-1"></a></span>
+<span id="cb76-4"><a href="quality-control.html#cb76-4" tabindex="-1"></a><span class="co"># This will run all samples even if some fail</span></span>
+<span id="cb76-5"><a href="quality-control.html#cb76-5" tabindex="-1"></a>results <span class="ot">&lt;-</span> purrr<span class="sc">::</span><span class="fu">map2</span>(sces, <span class="fu">names</span>(sces), safe_qc)</span>
+<span id="cb76-6"><a href="quality-control.html#cb76-6" tabindex="-1"></a></span>
+<span id="cb76-7"><a href="quality-control.html#cb76-7" tabindex="-1"></a><span class="co"># Check which samples succeeded</span></span>
+<span id="cb76-8"><a href="quality-control.html#cb76-8" tabindex="-1"></a>purrr<span class="sc">::</span><span class="fu">map_lgl</span>(results, <span class="sc">~</span><span class="fu">is.null</span>(.x<span class="sc">$</span>error))</span></code></pre></div>
+<p>Compare this to copy-pasting 200+ lines of code and changing sample names by hand. One function definition plus one line to apply it. As your experiments get bigger, this approach scales. I recommend investing time in learning <code>purrr</code> – it pays off quickly.</p>
+<hr />
+</div>
+</div>
+<div id="what-we-covered" class="section level3 hasAnchor" number="2.4.6">
+<h3><span class="header-section-number">2.4.6</span> What we covered<a href="quality-control.html#what-we-covered" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<p>We generated QC reports with alevinQC, removed empty droplets with <code>emptyDrops()</code>, made knee plots, converted ENSEMBL IDs to gene symbols, and processed all four samples using <code>purrr</code>. We also looked at MAD-based thresholding as an alternative to fixed cutoffs.</p>
+<p>Files generated:</p>
+<ul>
+<li><code>results/QC/*.html</code> – alevinQC reports</li>
+<li><code>data/*_quant/filtered_mat.rds</code> – filtered count matrices (empty droplets removed)</li>
+<li><code>results/*_knee_plot.pdf</code> – knee plots for each sample</li>
+</ul>
+<p>In Chapter 3, we’ll create Seurat objects from these filtered matrices and do normalization, clustering, and integration. We’ll also apply additional QC filters (mitochondrial %, gene counts) after seeing how they distribute across clusters.</p>
+</div>
+<div id="things-to-watch-out-for" class="section level3 hasAnchor" number="2.4.7">
+<h3><span class="header-section-number">2.4.7</span> Things to watch out for<a href="quality-control.html#things-to-watch-out-for" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<p>Don’t use fixed UMI thresholds for cell calling – use <code>emptyDrops()</code>. Don’t filter aggressively on a single metric; a cell with low gene counts might be biologically quiescent, not low-quality. Always look at your knee plot. If it doesn’t have a clear knee, your data might have quality issues. And please don’t copy-paste code for each sample – use <code>purrr</code>.</p>
+</div>
+<div id="further-reading-1" class="section level3 hasAnchor" number="2.4.8">
+<h3><span class="header-section-number">2.4.8</span> Further reading<a href="quality-control.html#further-reading-1" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<ul>
+<li>The <a href="https://www.sc-best-practices.org/preprocessing_visualization/quality_control.html">sc-best-practices.org QC chapter</a> – a good overview of current recommendations</li>
+<li>The <a href="https://bioconductor.org/books/release/OSCA.basic/quality-control.html">OSCA book QC chapter</a> – more statistical detail, particularly on MAD-based filtering. I find myself going back to this one often.</li>
+<li>Lun et al. (2019), “EmptyDrops: distinguishing cells from empty droplets in droplet-based single-cell RNA sequencing data” – the paper behind <code>emptyDrops()</code></li>
+<li>Jenny Bryan’s <a href="https://jennybc.github.io/purrr-tutorial/">purrr tutorial</a> – the best intro to purrr I’ve found</li>
+</ul>
+</div>
+</div>
+<div id="session-information-1" class="section level2 unnumbered hasAnchor">
+<h2>Session Information<a href="quality-control.html#session-information-1" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<div class="sourceCode" id="cb77"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb77-1"><a href="quality-control.html#cb77-1" tabindex="-1"></a><span class="fu">sessionInfo</span>()</span></code></pre></div>
+<pre><code>#&gt; R version 4.4.1 (2024-06-14)
+#&gt; Platform: aarch64-apple-darwin20
+#&gt; Running under: macOS Sonoma 14.1
+#&gt; 
+#&gt; Matrix products: default
+#&gt; BLAS:   /Library/Frameworks/R.framework/Versions/4.4-arm64/Resources/lib/libRblas.0.dylib 
+#&gt; LAPACK: /Library/Frameworks/R.framework/Versions/4.4-arm64/Resources/lib/libRlapack.dylib;  LAPACK version 3.12.0
+#&gt; 
+#&gt; locale:
+#&gt; [1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8
+#&gt; 
+#&gt; time zone: America/New_York
+#&gt; tzcode source: internal
+#&gt; 
+#&gt; attached base packages:
+#&gt; [1] stats4    stats     graphics  grDevices utils     datasets  methods  
+#&gt; [8] base     
+#&gt; 
+#&gt; other attached packages:
+#&gt;  [1] DropletUtils_1.24.0         stringr_1.5.1              
+#&gt;  [3] ggplot2_3.5.1               dplyr_1.1.4                
+#&gt;  [5] here_1.0.1                  Seurat_5.1.0               
+#&gt;  [7] SeuratObject_5.0.2          sp_2.1-4                   
+#&gt;  [9] SingleCellExperiment_1.26.0 SummarizedExperiment_1.34.0
+#&gt; [11] Biobase_2.64.0              GenomicRanges_1.56.1       
+#&gt; [13] GenomeInfoDb_1.40.1         IRanges_2.38.1             
+#&gt; [15] S4Vectors_0.42.1            BiocGenerics_0.50.0        
+#&gt; [17] MatrixGenerics_1.16.0       matrixStats_1.3.0          
+#&gt; 
+#&gt; loaded via a namespace (and not attached):
+#&gt;   [1] RcppAnnoy_0.0.22          splines_4.4.1            
+#&gt;   [3] later_1.3.2               BiocIO_1.14.0            
+#&gt;   [5] bitops_1.0-8              tibble_3.2.1             
+#&gt;   [7] R.oo_1.26.0               polyclip_1.10-7          
+#&gt;   [9] XML_3.99-0.17             fastDummies_1.7.4        
+#&gt;  [11] lifecycle_1.0.4           edgeR_4.2.1              
+#&gt;  [13] rprojroot_2.0.4           globals_0.16.3           
+#&gt;  [15] lattice_0.22-6            MASS_7.3-60.2            
+#&gt;  [17] magrittr_2.0.3            limma_3.60.4             
+#&gt;  [19] plotly_4.10.4             sass_0.4.9               
+#&gt;  [21] rmarkdown_2.27            jquerylib_0.1.4          
+#&gt;  [23] yaml_2.3.10               httpuv_1.6.15            
+#&gt;  [25] sctransform_0.4.1         spam_2.10-0              
+#&gt;  [27] spatstat.sparse_3.1-0     reticulate_1.38.0        
+#&gt;  [29] cowplot_1.1.3             pbapply_1.7-2            
+#&gt;  [31] RColorBrewer_1.1-3        abind_1.4-5              
+#&gt;  [33] zlibbioc_1.50.0           Rtsne_0.17               
+#&gt;  [35] purrr_1.0.2               R.utils_2.12.3           
+#&gt;  [37] RCurl_1.98-1.16           GenomeInfoDbData_1.2.12  
+#&gt;  [39] ggrepel_0.9.5             irlba_2.3.5.1            
+#&gt;  [41] listenv_0.9.1             spatstat.utils_3.1-0     
+#&gt;  [43] fishpond_2.10.0           goftest_1.2-3            
+#&gt;  [45] RSpectra_0.16-2           spatstat.random_3.3-1    
+#&gt;  [47] dqrng_0.4.1               fitdistrplus_1.2-1       
+#&gt;  [49] parallelly_1.38.0         DelayedMatrixStats_1.26.0
+#&gt;  [51] leiden_0.4.3.1            codetools_0.2-20         
+#&gt;  [53] DelayedArray_0.30.1       scuttle_1.14.0           
+#&gt;  [55] tidyselect_1.2.1          farver_2.1.2             
+#&gt;  [57] UCSC.utils_1.0.0          spatstat.explore_3.3-2   
+#&gt;  [59] GenomicAlignments_1.40.0  jsonlite_1.8.8           
+#&gt;  [61] progressr_0.14.0          ggridges_0.5.6           
+#&gt;  [63] survival_3.6-4            tools_4.4.1              
+#&gt;  [65] ica_1.0-3                 Rcpp_1.0.13              
+#&gt;  [67] glue_1.8.0                svMisc_1.2.3             
+#&gt;  [69] gridExtra_2.3             SparseArray_1.4.8        
+#&gt;  [71] xfun_0.52                 HDF5Array_1.32.1         
+#&gt;  [73] withr_3.0.0               fastmap_1.2.0            
+#&gt;  [75] rhdf5filters_1.16.0       fansi_1.0.6              
+#&gt;  [77] digest_0.6.36             R6_2.5.1                 
+#&gt;  [79] mime_0.12                 colorspace_2.1-1         
+#&gt;  [81] scattermore_1.2           gtools_3.9.5             
+#&gt;  [83] tensor_1.5                spatstat.data_3.1-2      
+#&gt;  [85] R.methodsS3_1.8.2         utf8_1.2.4               
+#&gt;  [87] tidyr_1.3.1               generics_0.1.3           
+#&gt;  [89] data.table_1.15.4         rtracklayer_1.64.0       
+#&gt;  [91] httr_1.4.7                htmlwidgets_1.6.4        
+#&gt;  [93] S4Arrays_1.4.1            uwot_0.2.2               
+#&gt;  [95] pkgconfig_2.0.3           gtable_0.3.5             
+#&gt;  [97] lmtest_0.9-40             XVector_0.44.0           
+#&gt;  [99] htmltools_0.5.8.1         dotCall64_1.1-1          
+#&gt; [101] bookdown_0.40             scales_1.3.0             
+#&gt; [103] png_0.1-8                 spatstat.univar_3.0-0    
+#&gt; [105] knitr_1.48                rstudioapi_0.16.0        
+#&gt; [107] rjson_0.2.22              reshape2_1.4.4           
+#&gt; [109] curl_5.2.1                nlme_3.1-164             
+#&gt; [111] cachem_1.1.0              zoo_1.8-12               
+#&gt; [113] rhdf5_2.48.0              KernSmooth_2.23-24       
+#&gt; [115] parallel_4.4.1            miniUI_0.1.1.1           
+#&gt; [117] restfulr_0.0.15           pillar_1.9.0             
+#&gt; [119] grid_4.4.1                vctrs_0.6.5              
+#&gt; [121] RANN_2.6.1                promises_1.3.0           
+#&gt; [123] beachmat_2.20.0           xtable_1.8-4             
+#&gt; [125] cluster_2.1.6             evaluate_0.24.0          
+#&gt; [127] Rsamtools_2.20.0          locfit_1.5-9.10          
+#&gt; [129] cli_3.6.3                 compiler_4.4.1           
+#&gt; [131] rlang_1.1.4               crayon_1.5.3             
+#&gt; [133] future.apply_1.11.2       plyr_1.8.9               
+#&gt; [135] stringi_1.8.4             viridisLite_0.4.2        
+#&gt; [137] deldir_2.0-4              BiocParallel_1.38.0      
+#&gt; [139] Biostrings_2.72.1         munsell_0.5.1            
+#&gt; [141] lazyeval_0.2.2            spatstat.geom_3.3-2      
+#&gt; [143] Matrix_1.7-0              RcppHNSW_0.6.0           
+#&gt; [145] patchwork_1.2.0           sparseMatrixStats_1.16.0 
+#&gt; [147] future_1.34.0             Rhdf5lib_1.26.0          
+#&gt; [149] statmod_1.5.0             shiny_1.9.0              
+#&gt; [151] highr_0.11                ROCR_1.0-11              
+#&gt; [153] igraph_2.0.3              bslib_0.8.0</code></pre>
+
+</div>
+</div>
+            </section>
+
+          </div>
+        </div>
+      </div>
+<a href="download-data-and-quantification.html" class="navigation navigation-prev " aria-label="Previous page"><i class="fa fa-angle-left"></i></a>
+<a href="seurat-workflow.html" class="navigation navigation-next " aria-label="Next page"><i class="fa fa-angle-right"></i></a>
+    </div>
+  </div>
+<script src="libs/gitbook-2.6.7/js/app.min.js"></script>
+<script src="libs/gitbook-2.6.7/js/clipboard.min.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-search.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-sharing.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-fontsettings.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-bookdown.js"></script>
+<script src="libs/gitbook-2.6.7/js/jquery.highlight.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-clipboard.js"></script>
+<script>
+gitbook.require(["gitbook"], function(gitbook) {
+gitbook.start({
+  "sharing": {
+    "github": true,
+    "facebook": false,
+    "twitter": true,
+    "linkedin": true,
+    "weibo": false,
+    "instapaper": false,
+    "vk": false,
+    "whatsapp": false,
+    "all": ["facebook", "twitter", "linkedin", "weibo", "instapaper"]
+  },
+  "fontsettings": {
+    "theme": "white",
+    "family": "sans",
+    "size": 2
+  },
+  "edit": {
+    "link": "https://github.com/crazyhottommy/practical_scRNAseq_analysis_with_R/edit/main/02-quality-control.Rmd",
+    "text": "Edit"
+  },
+  "history": {
+    "link": null,
+    "text": null
+  },
+  "view": {
+    "link": null,
+    "text": null
+  },
+  "download": ["practical_scRNAseq_analysis.pdf", "practical_scRNAseq_analysis.epub"],
+  "search": {
+    "engine": "fuse",
+    "options": null
+  },
+  "toc": {
+    "collapse": "subsection"
+  }
+});
+});
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    var src = "true";
+    if (src === "" || src === "true") src = "https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.9/latest.js?config=TeX-MML-AM_CHTML";
+    if (location.protocol !== "file:")
+      if (/^https?:/.test(src))
+        src = src.replace(/^https?:/, '');
+    script.src = src;
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+</body>
+
+</html>
