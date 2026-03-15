@@ -62,11 +62,21 @@ This takes 30-60 minutes. Bioconductor packages are slow to compile. Go get lunc
 
 ### Step 4: Download the data
 
-```r
-source("scripts/download_data.R")
-```
+Download the data zip file (~540MB) from Google Drive:
 
-This downloads ~5GB of data from Zenodo, including genome files and pre-processed Seurat objects.
+https://drive.google.com/file/d/1944UsXcu-vZqm39wk76xtUlBRRacX0o-/view?usp=sharing
+
+Unzip it and place the contents into the `data/` folder in the project directory. You should end up with:
+
+```
+data/
+  SRX5329394_quant/
+  SRX5329395_quant/
+  SRX5329396_quant/
+  SRX5329397_quant/
+  pbmc_seurat_obj.rds
+  ref.Rds
+```
 
 ### Step 5: Work through the chapters
 
